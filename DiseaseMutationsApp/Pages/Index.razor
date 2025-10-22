@@ -20,13 +20,7 @@ Welcome to your new app.
 
     private async Task FetchData()
     {
-        try
-        {
-            data = await Http.GetStringAsync("https://eutils.ncbi.nlm.nih.gov/entrez/eutils/efetch.fcgi?db=nuccore&id=NC_000007.13&seq_start=117199601&seq_stop=117199622&rettype=fasta");
-        }
-        catch (Exception ex)
-        {
-            data = $"Error: {ex.Message}";
-        }
+        var seq = await Sequence.UsingId("NG_016465.4").From(70169).To(70190).Get();
+        data = seq;
     }
 }
