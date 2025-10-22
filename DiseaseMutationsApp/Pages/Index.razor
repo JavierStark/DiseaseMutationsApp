@@ -1,0 +1,32 @@
+﻿@page "/"
+
+<PageTitle>Index</PageTitle>
+
+<h1>Disease Mutations App</h1>
+
+Welcome to your new app.
+
+
+@inject HttpClient Http
+
+<button class="btn btn-primary" style="font-size: 16px;" @onclick="FetchData">Fetch Data</button>
+@if (data != null)
+{
+    <p>Data: @data</p>
+}
+
+@code {
+    private string? data;
+
+    private async Task FetchData()
+    {
+        try
+        {
+            data = await Http.GetStringAsync("https://eutils.ncbi.nlm.nih.gov/entrez/eutils/efetch.fcgi?db=nuccore&id=NC_000007.13&seq_start=117199601&seq_stop=117199622&rettype=fasta");
+        }
+        catch (Exception ex)
+        {
+            data = $"Error: {ex.Message}";
+        }
+    }
+}
