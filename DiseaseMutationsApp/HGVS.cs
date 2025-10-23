@@ -63,7 +63,11 @@ public partial class HGVS
 
     private void ParseMethod(string method)
     {
-        if (method.Contains('>'))
+        if(string.IsNullOrEmpty(method) || method == "=")
+        {
+            Mutation = MutationType.NoChange;
+        }
+        else if (method.Contains('>'))
         {
             Mutation = MutationType.Substitution;
             var refs = method.Split('>');

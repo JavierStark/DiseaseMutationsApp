@@ -28,4 +28,38 @@ public class Sequence
     {
         return Data[(from - 1)..to];
     }
+
+    public (string mutated, string original) GetMutatedSubsequence(HGVS hgvs, int leftBorder = 0, int rightBorder = 0)
+    {
+        var start = hgvs.Position.start - 1;
+        var limitLeft = start - leftBorder;
+        
+        if (start < 0) start = 0;
+        if (limitLeft < 0) leftBorder = 0;
+        
+        var end = hgvs.Position.end;
+        var limitRight = end + rightBorder;
+        
+        if (end > Data.Length) end = Data.Length;
+        if (limitRight > Data.Length) rightBorder = Data.Length;
+        
+        var original = Data[limitLeft..limitRight];
+        
+        var mutated = hgvs.Mutation switch
+        {
+            HGVS.MutationType.Substitution => 
+                Data[(start-leftBorder)..start] + hgvs.Alternate + Data[end..(end + rightBorder)],
+            HGVS.MutationType.Deletion => 
+                Data[..start] + Data[end..],
+            HGVS.MutationType.Insertion => 
+                Data[..(start + 1)] + hgvs.Alternate + Data[(start + 1)..],
+            HGVS.MutationType.Duplication => 
+                Data[..end] + Data[start..(end - start)] + Data[end..],
+            HGVS.MutationType.NoChange => 
+                original,
+            _ => throw new NotImplementedException($"Mutation type {hgvs.Mutation} not implemented")
+        };
+        
+        return (mutated, original); 
+    }
 }
