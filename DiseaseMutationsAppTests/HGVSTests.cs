@@ -100,7 +100,7 @@ public class HGVSTests
     [Test]
     public void ParseRepeat()
     {
-        var sut = new HGVS("NM_000546.6:c.215_217TA[3]");
+        var sut = new HGVS("NM_000546.6:c.215TA[3]");
         Assert.Multiple(() =>
         {
             Assert.That(sut.Mutation, Is.EqualTo(HGVS.MutationType.Repeat));

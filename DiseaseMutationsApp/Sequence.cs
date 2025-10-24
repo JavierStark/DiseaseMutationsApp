@@ -29,34 +29,40 @@ public class Sequence
         return Data[(from - 1)..to];
     }
 
-    public (string mutated, string original) GetMutatedSubsequence(HGVS hgvs, int leftBorder = 0, int rightBorder = 0)
+    public (string mutated, string original) GetMutatedSubsequence(HGVS hgvs, int leftPadding = 0, int rightPadding = 0)
     {
         var start = hgvs.Position.start - 1;
-        var limitLeft = start - leftBorder;
+        var limitLeft = start - leftPadding;
         
         if (start < 0) start = 0;
-        if (limitLeft < 0) leftBorder = 0;
+        if (limitLeft < 0) leftPadding = 0;
         
         var end = hgvs.Position.end;
-        var limitRight = end + rightBorder;
+        var limitRight = end + rightPadding;
         
         if (end > Data.Length) end = Data.Length;
-        if (limitRight > Data.Length) rightBorder = Data.Length;
+        if (limitRight > Data.Length) rightPadding = Data.Length;
         
         var original = Data[limitLeft..limitRight];
         
         var mutated = hgvs.Mutation switch
         {
             HGVS.MutationType.Substitution => 
-                Data[(start-leftBorder)..start] + hgvs.Alternate + Data[end..(end + rightBorder)],
+                Data[limitLeft..start] + hgvs.Alternate + Data[end..limitRight],
             HGVS.MutationType.Deletion => 
-                Data[..start] + Data[end..],
+                Data[limitLeft..start] + Data[end..limitRight],
             HGVS.MutationType.Insertion => 
-                Data[..(start + 1)] + hgvs.Alternate + Data[(start + 1)..],
+                Data[limitLeft..(start + 1)] + hgvs.Alternate + Data[(start + 1)..limitRight],
             HGVS.MutationType.Duplication => 
-                Data[..end] + Data[start..(end - start)] + Data[end..],
+                Data[limitLeft..start] + Data[start..end] + Data[start..end] + Data[end..limitRight],
             HGVS.MutationType.NoChange => 
                 original,
+            HGVS.MutationType.DeletionInsertion => 
+                Data[limitLeft..start] + hgvs.Alternate + Data[end..limitRight],
+            HGVS.MutationType.Inversion => 
+                Data[limitLeft..start] + 
+                new string(Data[start..end].Reverse().ToArray()) + 
+                Data[end..limitRight],
             _ => throw new NotImplementedException($"Mutation type {hgvs.Mutation} not implemented")
         };
         

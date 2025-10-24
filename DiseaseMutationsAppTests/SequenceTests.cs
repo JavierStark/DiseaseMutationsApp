@@ -66,8 +66,8 @@ public class SequenceTests
         const string seqData = "ATGCGTACGTAGCTAGCTAGCTAGCTAGCTAGCTAGCTAGC";
         var sequence = new Sequence("NG_016465.4", seqData);
         var hgvs = new HGVS("NG_016465.4:c.5del");
-        var (mutated, _) = sequence.GetMutatedSubsequence(hgvs);
-        Assert.That(mutated, Is.EqualTo("ATGCTACGTAGCTAGCTAGCTAGCTAGCTAGCTAGCTAGC"));
+        var (mutated, _) = sequence.GetMutatedSubsequence(hgvs,1,1);
+        Assert.That(mutated, Is.EqualTo("CT"));
     }
     
     [Test]
@@ -76,7 +76,47 @@ public class SequenceTests
         const string seqData = "ATGCGTACGTAGCTAGCTAGCTAGCTAGCTAGCTAGCTAGC";
         var sequence = new Sequence("NG_016465.4", seqData);
         var hgvs = new HGVS("NG_016465.4:c.5_7del");
-        var (mutated, _) = sequence.GetMutatedSubsequence(hgvs);
-        Assert.That(mutated, Is.EqualTo("ATGCCGTAGCTAGCTAGCTAGCTAGCTAGCTAGCTAGC"));
+        var (mutated, _) = sequence.GetMutatedSubsequence(hgvs,1,1);
+        Assert.That(mutated, Is.EqualTo("CC"));
     }
+
+    [Test]
+    public void GetMutatedInsertion()
+    {
+        const string seqData = "ATGCGTACGTAGCTAGCTAGCTAGCTAGCTAGCTAGCTAGC";
+        var sequence = new Sequence("NG_016465.4", seqData);
+        var hgvs = new HGVS("NG_016465.4:c.5_6insA");
+        var (mutated, _) = sequence.GetMutatedSubsequence(hgvs,1,1);
+        Assert.That(mutated, Is.EqualTo("CGATA"));
+    }
+    
+    [Test]
+    public void GetMutatedDuplication()
+    {
+        const string seqData = "ATGCGTACGTAGCTAGCTAGCTAGCTAGCTAGCTAGCTAGC";
+        var sequence = new Sequence("NG_016465.4", seqData);
+        var hgvs = new HGVS("NG_016465.4:c.5_7dup");
+        var (mutated, _) = sequence.GetMutatedSubsequence(hgvs);
+        Assert.That(mutated, Is.EqualTo("GTAGTA"));
+    }
+
+    [Test]
+    public void GetMutatedInversion()
+    {
+        const string seqData = "ATGCGTACGTAGCTAGCTAGCTAGCTAGCTAGCTAGCTAGC";
+        var sequence = new Sequence("NG_016465.4", seqData);
+        var hgvs = new HGVS("NG_016465.4:c.5_7inv");
+        var (mutated, _) = sequence.GetMutatedSubsequence(hgvs,1,1);
+        Assert.That(mutated, Is.EqualTo("CATGC"));
+    }
+
+    // [Test]
+    // public void GetMutatedRepeat()
+    // {
+    //     const string seqData = "ATGCGTACGTAGCTAGCTAGCTAGCTAGCTAGCTAGCTAGC";
+    //     var sequence = new Sequence("NM_000546.6", seqData);
+    //     var hgvs = new HGVS("NM_000546.6:c.2TA[3]");
+    //     var (mutated, _) = sequence.GetMutatedSubsequence(hgvs,1,1);
+    //     Assert.That(mutated, Is.EqualTo("TTATATATAG"));
+    // }
 }

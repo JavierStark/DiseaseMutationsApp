@@ -1,184 +1,78 @@
 ﻿@page "/hgvs_sequence"
 
-<PageTitle>Index</PageTitle>
+<PageTitle>HGVS Sequence</PageTitle>
 
 <h1>Disease Mutations App</h1>
 
-<ul class="nav nav-tabs">
-    <li class="nav-item">
-        <a class="nav-link @(currentMode == Mode.FromTo ? "active" : "")" @onclick="() => SetMode(Mode.FromTo)">From-To</a>
-    </li>
-    <li class="nav-item">
-        <a class="nav-link @(currentMode == Mode.Position ? "active" : "")" @onclick="() => SetMode(Mode.Position)">Position</a>
-    </li>
-    <li class="nav-item">
-        <a class="nav-link @(currentMode == Mode.HGVS ? "active" : "")" @onclick="() => SetMode(Mode.HGVS)">HGVS</a>
-    </li>
-</ul>
-<!-- vertical padding -->
 <div style="height: 10rem; padding: 1rem 0;">
     <table>
-        @switch (currentMode)
-        {
-            case Mode.FromTo:
-
-                <tr>
-                    <td>
-                        <label for="id">ID:</label>
-                    </td>
-                    <td>
-                        <input id="id" @bind="id"/>
-                    </td>
-                </tr>
-                <tr>
-                    <td>
-                        <label for="from">From:</label>
-                    </td>
-                    <td>
-                        <input id="from" type="number" @bind="from"/>
-                    </td>
-                </tr>
-                <tr>
-                    <td>
-                        <label for="to">To:</label>
-                    </td>
-                    <td>
-                        <input id="to" type="number" @bind="to"/>
-                    </td>
-                </tr>
-                break;
-            case Mode.Position:
-                <tr>
-                    <td>
-                        <label for="id">ID:</label>
-                    </td>
-                    <td>
-                        <input id="id" @bind="id"/>
-                    </td>
-                </tr>
-                <tr>
-                    <td>
-                        <label for="position">Position:</label>
-                    </td>
-                    <td>
-                        <input id="position" type="number" @bind="position"/>
-                    </td>
-                </tr>
-                <tr>
-                    <td>
-                        <label for="before">Nucleotides Before:</label>
-                    </td>
-                    <td>
-                        <input id="before" type="number" @bind="nucleotidesBefore"/>
-                    </td>
-                </tr>
-                <tr>
-                    <td>
-                        <label for="after">Nucleotides After:</label>
-                    </td>
-                    <td>
-                        <input id="after" type="number" @bind="nucleotidesAfter"/>
-                    </td>
-                </tr>
-                break;
-            case Mode.HGVS:
-                <tr>
-                    <td>
-                        <label for="hgvs">HGVS:</label>
-                    </td>
-                    <td>
-                        <input id="hgvs" @bind="hgvs"/>
-                    </td>
-                </tr>
-                <tr>
-                    <td>
-                        <label for="before">Nucleotides Before:</label>
-                    </td>
-                    <td>
-                        <input id="before" type="number" @bind="nucleotidesBefore"/>
-                    </td>
-                </tr>
-                <tr>
-                    <td>
-                        <label for="after">Nucleotides After:</label>
-                    </td>
-                    <td>
-                        <input id="after" type="number" @bind="nucleotidesAfter"/>
-                    </td>
-                </tr>
-                break;
-            default:
-                throw new ArgumentOutOfRangeException();
-        }
+        <tr>
+            <td>
+                <label for="hgvs">HGVS:</label>
+            </td>
+            <td>
+                <input id="hgvs" @bind="hgvs" />
+            </td>
+        </tr>
+        <tr>
+            <td>
+                <label for="before">Nucleotides Before:</label>
+            </td>
+            <td>
+                <input id="before" type="number" @bind="nucleotidesBefore" />
+            </td>
+        </tr>
+        <tr>
+            <td>
+                <label for="after">Nucleotides After:</label>
+            </td>
+            <td>
+                <input id="after" type="number" @bind="nucleotidesAfter" />
+            </td>
+        </tr>
     </table>
 </div>
 <button class="btn btn-primary" style="font-size: 16px;" @onclick="FetchData">Fetch Data</button>
 
-@if (data != null)
+@if (original != null && mutated != null)
 {
-    <p>Data: @data</p>
+    <h3>Original Sequence:</h3>
+    <p>@((MarkupString)original)</p>
+    <h3>Mutated Sequence:</h3>
+    <p>@((MarkupString)mutated)</p>
 }
 
 @code {
-    private string? id;
-    private int from;
-    private int to;
-    private int position;
+    private string? hgvs;
     private int nucleotidesBefore;
     private int nucleotidesAfter;
-    private string? hgvs;
-    private string? data;
-
-    private enum Mode
-    {
-        FromTo,
-        Position,
-        HGVS
-    }
-
-    private Mode currentMode = Mode.FromTo;
-
-    private void SetMode(Mode mode)
-    {
-        currentMode = mode;
-        data = null;
-    }
+    private string? original;
+    private string? mutated;
 
     private async Task FetchData()
     {
-        var valid = false;
-
-        switch (currentMode)
+        if (!string.IsNullOrWhiteSpace(hgvs) && nucleotidesBefore >= 0 && nucleotidesAfter >= 0)
         {
-            case Mode.FromTo:
-                valid = !string.IsNullOrWhiteSpace(id) && from > 0 && to >= from;
-                break;
-            case Mode.Position:
-                valid = !string.IsNullOrWhiteSpace(id) && position > 0 && nucleotidesBefore >= 0 && nucleotidesAfter >= 0;
-                from = Math.Max(1, position - nucleotidesBefore);
-                to = position + nucleotidesAfter;
-                break;
-            case Mode.HGVS:
-                valid = !string.IsNullOrWhiteSpace(hgvs) && nucleotidesBefore >= 0 && nucleotidesAfter >= 0;
-                var hgvsObj = new HGVS(hgvs);
-                id = hgvsObj.Accession;
-                // position = hgvsObj.Position;
-                // from = Math.Max(1, hgvsObj.Position - nucleotidesBefore);
-                // to = hgvsObj.Position + nucleotidesAfter;
-                break;
-            default:
-                throw new ArgumentOutOfRangeException();
-        }
-
-        if (valid && id != null)
-        {
-            var seq = await SequenceRepository.GetSequence(id);
-            data = seq.FromTo(from, to);
+            var hgvsObj = new HGVS(hgvs);
+            var sequence = await SequenceRepository.GetSequence(hgvsObj.Accession);
+            (mutated, original) = sequence.GetMutatedSubsequence(hgvsObj, nucleotidesBefore, nucleotidesAfter);
+            //bold original mutation position
+            // int mutationIndex = original.IndexOf(hgvsObj.GetReferenceSequence());
+            // if (mutationIndex >= 0)m
+            // {
+            //     original = original.Insert(mutationIndex + hgvsObj.GetReferenceSequence().Length, "</b>")
+            //                        .Insert(mutationIndex, "<b>");
+            // }
+            Console.WriteLine($"original size: {original.Length}, mutated size: {mutated.Length}, left: {nucleotidesBefore}, right: {nucleotidesAfter}");
+            original = original.Insert(nucleotidesBefore, "<b>");
+            original = original.Insert(original.Length - nucleotidesAfter, "</b>");
+            mutated = mutated.Insert(nucleotidesBefore, "<b>");
+            mutated = mutated.Insert(mutated.Length - nucleotidesAfter, "</b>");
         }
         else
         {
-            data = "Invalid input. Please check the values.";
+            original = "Invalid input. Please check the values.";
+            mutated = "";
         }
     }
-
 }
