@@ -113,4 +113,10 @@ public partial class HGVS
 
     [GeneratedRegex(@"^(\d+)(_(\d+))?")]
     private static partial Regex PositionRange();
+    
+    
+    public int GetMutationLength()
+    {
+        return Position.end - Position.start + 1;
+    }
 }

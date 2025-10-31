@@ -1,5 +1,7 @@
 ﻿@page "/hgvs_sequence"
 
+@using gRNA
+
 <PageTitle>HGVS Sequence</PageTitle>
 
 <h1>Disease Mutations App</h1>
@@ -16,18 +18,10 @@
         </tr>
         <tr>
             <td>
-                <label for="before">Nucleotides Before:</label>
+                <label for="before">gRNA size:</label>
             </td>
             <td>
-                <input id="before" type="number" @bind="nucleotidesBefore" />
-            </td>
-        </tr>
-        <tr>
-            <td>
-                <label for="after">Nucleotides After:</label>
-            </td>
-            <td>
-                <input id="after" type="number" @bind="nucleotidesAfter" />
+                <input id="before" type="number" @bind="gRNASize" />
             </td>
         </tr>
     </table>
@@ -40,34 +34,63 @@
     <p>@((MarkupString)original)</p>
     <h3>Mutated Sequence:</h3>
     <p>@((MarkupString)mutated)</p>
+    
+    <br/>
+    
+    <div>
+    @if (gRNAs != null && gRNAs.Any())
+    {
+        <table class="table">
+            <thead>
+                <tr>
+                    <th>gRNA Spacer</th>
+                    <th>GC Score (how close to range 40%-60%)</th>
+                    <th>Homopolymer Count</th>
+                </tr>
+            </thead>
+            <tbody>
+                @foreach (var tuple in gRNAs)
+                {
+                    <tr>
+                        <td>@tuple.Item1</td>
+                        <td>@tuple.Item2</td>
+                        <td>@tuple.Item3</td>
+                    </tr>
+                }
+            </tbody>
+        </table>
+    }
+</div>
 }
 
 @code {
     private string? hgvs;
-    private int nucleotidesBefore;
-    private int nucleotidesAfter;
+    private int gRNASize = 28;
     private string? original;
     private string? mutated;
+    private List<Tuple<string, double, int, string>>? gRNAs;
 
     private async Task FetchData()
     {
-        if (!string.IsNullOrWhiteSpace(hgvs) && nucleotidesBefore >= 0 && nucleotidesAfter >= 0)
+        if (!string.IsNullOrWhiteSpace(hgvs) && gRNASize > 0)
         {
             var hgvsObj = new HGVS(hgvs);
             var sequence = await SequenceRepository.GetSequence(hgvsObj.Accession);
-            (mutated, original) = sequence.GetMutatedSubsequence(hgvsObj, nucleotidesBefore, nucleotidesAfter);
-            //bold original mutation position
-            // int mutationIndex = original.IndexOf(hgvsObj.GetReferenceSequence());
-            // if (mutationIndex >= 0)m
-            // {
-            //     original = original.Insert(mutationIndex + hgvsObj.GetReferenceSequence().Length, "</b>")
-            //                        .Insert(mutationIndex, "<b>");
-            // }
-            Console.WriteLine($"original size: {original.Length}, mutated size: {mutated.Length}, left: {nucleotidesBefore}, right: {nucleotidesAfter}");
-            original = original.Insert(nucleotidesBefore, "<b>");
-            original = original.Insert(original.Length - nucleotidesAfter, "</b>");
-            mutated = mutated.Insert(nucleotidesBefore, "<b>");
-            mutated = mutated.Insert(mutated.Length - nucleotidesAfter, "</b>");
+            var extraNucleotids = gRNASize - hgvsObj.GetMutationLength();
+            
+            
+            (mutated, original) = sequence.GetMutatedSubsequence(hgvsObj, extraNucleotids, extraNucleotids);
+
+            gRNAs = SpacerFinder.getBestgRNA(28, mutated).ToList();
+
+            
+            Console.WriteLine($"original size: {original.Length}, mutated size: {mutated.Length}, left: {extraNucleotids}, right: {extraNucleotids}");
+            original = original.Insert(extraNucleotids, "<b>");
+            original = original.Insert(original.Length - extraNucleotids, "</b>");
+            mutated = mutated.Insert(extraNucleotids, "<b>");
+            mutated = mutated.Insert(mutated.Length - extraNucleotids, "</b>");
+            
+            
         }
         else
         {
