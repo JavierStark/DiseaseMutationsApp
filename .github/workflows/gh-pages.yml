@@ -24,11 +24,11 @@ jobs:
         run: dotnet publish -c Release -p:BaseHref=/DiseaseMutationsApp/
 
       - name: List publish output (debug)
-        run: ls -R ./DiseaseMutationsApp/bin/Release/net7.0/publish/wwwroot
+        run: ls -R ./DiseaseMutationsApp/bin/Release/net8.0/publish/wwwroot
 
       - name: Deploy to GitHub Pages
         uses: peaceiris/actions-gh-pages@v4
         with:
           github_token: ${{ secrets.GITHUB_TOKEN }}
           publish_branch: gh-pages
-          publish_dir: ./DiseaseMutationsApp/bin/Release/net7.0/publish/wwwroot
+          publish_dir: ./DiseaseMutationsApp/bin/Release/net8.0/publish/wwwroot
