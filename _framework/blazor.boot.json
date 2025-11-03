@@ -1,7 +1,7 @@
 {
   "entryAssembly": "DiseaseMutationsApp",
   "resources": {
-    "hash": "sha256-cNYOGKgzDFR6zA/dTwcrAd1ABk7lEQ3dbfSGOkbOuUk=",
+    "hash": "sha256-8HMBCGzvLdbnPk+bEQpBNNu1dLHywV0UC2O4R/pLAVo=",
     "runtime": {
       "dotnet.js": "sha256-eaJTmow4t8eE7FZMZR5Ja41JMOefGCbIYDTdpclGsac=",
       "dotnet.timezones.blat": "sha256-gbATD5HDsHYtW8vdPYh9iSBY4O5CjvMeCSF5xXWF1xo=",
@@ -13,11 +13,11 @@
     "coreAssembly": {},
     "assembly": {
       "Deedle.dll": "sha256-CVp0L9mY1p9yyLqUnsxzkN0PEEJnvfXQS6ErN72sX6k=",
-      "DiseaseMutationsApp.dll": "sha256-NUggA7HURxqCo6YlAl9WrPmcj10KeQva5m+nI/x+iTI=",
+      "DiseaseMutationsApp.dll": "sha256-F/7RQh3sHtJ6rO1sw4mFOdgC7MqtHOjFnMhH8Ftfwdo=",
       "DynamicObj.dll": "sha256-s6Xssv6dr+JVvh09D7NZYPmlxZKxw5+lO0tfH5BbROM=",
       "FSharp.Core.dll": "sha256-v3JxTDbcITV6ZTDVlHnh1/xea8gVqa+ahy5eQWEcHm8=",
       "Giraffe.ViewEngine.StrongName.dll": "sha256-Cz/HsETnmjx96KnRp/dyyAjhvjN0BzTvCj2pncvBOxA=",
-      "gRNA.dll": "sha256-MKtEdSQ31apwHvqoYU0UQlCTNydkio5zdoVry/amsXI=",
+      "gRNA.dll": "sha256-c3E7VOXtBodRgJ9tUjhITlLzUCP+CbJyBBge9hFPo6Q=",
       "Microsoft.AspNetCore.Components.dll": "sha256-grWIe3nunEq3V4qM3/Nd4Aniah/+EqqlgPpL9SWOVuE=",
       "Microsoft.AspNetCore.Components.Web.dll": "sha256-fOY99yMSwig3BNMkit7s8Hb5J732KA/9BUofNFSqOsA=",
       "Microsoft.AspNetCore.Components.WebAssembly.dll": "sha256-znXDHI1RK/adkYK4Iv1P5+AfjGNNGc4VrC5wbk7xkiM=",
