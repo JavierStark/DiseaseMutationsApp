@@ -1,7 +1,7 @@
 {
   "entryAssembly": "DiseaseMutationsApp",
   "resources": {
-    "hash": "sha256-C+h7opBlu6YkuLokLNHU6DiYc/RwZ17ByvWMVLnLtHg=",
+    "hash": "sha256-ynlY5aEY+8Peiym4iIf4mkVVUGVTs7lq9OB8uPlN+Ko=",
     "runtime": {
       "dotnet.js": "sha256-eaJTmow4t8eE7FZMZR5Ja41JMOefGCbIYDTdpclGsac=",
       "dotnet.timezones.blat": "sha256-gbATD5HDsHYtW8vdPYh9iSBY4O5CjvMeCSF5xXWF1xo=",
@@ -13,13 +13,13 @@
     "coreAssembly": {},
     "assembly": {
       "Deedle.dll": "sha256-CVp0L9mY1p9yyLqUnsxzkN0PEEJnvfXQS6ErN72sX6k=",
-      "DiseaseMutationsApp.dll": "sha256-+km/sEcxCRBKoJaosTsI8sq4pP64XES6/vfISTkQapo=",
+      "DiseaseMutationsApp.dll": "sha256-zx0VUThsIiyMBb9IT3nH1ptZLgEijoefWSNJltD9wVM=",
       "DynamicObj.dll": "sha256-s6Xssv6dr+JVvh09D7NZYPmlxZKxw5+lO0tfH5BbROM=",
       "FSharp.Core.dll": "sha256-v3JxTDbcITV6ZTDVlHnh1/xea8gVqa+ahy5eQWEcHm8=",
       "Giraffe.ViewEngine.StrongName.dll": "sha256-Cz/HsETnmjx96KnRp/dyyAjhvjN0BzTvCj2pncvBOxA=",
-      "gRNA.dll": "sha256-mhL9mPq5WfDLDuzsbMHDLUAw+EaRh0553ucK3aVxqNI=",
-      "Microsoft.AspNetCore.Components.dll": "sha256-X5r7WmD+SJIaLfvtHU+AJrCQCrK1+hWhoL90eW+anmQ=",
-      "Microsoft.AspNetCore.Components.Web.dll": "sha256-l/x0ppV4FLm2zujlmv+Tn0zzbv560iyTSywVOJyOGvg=",
+      "gRNA.dll": "sha256-iX/xWwmX/bqVCh4mty5TjQBmiHevvyTfGReeiHrMkkQ=",
+      "Microsoft.AspNetCore.Components.dll": "sha256-grWIe3nunEq3V4qM3/Nd4Aniah/+EqqlgPpL9SWOVuE=",
+      "Microsoft.AspNetCore.Components.Web.dll": "sha256-fOY99yMSwig3BNMkit7s8Hb5J732KA/9BUofNFSqOsA=",
       "Microsoft.AspNetCore.Components.WebAssembly.dll": "sha256-znXDHI1RK/adkYK4Iv1P5+AfjGNNGc4VrC5wbk7xkiM=",
       "Microsoft.CSharp.dll": "sha256-v76fVi/4NZlZJCmtfS2HHSU+gW+r+CH3WAxuJ1gweJY=",
       "Microsoft.Extensions.Configuration.Abstractions.dll": "sha256-egcQRLiK94PEq8KGPxPqYb1t4s1C0/sMrgR76xizZjw=",
@@ -71,7 +71,7 @@
       "System.Reflection.Emit.dll": "sha256-Fc2We9I3kXmTm2098YFgGZBfNSdNr5+m0NFLYDZy54U=",
       "System.Reflection.Emit.ILGeneration.dll": "sha256-Txf3pzTRHFYZS+/P2t+OL3owI4GJlIaPMK+IXT2kM+I=",
       "System.Reflection.Emit.Lightweight.dll": "sha256-JzHdBhfYjkAtaISMlzys52ucNynf+kbRkJzCMRHnFkY=",
-      "System.Runtime.dll": "sha256-P1qSRyH+LI7Ij+noKZbZy2T85hf1JiAQGFdWbMjypIQ=",
+      "System.Runtime.dll": "sha256-BJmY4Fc2WJtWJP3U87tCPvu7ddZhMAud43JBHVc55O8=",
       "System.Runtime.Extensions.dll": "sha256-LUCYadciJCZ654Vl8qXvAg1iLEELqVknhSOv8iTY274=",
       "System.Runtime.InteropServices.JavaScript.dll": "sha256-rzpGyyjUL4+ASZ1bvIB8FMdD4b4OhvCXv9OBEwDVUVM=",
       "System.Runtime.Numerics.dll": "sha256-vf6bpK+54eR1MI76F1wvG4JGheUzbhMUqWuNreW721o=",
