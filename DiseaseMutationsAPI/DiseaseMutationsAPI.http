@@ -1,0 +1,6 @@
+@DiseaseMutationsAPI_HostAddress = http://localhost:5152
+
+GET {{DiseaseMutationsAPI_HostAddress}}/weatherforecast/
+Accept: application/json
+
+###
