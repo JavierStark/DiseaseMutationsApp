@@ -1,6 +1,7 @@
 @DiseaseMutationsAPI_HostAddress = http://localhost:5152
 
-GET {{DiseaseMutationsAPI_HostAddress}}/weatherforecast/
+### Run Bowtie alignment (HTTP)
+GET {{DiseaseMutationsAPI_HostAddress}}/bowtie?sequence=CACAGTGGAAGAATTTCATTCTGTTCTCAGTTTTCCTGGATTATGCCTGGCACCA&mismatches=2
 Accept: application/json
 
 ###
