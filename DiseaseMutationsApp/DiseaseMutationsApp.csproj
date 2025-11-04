@@ -2,34 +2,7 @@
     <PropertyGroup>
         <BaseHref>/</BaseHref>
     </PropertyGroup>
-
-    <PropertyGroup Condition="'$(Configuration)'=='Release'">
-        <BaseHref>/repo-name/</BaseHref>
-    </PropertyGroup>
-       
-
-    <UsingTask TaskName="ReplaceFileTextTask" TaskFactory="CodeTaskFactory" AssemblyName="Microsoft.Build.Tasks.Core">
-        <ParameterGroup>
-            <Files ParameterType="Microsoft.Build.Framework.ITaskItem[]" Required="true" />
-            <OldText ParameterType="System.String" Required="true" />
-            <NewText ParameterType="System.String" Required="true" />
-        </ParameterGroup>
-        <Task>
-            <Using Namespace="System.IO" />
-            <Code Type="Fragment" Language="cs"><![CDATA[
-      foreach (var file in Files)
-      {
-          string path = file.ItemSpec;
-          string text = File.ReadAllText(path);
-          text = text.Replace(OldText, NewText);
-          File.WriteAllText(path, text);
-      }
-      return true;
-    ]]></Code>
-        </Task>
-    </UsingTask>
-
-
+    
     <PropertyGroup>
         <TargetFramework>net8.0</TargetFramework>
         <Nullable>enable</Nullable>

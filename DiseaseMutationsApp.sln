@@ -6,6 +6,8 @@ Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "DiseaseMutationsAppTests", 
 EndProject
 Project("{F2A71F9B-5D33-465A-A702-920D77279786}") = "gRNA", "gRNA\gRNA.fsproj", "{724C61A2-96B0-46FA-8247-3A07FD02FBBA}"
 EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "DiseaseMutationsAPI", "DiseaseMutationsAPI\DiseaseMutationsAPI.csproj", "{45C91C66-81BC-4E0F-8318-E410DD15ACCD}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -24,5 +26,9 @@ Global
 		{724C61A2-96B0-46FA-8247-3A07FD02FBBA}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{724C61A2-96B0-46FA-8247-3A07FD02FBBA}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{724C61A2-96B0-46FA-8247-3A07FD02FBBA}.Release|Any CPU.Build.0 = Release|Any CPU
+		{45C91C66-81BC-4E0F-8318-E410DD15ACCD}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{45C91C66-81BC-4E0F-8318-E410DD15ACCD}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{45C91C66-81BC-4E0F-8318-E410DD15ACCD}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{45C91C66-81BC-4E0F-8318-E410DD15ACCD}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 EndGlobal
