@@ -52,7 +52,7 @@ app.MapGet("/bowtie", async (string sequence, int mismatches, HttpContext http) 
     if (RuntimeInformation.IsOSPlatform(OSPlatform.Windows))
     {
         // On Windows, use python interpreter
-        executable = "python"; // or "python3" depending on your system
+        executable = "python3"; // or "python3" depending on your system
         psi.FileName = executable;
         psi.ArgumentList.Add(scriptPath);
     }

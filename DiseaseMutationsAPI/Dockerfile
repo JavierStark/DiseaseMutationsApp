@@ -1,23 +1,22 @@
-﻿FROM mcr.microsoft.com/dotnet/aspnet:8.0 AS base
-USER $APP_UID
-WORKDIR /app
-EXPOSE 8080
-EXPOSE 8081
-
+﻿# Stage 1: Build the .NET app
 FROM mcr.microsoft.com/dotnet/sdk:8.0 AS build
-ARG BUILD_CONFIGURATION=Release
 WORKDIR /src
-COPY ["DiseaseMutationsAPI/DiseaseMutationsAPI.csproj", "DiseaseMutationsAPI/"]
-RUN dotnet restore "DiseaseMutationsAPI/DiseaseMutationsAPI.csproj"
+
+# Copy everything and publish
 COPY . .
-WORKDIR "/src/DiseaseMutationsAPI"
-RUN dotnet build "DiseaseMutationsAPI.csproj" -c $BUILD_CONFIGURATION -o /app/build
+RUN dotnet publish -c Release -o /app/publish
 
-FROM build AS publish
-ARG BUILD_CONFIGURATION=Release
-RUN dotnet publish "DiseaseMutationsAPI.csproj" -c $BUILD_CONFIGURATION -o /app/publish /p:UseAppHost=false
-
-FROM base AS final
+# Stage 2: Runtime image
+FROM mcr.microsoft.com/dotnet/aspnet:8.0
 WORKDIR /app
-COPY --from=publish /app/publish .
+
+RUN apt-get update && apt-get install -y wget python3-venv python3-distutils && rm -rf /var/lib/apt/lists/*
+
+# Copy the published .NET app
+COPY --from=build /app/publish .
+
+# Ensure bowtie executable permissions
+RUN chmod +x ./bowtie
+
+EXPOSE 8080
 ENTRYPOINT ["dotnet", "DiseaseMutationsAPI.dll"]

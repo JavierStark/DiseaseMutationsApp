@@ -1,7 +1,10 @@
 @DiseaseMutationsAPI_HostAddress = http://localhost:5152
 
-### Run Bowtie alignment (HTTP)
-GET {{DiseaseMutationsAPI_HostAddress}}/bowtie?sequence=CACAGTGGAAGAATTTCATTCTGTTCTCAGTTTTCCTGGATTATGCCTGGCACCA&mismatches=2
-Accept: application/json
+### Parameters
+@sequence = CACAGTGGAAGAATTTCATTCTGTTCTCAGTTTTCCTGGATTATGCCTGGCACCA
+@mismatches = 2
 
+### Run Bowtie alignment
+GET {{DiseaseMutationsAPI_HostAddress}}/bowtie?sequence={{sequence}}&mismatches={{mismatches}}
+Accept: application/json
 ###
