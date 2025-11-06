@@ -26,7 +26,7 @@
 
     <ItemGroup>
       <None Update="bowtie">
-        <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+        <CopyToOutputDirectory>Always</CopyToOutputDirectory>
       </None>
       <None Update="bowtie-align-l.exe">
         <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>

@@ -15,8 +15,11 @@ RUN apt-get update && apt-get install -y wget python3-venv python3-distutils && 
 # Copy the published .NET app
 COPY --from=build /app/publish .
 
-# Ensure bowtie executable permissions
-RUN chmod +x ./bowtie
+# Copy the bowtie file from the build context root to /app/bowtie
+COPY bowtie /app/bowtie
+
+# Ensure bowtie has executable permissions
+RUN chmod +x /app/bowtie
 
 EXPOSE 8080
 ENTRYPOINT ["dotnet", "DiseaseMutationsAPI.dll"]
