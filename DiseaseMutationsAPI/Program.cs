@@ -59,7 +59,7 @@ app.MapGet("/bowtie", async (string sequence, int mismatches, HttpContext http) 
     else
     {
         // On Linux/macOS, execute script directly (shebang will invoke python3)
-        executable = "./bowtie";
+        executable = "bowtie";
         psi.FileName = executable;
     }
 
