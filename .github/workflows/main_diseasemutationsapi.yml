@@ -1,0 +1,68 @@
+name: Build and deploy container app to Azure Web App - DiseaseMutationsAPI
+
+on:
+  push:
+    branches:
+      - main
+  workflow_dispatch:
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read # Required for actions/checkout
+
+    steps:
+      # 1️⃣ Checkout code
+      - uses: actions/checkout@v4
+
+      # 2️⃣ Set up Docker Buildx
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v2
+
+      # 3️⃣ Log in to Azure (for the deploy step later)
+      - name: Login to Azure
+        uses: azure/login@v1
+        with:
+          creds: ${{ secrets.AZURE_CREDENTIALS }}
+
+      # 4️⃣ Log in to Azure Container Registry (ACR)
+      #    ⛔ You need this, otherwise docker/build-push-action cannot push
+      - name: Log in to ACR
+        uses: docker/login-action@v3
+        with:
+          registry: igemcontainers.azurecr.io   # ❌ no trailing slash
+          username: ${{ secrets.REGISTRY_USERNAME }}  # ACR admin username
+          password: ${{ secrets.REGISTRY_PASSWORD }}  # ACR admin password
+
+      # 5️⃣ Build and push container image to ACR
+      - name: Build and push container image
+        uses: docker/build-push-action@v3
+        with:
+          context: ./DiseaseMutationsAPI
+          push: true
+          # ✅ The repository should NOT include your username
+          tags: igemcontainers.azurecr.io/diseasemutationapi:${{ github.sha }}
+          file: ./DiseaseMutationsAPI/Dockerfile
+
+  deploy:
+    runs-on: ubuntu-latest
+    permissions:
+      id-token: write
+      contents: read
+    needs: build
+    
+    steps:
+      - name: Login to Azure
+        uses: azure/login@v1
+        with:
+          creds: ${{ secrets.AZURE_CREDENTIALS }}
+
+      # 6️⃣ Deploy to Azure Web App (using the pushed image)
+      - name: Deploy to Azure Web App
+        id: deploy-to-webapp
+        uses: azure/webapps-deploy@v2
+        with:
+          app-name: 'DiseaseMutationsAPI'
+          slot-name: 'Production'
+          images: 'igemcontainers.azurecr.io/diseasemutationapi:${{ github.sha }}'
