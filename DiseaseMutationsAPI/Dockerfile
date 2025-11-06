@@ -17,9 +17,15 @@ COPY --from=build /app/publish .
 
 # Copy the bowtie file from the build context root to /app/bowtie
 COPY bowtie /app/bowtie
+COPY bowtie-align-l.exe /app/bowtie-align-l.exe
+COPY bowtie-align-s.exe /app/bowtie-align-s.exe
+COPY bowtie-build-l.exe /app/bowtie-build-l.exe
+COPY bowtie-build-s.exe /app/bowtie-build-s.exe
+COPY bowtie-inspect-l.exe /app/bowtie-inspect-l.exe
+COPY bowtie-inspect-s.exe /app/bowtie-inspect-s.exe
 
-# Ensure bowtie has executable permissions
-RUN chmod +x /app/bowtie
+# Ensure all Bowtie files are executable
+RUN chmod +x /app/bowtie /app/bowtie-*.exe
 
 EXPOSE 8080
 ENTRYPOINT ["dotnet", "DiseaseMutationsAPI.dll"]
