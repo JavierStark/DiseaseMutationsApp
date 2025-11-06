@@ -1,7 +1,7 @@
 {
   "mainAssemblyName": "DiseaseMutationsApp",
   "resources": {
-    "hash": "sha256-gV8ALi6X0we65cwZtx6uVfKmknyV+eSaNaAPuMyylF8=",
+    "hash": "sha256-azTjLeTX++Yy08v26oKbzJ2JRwvIXtrAoNEPbbINp4Y=",
     "jsModuleNative": {
       "dotnet.native.js": "sha256-9Fzd5We95Rp03dEKIAbYjPDR3eWyLbmjMlYStvxyiok="
     },
@@ -19,11 +19,11 @@
     "coreAssembly": {},
     "assembly": {
       "Deedle.wasm": "sha256-PI0mr9R0eImd6jXz5PZkUQgjou2x6TxeqJ0UHC9kUWw=",
-      "DiseaseMutationsApp.wasm": "sha256-ngvQR1AYODUDFAZHGuCJeH3A4//is0Fk7EOOHSuo+3c=",
+      "DiseaseMutationsApp.wasm": "sha256-S12RzIMwuABLN8O1CkITJRYMJDk3+YhiD/h5fdZmWZY=",
       "DynamicObj.wasm": "sha256-QvvWROODrYXA6Wu6a6UVnClW6ei36+37TaMzKSSrBwk=",
       "FSharp.Core.wasm": "sha256-q8qZAW7fxCG+hSF0H/LXt4Ly02PVf++A2La0FE0ncw0=",
       "Giraffe.ViewEngine.StrongName.wasm": "sha256-oeqzKSIdrqEipapa0I9bjIvJDgu8DgdsyHIuHNNwas0=",
-      "gRNA.wasm": "sha256-Dqths9KLbRLw6sLzfPvVe11TAFuPmgLBsNka6vINt0U=",
+      "gRNA.wasm": "sha256-6Fn7Dyccs0s3hhq7lNsWraAlW9UVSruh0RF1p6E5ltk=",
       "Microsoft.AspNetCore.Components.wasm": "sha256-1yK+EaSgPu59RGa0tZKYMs9LJXVA4V8tBr/45t2ZVh8=",
       "Microsoft.AspNetCore.Components.Web.wasm": "sha256-rUSatLSLhFJrKxzBVbghcc4o58NRSzAPMz3/z0uydRw=",
       "Microsoft.AspNetCore.Components.WebAssembly.wasm": "sha256-MIEQTBn9iFfbzHJYc5ZoegBfdFmW2wmzwlh90PcrcEk=",
