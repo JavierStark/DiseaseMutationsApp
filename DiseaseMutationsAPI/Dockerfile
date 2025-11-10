@@ -16,16 +16,16 @@ RUN apt-get update && apt-get install -y wget python3-venv python3-distutils && 
 COPY --from=build /app/publish .
 
 # Copy the bowtie file from the build context root to /app
-COPY /bowtieFiles/bowtie /app/bowtie
-COPY /bowtieFiles/bowtie-align-l /app/bowtie-align-l
-COPY /bowtieFiles/bowtie-align-s /app/bowtie-align-s
-COPY /bowtieFiles/bowtie-build-l /app/bowtie-build-l
-COPY /bowtieFiles/bowtie-build-s /app/bowtie-build-s
-COPY /bowtieFiles/bowtie-inspect-l /app/bowtie-inspect-l
-COPY /bowtieFiles/bowtie-inspect-s /app/bowtie-inspect-s
+COPY /bowtieFiles/bowtie /tmp/bowtie
+COPY /bowtieFiles/bowtie-align-l /tmp/bowtie-align-l
+COPY /bowtieFiles/bowtie-align-s /tmp/bowtie-align-s
+COPY /bowtieFiles/bowtie-build-l /tmp/bowtie-build-l
+COPY /bowtieFiles/bowtie-build-s /tmp/bowtie-build-s
+COPY /bowtieFiles/bowtie-inspect-l /tmp/bowtie-inspect-l
+COPY /bowtieFiles/bowtie-inspect-s /tmp/bowtie-inspect-s
 
 # Ensure bowtie has executable permissions
-RUN chmod +x /app/bowtie /app/bowtie-*
+RUN chmod +x /tmp/bowtie /tmp/bowtie-*
 
 EXPOSE 8080
 
