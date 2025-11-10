@@ -29,6 +29,6 @@ RUN chmod +x /app/bowtie /app/bowtie-*.exe
 
 EXPOSE 8080
 
-CMD ls -la /app
+CMD bash -c "ls -la /app && dotnet DiseaseMutationsAPI.dll"
 
-ENTRYPOINT ["dotnet", "DiseaseMutationsAPI.dll"]
+#ENTRYPOINT ["dotnet", "DiseaseMutationsAPI.dll"]
