@@ -25,7 +25,7 @@ COPY /bowtieFiles/bowtie-inspect-l /app/bowtie-inspect-l
 COPY /bowtieFiles/bowtie-inspect-s /app/bowtie-inspect-s
 
 # Ensure bowtie has executable permissions
-RUN chmod +x /app/bowtie /app/bowtie-*.exe
+RUN chmod +x /app/bowtie /app/bowtie-*
 
 EXPOSE 8080
 
