@@ -15,14 +15,14 @@ RUN apt-get update && apt-get install -y wget python3-venv python3-distutils && 
 # Copy the published .NET app
 COPY --from=build /app/publish .
 
-# Copy the bowtie file from the build context root to /app/bowtie
-COPY bowtie /app/bowtie
-COPY bowtie-align-l.exe /app/bowtie-align-l.exe
-COPY bowtie-align-s.exe /app/bowtie-align-s.exe
-COPY bowtie-build-l.exe /app/bowtie-build-l.exe
-COPY bowtie-build-s.exe /app/bowtie-build-s.exe
-COPY bowtie-inspect-l.exe /app/bowtie-inspect-l.exe
-COPY bowtie-inspect-s.exe /app/bowtie-inspect-s.exe
+# Copy the bowtie file from the build context root to /app
+COPY /bowtieFiles/bowtie /app/bowtie
+COPY /bowtieFiles/bowtie-align-l /app/bowtie-align-l
+COPY /bowtieFiles/bowtie-align-s /app/bowtie-align-s
+COPY /bowtieFiles/bowtie-build-l /app/bowtie-build-l
+COPY /bowtieFiles/bowtie-build-s /app/bowtie-build-s
+COPY /bowtieFiles/bowtie-inspect-l /app/bowtie-inspect-l
+COPY /bowtieFiles/bowtie-inspect-s /app/bowtie-inspect-s
 
 # Ensure bowtie has executable permissions
 RUN chmod +x /app/bowtie /app/bowtie-*.exe
