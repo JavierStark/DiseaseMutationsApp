@@ -3,20 +3,33 @@ using System.Runtime.InteropServices;
 
 var builder = WebApplication.CreateBuilder(args);
 
-// Add services to the container.
-// Learn more about configuring Swagger/OpenAPI at https://aka.ms/aspnetcore/swashbuckle
+// Add services
 builder.Services.AddEndpointsApiExplorer();
 builder.Services.AddSwaggerGen();
 
 var app = builder.Build();
 
-// Configure the HTTP request pipeline.
-// if (app.Environment.IsDevelopment())
-// {
-    app.UseSwagger();
-    app.UseSwaggerUI();
-// }
+// Configure Swagger
+app.UseSwagger();
+app.UseSwaggerUI();
 
+// Paths
+var indexPath = "/tmp/indexes";   // local ephemeral index path
+var bowtieScriptPath = "/tmp/bowtie"; // Python wrapper / launcher in /tmp
+
+// Ensure indexes exist (copy if needed)
+var sharedIndexPath = "/app/indexes";
+if (!Directory.Exists(indexPath))
+{
+    Console.WriteLine("Copying Bowtie indexes to /tmp...");
+    Directory.CreateDirectory(indexPath);
+    foreach (var dirPath in Directory.GetDirectories(sharedIndexPath, "*", SearchOption.AllDirectories))
+        Directory.CreateDirectory(dirPath.Replace(sharedIndexPath, indexPath));
+    foreach (var newPath in Directory.GetFiles(sharedIndexPath, "*.*", SearchOption.AllDirectories))
+        File.Copy(newPath, newPath.Replace(sharedIndexPath, indexPath), true);
+}
+
+// Bowtie endpoint
 app.MapGet("/bowtie", async (string sequence, int mismatches, HttpContext http) =>
 {
     if (string.IsNullOrWhiteSpace(sequence))
@@ -25,50 +38,43 @@ app.MapGet("/bowtie", async (string sequence, int mismatches, HttpContext http) 
         return Results.BadRequest("Invalid mismatch count (0–10).");
 
     var cts = CancellationTokenSource.CreateLinkedTokenSource(http.RequestAborted);
-    cts.CancelAfter(TimeSpan.FromMinutes(5)); // timeout safeguard
+    cts.CancelAfter(TimeSpan.FromMinutes(5));
 
-    string workingDir = AppContext.BaseDirectory;
-    string scriptPath = Path.Combine(workingDir, "bowtie"); // your Python script
-    string outputFile = Path.Combine(workingDir, "offtargets.txt");
+    string outputFile = Path.Combine(AppContext.BaseDirectory, "offtargets.txt");
 
-    if (!File.Exists(scriptPath))
-        return Results.Problem($"Bowtie script not found at {scriptPath}", statusCode: 500);
+    if (!File.Exists(bowtieScriptPath))
+        return Results.Problem($"Bowtie script not found at {bowtieScriptPath}", statusCode: 500);
 
-    // Remove old output if exists
     if (File.Exists(outputFile))
         File.Delete(outputFile);
 
-    // Cross-platform command setup
-    string executable;
     var psi = new ProcessStartInfo
     {
         UseShellExecute = false,
         RedirectStandardOutput = true,
         RedirectStandardError = true,
         CreateNoWindow = true,
-        WorkingDirectory = workingDir
+        WorkingDirectory = AppContext.BaseDirectory
     };
 
     if (RuntimeInformation.IsOSPlatform(OSPlatform.Windows))
     {
-        // On Windows, use python interpreter
-        executable = "python3"; // or "python3" depending on your system
-        psi.FileName = executable;
-        psi.ArgumentList.Add(scriptPath);
+        // Use Python on Windows
+        psi.FileName = "python3";
+        psi.ArgumentList.Add(bowtieScriptPath);
     }
     else
     {
-        // On Linux/macOS, execute script directly (shebang will invoke python3)
-        executable = "bowtie";
-        psi.FileName = executable;
+        // Use /tmp/bowtie directly on Linux
+        psi.FileName = bowtieScriptPath;
     }
 
-    // Add arguments
+    // Bowtie arguments
     psi.ArgumentList.Add("-v");
     psi.ArgumentList.Add(mismatches.ToString());
     psi.ArgumentList.Add("-a");
     psi.ArgumentList.Add("-x");
-    psi.ArgumentList.Add("grch38_1kgmaj"); // your index prefix
+    psi.ArgumentList.Add(Path.Combine(indexPath, "grch38_1kgmaj")); // index prefix in /tmp
     psi.ArgumentList.Add("-c");
     psi.ArgumentList.Add(sequence);
 
@@ -82,14 +88,13 @@ app.MapGet("/bowtie", async (string sequence, int mismatches, HttpContext http) 
 
         await process.WaitForExitAsync(cts.Token);
 
-        int exitCode = process.ExitCode;
         string? resultFileContent = null;
         if (File.Exists(outputFile))
             resultFileContent = await File.ReadAllTextAsync(outputFile, cts.Token);
 
         var response = new
         {
-            ExitCode = exitCode,
+            ExitCode = process.ExitCode,
             StdOut = stdout,
             StdErr = stderr,
             ResultFile = resultFileContent
