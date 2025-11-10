@@ -10,7 +10,11 @@ RUN dotnet publish -c Release -o /app/publish
 FROM mcr.microsoft.com/dotnet/aspnet:8.0
 WORKDIR /app
 
-RUN apt-get update && apt-get install -y wget python3-venv python3-distutils && rm -rf /var/lib/apt/lists/*
+RUN apt-get update && apt-get install -y wget openssh-server python3-venv python3-distutils && rm -rf /var/lib/apt/lists/*  && mkdir /var/run/sshd
+
+RUN echo "root:Docker!" | chpasswd \
+    && sed -i 's/#PermitRootLogin prohibit-password/PermitRootLogin yes/' /etc/ssh/sshd_config \
+    && sed -i 's@session\s*required\s*pam_loginuid.so@session optional pam_loginuid.so@g' /etc/pam.d/sshd
 
 # Copy the published .NET app
 COPY --from=build /app/publish .
@@ -28,4 +32,8 @@ COPY bowtie-inspect-s.exe /app/bowtie-inspect-s.exe
 RUN chmod +x /app/bowtie /app/bowtie-*.exe
 
 EXPOSE 8080
+EXPOSE 2222
+
+CMD service ssh start
+
 ENTRYPOINT ["dotnet", "DiseaseMutationsAPI.dll"]
