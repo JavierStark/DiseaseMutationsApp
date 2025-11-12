@@ -24,28 +24,4 @@
         </Content>
     </ItemGroup>
 
-    <ItemGroup>
-      <None Update="bowtieFiles\bowtie">
-        <CopyToOutputDirectory>Always</CopyToOutputDirectory>
-      </None>
-      <None Update="bowtieFiles\bowtie-align-l.exe">
-        <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
-      </None>
-      <None Update="bowtieFiles\bowtie-align-s.exe">
-        <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
-      </None>
-      <None Update="bowtieFiles\bowtie-build-l.exe">
-        <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
-      </None>
-      <None Update="bowtieFiles\bowtie-build-s.exe">
-        <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
-      </None>
-      <None Update="bowtieFiles\bowtie-inspect-l.exe">
-        <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
-      </None>
-      <None Update="bowtieFiles\bowtie-inspect-s.exe">
-        <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
-      </None>
-    </ItemGroup>
-
 </Project>
