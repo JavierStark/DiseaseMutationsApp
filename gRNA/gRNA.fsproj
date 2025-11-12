@@ -7,6 +7,36 @@
 
     <ItemGroup>
         <Compile Include="SpacerFinder.fs" />
+        <Compile Include="BowtieWrapper.fs" />
+    </ItemGroup>
+
+    <ItemGroup>
+      <None Include="bowtieFiles\bowtie" />
+      <None Include="bowtieFiles\bowtie-align-l" />
+      <None Include="bowtieFiles\bowtie-align-l-debug" />
+      <None Include="bowtieFiles\bowtie-align-l.exe" />
+      <None Include="bowtieFiles\bowtie-align-s" />
+      <None Include="bowtieFiles\bowtie-align-s-debug" />
+      <None Include="bowtieFiles\bowtie-align-s.exe" />
+      <None Include="bowtieFiles\bowtie-build" />
+      <None Include="bowtieFiles\bowtie-build-l" />
+      <None Include="bowtieFiles\bowtie-build-l-debug" />
+      <None Include="bowtieFiles\bowtie-build-l.exe" />
+      <None Include="bowtieFiles\bowtie-build-s" />
+      <None Include="bowtieFiles\bowtie-build-s-debug" />
+      <None Include="bowtieFiles\bowtie-build-s.exe" />
+      <None Include="bowtieFiles\bowtie-inspect" />
+      <None Include="bowtieFiles\bowtie-inspect-l" />
+      <None Include="bowtieFiles\bowtie-inspect-l-debug" />
+      <None Include="bowtieFiles\bowtie-inspect-l.exe" />
+      <None Include="bowtieFiles\bowtie-inspect-s" />
+      <None Include="bowtieFiles\bowtie-inspect-s-debug" />
+      <None Include="bowtieFiles\bowtie-inspect-s.exe" />
+      <Content Include="bowtieFiles\grch38_1kgmaj.1.ebwt" />
+    </ItemGroup>
+
+    <ItemGroup>
+      <None Include="LibraryTesting.fsx" />
     </ItemGroup>
 
 </Project>
