@@ -1,0 +1,15 @@
+@Backend_HostAddress = http://localhost:5150
+
+### Get best gRNA with window size and sequence
+GET {{Backend_HostAddress}}/getbestrna?window=20&sequence=ATGCGATCGATCGATCGATCGATCGATCGATCGATCGATCGATCGATCGATCGATCGATCG
+Accept: application/json
+
+###
+
+### Get all alignments using Bowtie
+GET {{Backend_HostAddress}}/getallignments?sequence=ACTGACTGACTGACTG&mismatches=2&threads=1
+Accept: application/json
+
+###
+
+###
