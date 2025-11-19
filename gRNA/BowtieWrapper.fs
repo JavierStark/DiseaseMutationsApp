@@ -7,8 +7,12 @@ open System.Runtime.InteropServices
 open System.Threading
 open System.Threading.Tasks
 
+//example output:
+// 0	+	chr7	147119362	ACTGACTGACTG	IIIIIIIIIIII	478	
+// 0	+	chr9	37515365	ACTGACTGACTG	IIIIIIIIIIII	478	
+
 // ./bowtie-align-s -x grch38_1kgmaj -c SEQUENCE -v MISMATCHES -k 2
-let runBowtie (sequence: string) (mismatches: int) (threads: int): Task<string> = task {
+let runBowtie (sequence: string) (mismatches: int) (threads: int): Task<string array> = task {
     let startInfo = ProcessStartInfo()
     startInfo.FileName <- "./bowtie-align-s.exe"
     startInfo.Arguments <- sprintf "-x grch38_1kgmaj -c %s -v %d -k 2 --threads %d" sequence mismatches threads
@@ -33,6 +37,20 @@ let runBowtie (sequence: string) (mismatches: int) (threads: int): Task<string> 
             sprintf "Bowtie exited with code %d but produced no output." proc.ExitCode
         else
             stdout + "\n" + stderr
+            
+//0	+	chr7	147119362	ACTGACTGACTG	IIIIIIIIIIII	478
+// 0	+	chr9	37515365	ACTGACTGACTG	IIIIIIIIIIII	478//
+//
+// # reads processed: 1
+// # reads with at least one alignment: 1 (100.00%)
+// # reads that failed to align: 0 (0.00%)
+// Reported 2 alignments
 
-    return combinedOutput
+    let allignments =
+        combinedOutput.Split([|'\n'|])
+        |> Array.takeWhile (fun line -> not (String.IsNullOrEmpty(line)))
+    
+    
+    return allignments
+           
 }
