@@ -1,6 +1,7 @@
 <Project Sdk="Microsoft.NET.Sdk.BlazorWebAssembly">
     <PropertyGroup>
         <BaseHref>/</BaseHref>
+        <DockerDefaultTargetOS>Linux</DockerDefaultTargetOS>
     </PropertyGroup>
     
     <PropertyGroup>
@@ -16,17 +17,17 @@
 
 
     <ItemGroup>
-        <PackageReference Include="Deedle" Version="3.0.0" />
         <PackageReference Include="Microsoft.AspNetCore.Components.WebAssembly" Version="8.0.*"/>
-        <PackageReference Include="Microsoft.AspNetCore.Components.WebAssembly.DevServer" Version="8.0.*" PrivateAssets="all"/>
-        <PackageReference Include="Plotly.NET" Version="5.1.0" />
+<!--        <PackageReference Include="Microsoft.AspNetCore.Components.WebAssembly.DevServer" Version="8.0.*" PrivateAssets="all"/>-->
     </ItemGroup>
+
 
     <ItemGroup>
-      <ProjectReference Include="..\gRNA\gRNA.fsproj" />
+      <Content Include="..\.dockerignore">
+        <Link>.dockerignore</Link>
+      </Content>
     </ItemGroup>
 
-    
     
     
 

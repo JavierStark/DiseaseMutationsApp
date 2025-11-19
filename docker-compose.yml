@@ -1,0 +1,12 @@
+﻿version: "3.9"
+
+services:
+  frontend:
+    build:
+      context: ./DiseaseMutationsApp
+      dockerfile: Dockerfile
+    image: disease-mutations-frontend:latest
+    container_name: disease-mutations-frontend
+    ports:
+      - "8080:80"
+    restart: unless-stopped
