@@ -1,0 +1,23 @@
+# This is a generated file. Not intended for manual editing.
+version: "3.9"
+services:
+  frontend:
+    build:
+      context: "C:\\Users\\javie\\OneDrive\\Documentos\\Programming\\C#\\DiseaseMutationsApp\\\
+        DiseaseMutationsApp"
+      dockerfile: "Dockerfile"
+      target: "build"
+    command: []
+    entrypoint:
+    - "dotnet"
+    - "/app/../../../../../../.nuget/packages/microsoft.net.sdk.webassembly.pack/9.0.10/WasmAppHost/WasmAppHost.dll"
+    environment:
+      ASPNETCORE_ENVIRONMENT: "Development"
+    image: "disease-mutations-frontend:dev"
+    ports: []
+    volumes:
+    - "C:\\Users\\javie\\.nuget\\packages:/root/.nuget/packages"
+    - "C:\\Users\\javie\\OneDrive\\Documentos\\Programming\\C#\\DiseaseMutationsApp\\\
+      DiseaseMutationsApp:/app:rw"
+    - "C:\\Users\\javie\\OneDrive\\Documentos\\Programming\\C#\\DiseaseMutationsApp:/src:rw"
+    working_dir: "/app"

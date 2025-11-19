@@ -1,0 +1,41 @@
+﻿# Build outputs
+**/bin/
+**/obj/
+**/out/
+
+# NuGet
+**/.nuget/
+**/packages/
+*.nupkg
+
+# Git
+.git/
+.gitignore
+.gitattributes
+
+# IDE
+.vs/
+.vscode/
+*.user
+*.suo
+
+# Node (if applicable)
+**/node_modules/
+**/npm-debug.log
+
+# Data files (adjust to your needs)
+**/data/
+**/test-data/
+**/*.bam
+**/*.fastq
+**/*.vcf
+# Add your large bioinformatics file extensions
+
+# Docker
+Dockerfile
+docker-compose.yml
+.dockerignore
+
+# Misc
+*.md
+LICENSE

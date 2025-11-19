@@ -1,7 +1,5 @@
 ﻿@page "/"
 
-@using gRNA
-
 <PageTitle>Disease Mutations</PageTitle>
 
 <h1>Disease Mutations App</h1>
@@ -98,7 +96,8 @@
 
             (mutated, original) = sequence.GetMutatedSubsequence(hgvsObj, extraNucleotids, extraNucleotids);
 
-            gRNAs = SpacerFinder.getBestgRNA(28, mutated).ToList();
+            gRNAs = new List<Tuple<string, double, int, string>>();
+                //SpacerFinder.getBestgRNA(28, mutated).ToList();
 
 
             Console.WriteLine($"original size: {original.Length}, mutated size: {mutated.Length}, left: {extraNucleotids}, right: {extraNucleotids}");
