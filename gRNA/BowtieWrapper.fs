@@ -15,7 +15,7 @@ open System.Threading.Tasks
 let runBowtie (sequence: string) (mismatches: int) (threads: int): Task<string array> = task {
     printfn "Running bowtie for sequence: %s with up to %d mismatches on %d threads" sequence mismatches threads
     let startInfo = ProcessStartInfo()
-    startInfo.FileName <- "./bowtie-align-s.exe"
+    startInfo.FileName <- "./bowtie/bowtie-align-s.exe"
     startInfo.Arguments <- sprintf "-x grch38_1kgmaj -c %s -v %d -k 2 --threads %d" sequence mismatches threads
     startInfo.RedirectStandardOutput <- true
     startInfo.RedirectStandardError <- true
