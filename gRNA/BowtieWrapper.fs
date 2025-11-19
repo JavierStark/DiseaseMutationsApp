@@ -13,6 +13,7 @@ open System.Threading.Tasks
 
 // ./bowtie-align-s -x grch38_1kgmaj -c SEQUENCE -v MISMATCHES -k 2
 let runBowtie (sequence: string) (mismatches: int) (threads: int): Task<string array> = task {
+    printfn "Running bowtie for sequence: %s with up to %d mismatches on %d threads" sequence mismatches threads
     let startInfo = ProcessStartInfo()
     startInfo.FileName <- "./bowtie-align-s.exe"
     startInfo.Arguments <- sprintf "-x grch38_1kgmaj -c %s -v %d -k 2 --threads %d" sequence mismatches threads
@@ -49,8 +50,12 @@ let runBowtie (sequence: string) (mismatches: int) (threads: int): Task<string a
     let allignments =
         combinedOutput.Split([|'\n'|])
         |> Array.takeWhile (fun line -> not (String.IsNullOrEmpty(line)))
+        |> Array.map (_.Trim())
+        
     
-    
+
+    printfn "Bowtie finished with exit code %d" proc.ExitCode
+
     return allignments
            
 }
