@@ -1,0 +1,26 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<project version="4">
+  <component name="AgentMigrationStateService">
+    <option name="pendingSessionIds">
+      <option value="2fc66d6e-66f0-463f-8285-84810de640ea" />
+    </option>
+    <option name="pendingTurns">
+      <map>
+        <entry key="2fc66d6e-66f0-463f-8285-84810de640ea">
+          <value>
+            <set>
+              <option value="b61a11b4-d35f-4fe9-a01f-8f32e5e6e973" />
+            </set>
+          </value>
+        </entry>
+      </map>
+    </option>
+    <pendingWorkingSetItems>
+      <entry key="2fc66d6e-66f0-463f-8285-84810de640ea">
+        <set>
+          <option value="file://$PROJECT_DIR$/docker-compose.yml" />
+        </set>
+      </entry>
+    </pendingWorkingSetItems>
+  </component>
+</project>
