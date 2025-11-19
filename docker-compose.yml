@@ -20,6 +20,8 @@ services:
     image: disease-mutations-backend:latest
     volumes:
       - ./bowtie:/app/bowtie
+    tmpfs:
+      - /tmp
     container_name: disease-mutations-backend
     ports:
       - "5000:80"
@@ -27,3 +29,23 @@ services:
       - ASPNETCORE_ENVIRONMENT=Development
       - ASPNETCORE_URLS=http://+:80
     restart: unless-stopped
+    deploy:
+      resources:
+        limits:
+          cpus: '8.0'
+          memory: 4G
+        reservations:
+          cpus: '2.0'
+          memory: 2G
+
+  data:
+    image: disease-mutations-data:latest
+    container_name: disease-mutations-data
+    volumes:
+      - bowtie-data:/app/bowtie 
+    command: tail -f /dev/null 
+
+volumes:
+  bowtie-data:
+    driver: local 
+          

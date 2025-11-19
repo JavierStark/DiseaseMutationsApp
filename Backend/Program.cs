@@ -21,9 +21,9 @@ app.MapGet("/getbestrna", gRNA.SpacerFinder.getBestgRNA).WithName("GetBestgRNA")
 app.MapGet("/getallignments", async (string sequence, int mismatches, int threads) =>
 {
     Console.WriteLine($"Received request for GetAllAlignments with sequence: {sequence}, mismatches: {mismatches}, threads: {threads}");
-    var result =  await gRNA.BowtieWrapper.runBowtie(sequence, mismatches, threads);
+    var result = await gRNA.BowtieWrapper.runBowtie(sequence, mismatches, threads);
     Console.WriteLine($"Bowtie result: {result.Length}");
-    
+
     return Results.Ok(result);
 }).WithName("GetAllAlignments");
 
