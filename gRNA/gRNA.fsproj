@@ -11,13 +11,6 @@
     </ItemGroup>
 
     <ItemGroup>
-      <None Include="bowtieFiles\bowtie-align-s" />
-      <None Include="bowtieFiles\bowtie-align-s-debug" />
-      <None Include="bowtieFiles\bowtie-align-s.exe" />
-      <Content Include="bowtieFiles\grch38_1kgmaj.1.ebwt" />
-    </ItemGroup>
-
-    <ItemGroup>
       <None Include="LibraryTesting.fsx" />
     </ItemGroup>
 

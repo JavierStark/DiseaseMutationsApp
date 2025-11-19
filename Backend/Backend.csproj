@@ -12,13 +12,18 @@
     </ItemGroup>
 
     <ItemGroup>
-      <Content Include="..\.dockerignore">
-        <Link>.dockerignore</Link>
-      </Content>
+      <ProjectReference Include="..\gRNA\gRNA.fsproj" />
     </ItemGroup>
 
     <ItemGroup>
-      <ProjectReference Include="..\gRNA\gRNA.fsproj" />
+      <None Remove="bowtie-align-s" />
+      <None Remove="bowtie-align-s.exe" />
+      <None Remove="grch38_1kgmaj.1.ebwt" />
+      <None Remove="grch38_1kgmaj.2.ebwt" />
+      <None Remove="grch38_1kgmaj.3.ebwt" />
+      <None Remove="grch38_1kgmaj.4.ebwt" />
+      <None Remove="grch38_1kgmaj.rev.1.ebwt" />
+      <None Remove="grch38_1kgmaj.rev.2.ebwt" />
     </ItemGroup>
 
 </Project>
