@@ -1,4 +1,7 @@
 ﻿@page "/"
+@using System.Buffers
+
+@inject Services.IDiseaseMutationsApi Api
 
 <PageTitle>Disease Mutations</PageTitle>
 
@@ -96,9 +99,7 @@
 
             (mutated, original) = sequence.GetMutatedSubsequence(hgvsObj, extraNucleotids, extraNucleotids);
 
-            gRNAs = new List<Tuple<string, double, int, string>>();
-                //SpacerFinder.getBestgRNA(28, mutated).ToList();
-
+            gRNAs = await Api.GetBestgRNA(gRNASize, mutated);
 
             Console.WriteLine($"original size: {original.Length}, mutated size: {mutated.Length}, left: {extraNucleotids}, right: {extraNucleotids}");
             original = original.Insert(extraNucleotids, "<b>");

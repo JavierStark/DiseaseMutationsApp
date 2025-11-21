@@ -1,8 +1,11 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <project version="4">
   <component name="AgentMigrationStateService">
+    <option name="migrationStatus" value="IN_PROGRESS" />
     <option name="pendingSessionIds">
       <option value="2fc66d6e-66f0-463f-8285-84810de640ea" />
+      <option value="5fe0c374-22a6-4a4c-990a-6431071ac5f7" />
+      <option value="f9c19eb9-7ab1-46fa-abc0-4fb43fb11846" />
     </option>
     <option name="pendingTurns">
       <map>
@@ -13,12 +16,32 @@
             </set>
           </value>
         </entry>
+        <entry key="5fe0c374-22a6-4a4c-990a-6431071ac5f7">
+          <value>
+            <set>
+              <option value="1603b842-af0e-403e-92d9-932dc1560d79" />
+            </set>
+          </value>
+        </entry>
+        <entry key="f9c19eb9-7ab1-46fa-abc0-4fb43fb11846">
+          <value>
+            <set>
+              <option value="1eb0c101-36de-4a14-830e-a972d4f9ccb2" />
+              <option value="eb56114b-e6df-4354-ab99-3b6856d06235" />
+              <option value="46c65590-0c95-42bc-8883-4dc71ea5d84b" />
+              <option value="3d3058d0-d396-4e63-96b2-f6624acf1d13" />
+              <option value="d7ce2de6-9934-40b8-9420-2ad08c1b70fe" />
+              <option value="b1c7a04f-75cf-467e-8443-ba337150d596" />
+            </set>
+          </value>
+        </entry>
       </map>
     </option>
     <pendingWorkingSetItems>
-      <entry key="2fc66d6e-66f0-463f-8285-84810de640ea">
+      <entry key="2fc66d6e-66f0-463f-8285-84810de640ea" />
+      <entry key="5fe0c374-22a6-4a4c-990a-6431071ac5f7">
         <set>
-          <option value="file://$PROJECT_DIR$/docker-compose.yml" />
+          <option value="file://$PROJECT_DIR$/gRNA/gRNA.fsproj" />
         </set>
       </entry>
     </pendingWorkingSetItems>
