@@ -18,8 +18,8 @@ services:
       context: .
       dockerfile: Dockerfile
     image: disease-mutations-backend:latest
-    volumes:
-      - ./bowtie:/app/bowtie
+#    volumes:
+#      - ./bowtie:/app/bowtie
     tmpfs:
       - /tmp
     container_name: disease-mutations-backend
@@ -38,12 +38,12 @@ services:
           cpus: '2.0'
           memory: 2G
 
-  data:
-    image: disease-mutations-data:latest
-    container_name: disease-mutations-data
-    volumes:
-      - bowtie-data:/app/bowtie 
-    command: tail -f /dev/null 
+#  data:
+#    image: disease-mutations-data:latest
+#    container_name: disease-mutations-data
+#    volumes:
+#      - bowtie-data:/app/bowtie 
+#    command: tail -f /dev/null 
 
 volumes:
   bowtie-data:
