@@ -39,13 +39,13 @@ module BowtieWrapper =
             else
                 stdout + "\n" + stderr
                 
-    //0	+	chr7	147119362	ACTGACTGACTG	IIIIIIIIIIII	478
-    // 0	+	chr9	37515365	ACTGACTGACTG	IIIIIIIIIIII	478//
-    //
-    // # reads processed: 1
-    // # reads with at least one alignment: 1 (100.00%)
-    // # reads that failed to align: 0 (0.00%)
-    // Reported 2 alignments
+        //0	+	chr7	147119362	ACTGACTGACTG	IIIIIIIIIIII	478
+        // 0	+	chr9	37515365	ACTGACTGACTG	IIIIIIIIIIII	478//
+        //
+        // # reads processed: 1
+        // # reads with at least one alignment: 1 (100.00%)
+        // # reads that failed to align: 0 (0.00%)
+        // Reported 2 alignments
 
         let allignments =
             combinedOutput.Split([|'\n'|])

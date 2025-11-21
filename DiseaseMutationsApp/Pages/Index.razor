@@ -1,5 +1,6 @@
 ﻿@page "/"
 @using System.Buffers
+@using DiseaseMutationsApp.Services
 
 @inject Services.IDiseaseMutationsApi Api
 
@@ -49,18 +50,20 @@
                     <th>gRNA Spacer</th>
                     <th>GC Score (how close to range 40%-60%)</th>
                     <th>Homopolymer Count</th>
+                    <th>Allignments</th>
                 </tr>
                 </thead>
                 <tbody>
-                @foreach (var tuple in gRNAs)
+                @foreach (var gRNA in gRNAs)
                 {
                     <tr>
                         <td>
-                            <button class="btn btn-secondary" @onclick="() => HandlegRNACreationButton(tuple.Item1)">🔨</button>
+                            <button class="btn btn-secondary" @onclick="() => HandlegRNACreationButton(gRNA.Sequence)">🔨</button>
                         </td>
-                        <td>@tuple.Item1</td>
-                        <td>@tuple.Item2</td>
-                        <td>@tuple.Item3</td>
+                        <td>@gRNA.Sequence</td>
+                        <td>@gRNA.GCScore</td>
+                        <td>@gRNA.HomopolymerCount</td>
+                        <td>@gRNA.Allignments</td>
                     </tr>
                 }
                 </tbody>
@@ -86,7 +89,7 @@
     private string? original;
     private string? mutated;
     private string? selectedSpacer;
-    private List<Tuple<string, double, int, string>>? gRNAs;
+    private List<GRNAResult>? gRNAs;
 
     private async Task FetchData()
     {
