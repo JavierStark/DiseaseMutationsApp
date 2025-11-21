@@ -1,6 +1,6 @@
 ﻿namespace gRNA
-
 module SpacerFinder =
+
     let slidingWindow (input: string) (windowSize: int) =
         if windowSize <= 0 then
             invalidArg "windowSize" "Window size must be greater than 0."
@@ -29,17 +29,39 @@ module SpacerFinder =
         System.Text.RegularExpressions.Regex.Matches(sequence, pattern).Count
         
         
+    type gRNAResult = {
+        Sequence: string
+        GCScore: float
+        HomopolymerCount: int
+        SeedRegion: string
+        Allignments: int
+    }
+
+    let getgRNAResults sequence =
+        let gcContent = calculateGCContent sequence
+        let gcScore = calculateGCScore gcContent (40.0, 60.0)
+        let homopolymerCount = countHomopolymers sequence
+        let seedRegion = sequence[10..17]
+        let allignments = BowtieWrapper.runBowtie sequence 2 4
+                          |> Async.AwaitTask
+                          |> Async.RunSynchronously
+        {
+            Sequence = sequence
+            GCScore = gcScore
+            HomopolymerCount = homopolymerCount
+            SeedRegion = seedRegion
+            Allignments = allignments.Length
+        }
+    
+    let sortByResult (result: gRNAResult) =
+        (result.Allignments, -result.GCScore, result.HomopolymerCount)
+    
     let getBestgRNA (window: int) (sequence: string) =
         let subsequences = slidingWindow sequence window
         let filteredResults =
             subsequences
-            |> List.map (fun subseq ->
-                let gcContent = calculateGCContent subseq
-                let gcScore = calculateGCScore gcContent (40.0, 60.0)
-                let homopolymerCount = countHomopolymers subseq
-                let seedRegion = subseq.[10..17]
-                (subseq, gcScore, homopolymerCount, seedRegion))
-            |> List.sortBy (fun (_, gcScore, homopolymerCount, _) -> (homopolymerCount, -gcScore))
+            |> List.map getgRNAResults
+            |> List.sortBy sortByResult
             |> List.take 5
             
         filteredResults

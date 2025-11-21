@@ -6,8 +6,8 @@
     </PropertyGroup>
 
     <ItemGroup>
-        <Compile Include="SpacerFinder.fs" />
         <Compile Include="BowtieWrapper.fs" />
+        <Compile Include="SpacerFinder.fs" />
     </ItemGroup>
 
     <ItemGroup>
