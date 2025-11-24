@@ -9,5 +9,5 @@ builder.RootComponents.Add<App>("#app");
 builder.RootComponents.Add<HeadOutlet>("head::after");
 
 builder.Services.AddScoped(sp => new HttpClient { BaseAddress = new Uri(builder.HostEnvironment.BaseAddress) });
-builder.Services.AddScoped(refit => RestService.For<IDiseaseMutationsApi>("https://localhost:5001"));
+builder.Services.AddScoped(refit => RestService.For<IDiseaseMutationsApi>("https://localhost:5000"));
 await builder.Build().RunAsync();

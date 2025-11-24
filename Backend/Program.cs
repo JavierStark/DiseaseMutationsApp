@@ -17,7 +17,7 @@ app.UseHttpsRedirection();
 
 app.MapGet("/", () => "Disease Mutations Backend is running.");
 
-app.MapGet("/getbestrna", gRNA.SpacerFinder.getBestgRNA).WithName("GetBestgRNA");
+app.MapGet("/getbestrna", async (int window, string sequence) => Results.Ok(await gRNA.SpacerFinder.getBestgRNA(window, sequence))).WithName("GetBestgRNA");
 app.MapGet("/getallignments", async (string sequence, int mismatches, int threads) =>
 {
     Console.WriteLine($"Received request for GetAllAlignments with sequence: {sequence}, mismatches: {mismatches}, threads: {threads}");
