@@ -28,6 +28,9 @@ WORKDIR /app
 # Copy published application
 COPY --from=publish /app/publish .
 
+# Copy bowtie folder from host
+COPY bowtie/ ./bowtie/
+
 # Expose port
 EXPOSE 80
 

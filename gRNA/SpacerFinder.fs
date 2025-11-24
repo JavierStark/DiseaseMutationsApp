@@ -39,12 +39,15 @@ type gRNAResult = {
     Allignments: int
 }
 
-let getgRNAResult sequence : Task<gRNAResult> = task {
+let getgRNAResult sequence : Async<gRNAResult> = async {
     let gcContent = calculateGCContent sequence
     let gcScore = calculateGCScore gcContent (40.0, 60.0)
     let homopolymerCount = countHomopolymers sequence
     let seedRegion = sequence[10..17]
-    let! allignments = BowtieWrapper.runBowtie sequence 2 4
+    let! allignments = BowtieWrapper.runBowtie sequence 2 4 |> Async.AwaitTask
+    
+    // print allignments for debugging
+    allignments |> Array.iter (printfn "Alignment: %s")
     
     return {
         Sequence = sequence
@@ -63,7 +66,7 @@ let getBestgRNA (window: int) (sequence: string) : Task<gRNAResult list> = task 
     let! results = 
         subsequences
         |> List.map getgRNAResult
-        |> Task.WhenAll
+        |> Async.Parallel 
     let filteredResults =
         results
         |> Array.toList
