@@ -8,3 +8,4 @@ runBowtie "ACTGACTGACTGACTG" 2 1
 |> Async.AwaitTask
 |> Async.RunSynchronously
 |> Array.iter (printfn "%s")
+// |> Array.iter (printfn "%s")

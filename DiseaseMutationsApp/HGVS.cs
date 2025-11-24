@@ -2,7 +2,7 @@
 
 namespace DiseaseMutationsApp;
 
-public partial class HGVS
+public class HGVS
 {
     private string Code { get; set; }
     public string Accession { get; private set; }
@@ -111,8 +111,8 @@ public partial class HGVS
         }
     }
 
-    [GeneratedRegex(@"^(\d+)(_(\d+))?")]
-    private static partial Regex PositionRange();
+    private static readonly Regex PositionRangeRegex = new(@"^(\d+)(_(\d+))?", RegexOptions.Compiled);
+    private static Regex PositionRange() => PositionRangeRegex;
     
     
     public int GetMutationLength()
