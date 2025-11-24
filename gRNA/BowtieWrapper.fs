@@ -8,16 +8,17 @@ open System.Threading.Tasks
 // 0	+	chr7	147119362	ACTGACTGACTG	IIIIIIIIIIII	478	
 // 0	+	chr9	37515365	ACTGACTGACTG	IIIIIIIIIIII	478	
 
-// ./bowtie-align-s -x grch38_1kgmaj -c SEQUENCE -v MISMATCHES -k 2
+// ./bowtie-align-s -x GCA_000001405.15_GRCh38_no_alt_analysis_set -c SEQUENCE -v MISMATCHES -k 2
 let public runBowtie (sequence: string) (mismatches: int) (threads: int): Task<string array> = task {
     let startInfo = ProcessStartInfo()
     startInfo.FileName <- "bowtie/bowtie-align-s"
-    startInfo.Arguments <- sprintf "-x grch38_1kgmaj -c %s -v %d -k 2 --threads %d" sequence mismatches threads
+    startInfo.Arguments <- sprintf "-x \"GCA_000001405.15_GRCh38_no_alt_analysis_set\" -c %s -v %d -k 2 --threads %d" sequence mismatches threads
     startInfo.RedirectStandardOutput <- true
     startInfo.RedirectStandardError <- true
     startInfo.UseShellExecute <- false
     startInfo.CreateNoWindow <- true
     
+    printf "Working Directory: %s\n" Environment.CurrentDirectory
     printf "Running Bowtie with command: %s %s" startInfo.FileName startInfo.Arguments
 
     use proc = new Process()

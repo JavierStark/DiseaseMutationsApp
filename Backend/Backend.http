@@ -1,7 +1,10 @@
+#@Backend_HostAddress = http://localhost:5150
 @Backend_HostAddress = http://localhost:5000
+@timeout = 120000
+
 
 ### Get best gRNA with window size and sequence
-GET {{Backend_HostAddress}}/getbestrna?window=20&sequence=ATGCGATCGATCGATCGATCGATCGATCGATCGATCGATCGATCGATCGATCGATCGATCG
+GET {{Backend_HostAddress}}/getbestrna?window=20&sequence=ATGCGATCGATCGATCGATCGATCG
 Accept: application/json
 
 ###
