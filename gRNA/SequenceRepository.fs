@@ -31,6 +31,6 @@ type SequenceRepository() =
                 lines 
                 |> Array.skip 1 
                 |> String.concat ""
-                |> fun s -> s.Trim()
+                |> _.Trim()
             return data
         }
