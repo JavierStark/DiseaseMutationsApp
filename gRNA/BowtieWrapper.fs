@@ -9,7 +9,7 @@ open System.Threading.Tasks
 // 0	+	chr9	37515365	ACTGACTGACTG	IIIIIIIIIIII	478	
 
 // ./bowtie-align-s -x GCA_000001405.15_GRCh38_no_alt_analysis_set -c SEQUENCE -v MISMATCHES -k 2
-let public runBowtie (sequence: string) (mismatches: int) (threads: int): Task<string array> = task {
+let runBowtie(mismatches: int) (threads: int)  (sequence: string) : Task<string array> = task {
     let startInfo = ProcessStartInfo()
     startInfo.FileName <- "bowtie/bowtie-align-s"
     startInfo.Arguments <- sprintf "-x \"GCA_000001405.15_GRCh38_no_alt_analysis_set\" -c %s -v %d -k 2 --threads %d" sequence mismatches threads
@@ -53,4 +53,20 @@ let public runBowtie (sequence: string) (mismatches: int) (threads: int): Task<s
 
     return allignments
            
+}
+
+let runBowtieForMultipleSequences (sequences: string list) (mismatches: int) (threads: int) : Task<int list> = task {
+    let! results =
+        sequences
+        |> String.concat ","
+        |> runBowtie mismatches threads
+        
+    let nOfAllignments =
+        results
+        |> Array.map(fun r -> r.Split '\t' |> Array.head |> int)
+        |> Array.groupBy id
+        |> Array.map(fun (key, group) -> group.Length)
+        |> Array.toList
+        
+    return nOfAllignments
 }

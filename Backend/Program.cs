@@ -24,14 +24,9 @@ app.UseHttpsRedirection();
 
 app.MapGet("/", () => "Disease Mutations Backend is running.");
 
-app.MapGet("/getbestrna", async (int window, string sequence) => Results.Ok(await gRNA.SpacerFinder.getBestgRNA(window, sequence))).WithName("GetBestgRNA");
-app.MapGet("/getallignments", async (string sequence, int mismatches, int threads) =>
-{
-    Console.WriteLine($"Received request for GetAllAlignments with sequence: {sequence}, mismatches: {mismatches}, threads: {threads}");
-    var result = await gRNA.BowtieWrapper.runBowtie(sequence, mismatches, threads);
-    Console.WriteLine($"Bowtie result: {result.Length}");
-
-    return Results.Ok(result);
-}).WithName("GetAllAlignments");
+app.MapGet("/getbestrna", async (int window, string sequence) => 
+    Results.Ok(await gRNA.SpacerFinder.getBestgRNA(window, sequence))).WithName("GetBestgRNA");
+app.MapGet("/getallignments", async (string sequence, int mismatches, int threads) => 
+    Results.Ok(await gRNA.BowtieWrapper.runBowtie(mismatches, threads, sequence))).WithName("GetAllAlignments");
 
 app.Run();
