@@ -1,3 +1,6 @@
+using gRNA;
+using static Microsoft.FSharp.Control.FSharpAsync;
+
 var builder = WebApplication.CreateBuilder(args);
 
 // Add services to the container.
@@ -37,8 +40,24 @@ app.UseHttpsRedirection();
 app.MapGet("/", () => "Disease Mutations Backend is running.");
 
 app.MapGet("/getbestrna", async (int window, string sequence) => 
-    Results.Ok(await gRNA.SpacerFinder.getBestgRNA(window, sequence))).WithName("GetBestgRNA");
+{
+    var fsharpAsync = SpacerFinder.getBestgRNA(window, sequence);
+    var task = StartAsTask(fsharpAsync, null, null);
+    var result = await task;
+    return Results.Ok(result);
+}).WithName("GetBestgRNA");
+
 app.MapGet("/getallignments", async (string sequence, int mismatches, int threads) => 
-    Results.Ok(await gRNA.BowtieWrapper.runBowtie(mismatches, threads, sequence))).WithName("GetAllAlignments");
+    Results.Ok(await BowtieWrapper.runBowtie(mismatches, threads, sequence))).WithName("GetAllAlignments");
+
+app.MapGet("/getbestgrnafromhgvs", async (string hgvs, int window) => 
+{
+    var fsharpAsync = Main.getBestgRNAFromHGVS(hgvs, window);
+    var task = StartAsTask(fsharpAsync, null, null);
+    var result = await task;
+    return Results.Ok(result);
+}).WithName("GetBestgRNAFromHgvs");
+
+
 
 app.Run();

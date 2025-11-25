@@ -56,7 +56,7 @@ let getgRNAResult sequence : gRNAResult =
 let sortByResult (result: gRNAResult) =
     (result.Allignments, -result.GCScore, result.HomopolymerCount)
 
-let getBestgRNA (window: int) (sequence: string) : Task<gRNAResult list> = task {
+let getBestgRNA (window: int) (sequence: string) : Async<gRNAResult list> = async {
     let subsequences = slidingWindow sequence window
     let results = subsequences |> List.map getgRNAResult
         
