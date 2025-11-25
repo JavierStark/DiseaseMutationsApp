@@ -1,124 +1,217 @@
 ﻿@page "/"
 @using DiseaseMutationsApp.Services
-
+@using BlazorBootstrap
+@inject IJSRuntime JSRuntime
 @inject Services.IDiseaseMutationsApi Api
 
 <PageTitle>Disease Mutations</PageTitle>
 
-<h1>Disease Mutations App</h1>
-
-<div style="height: 10rem; padding: 1rem 0;">
-    <table>
-        <tr>
-            <td>
-                <label for="hgvs">HGVS:</label>
-            </td>
-            <td>
-                <input id="hgvs" @bind="hgvs"/>
-            </td>
-        </tr>
-        <tr>
-            <td>
-                <label for="before">gRNA size:</label>
-            </td>
-            <td>
-                <input id="before" type="number" @bind="gRNASize"/>
-            </td>
-        </tr>
-    </table>
-</div>
-<button class="btn btn-primary" style="font-size: 16px;" @onclick="FetchData">Fetch Data</button>
-
-@if (original != null && mutated != null)
-{
-    <h3>Original Sequence:</h3>
-    <p>@((MarkupString)original)</p>
-    <h3>Mutated Sequence:</h3>
-    <p>@((MarkupString)mutated)</p>
-
-    <br/>
-
-
-    <div>
-        @if (gRNAs != null && gRNAs.Any())
-        {
-            <table class="table">
-                <thead>
-                <tr>
-                    <th></th>
-                    <th>gRNA Spacer</th>
-                    <th>GC Score (how close to range 40%-60%)</th>
-                    <th>Homopolymer Count</th>
-                    <th>Allignments</th>
-                </tr>
-                </thead>
-                <tbody>
-                @foreach (var gRNA in gRNAs)
-                {
-                    <tr>
-                        <td>
-                            <button class="btn btn-secondary" @onclick="() => HandlegRNACreationButton(gRNA.Sequence)">🔨</button>
-                        </td>
-                        <td>@gRNA.Sequence</td>
-                        <td>@gRNA.GCScore</td>
-                        <td>@gRNA.HomopolymerCount</td>
-                        <td>@gRNA.Allignments</td>
-                    </tr>
-                }
-                </tbody>
-            </table>
-        }
-
-
-        <h3>Complete gRNA</h3>
-        <p>
-            <span style="color: #d15b5b;">GAUUUAGACUACCCCAAAAACGAAGGGGACUAAAAC</span>
-            @if (selectedSpacer != null)
-            {
-                <span style="color: #4b4bba;">@selectedSpacer</span>
-            }
-        </p>
+<div class="container-fluid px-4 py-4" style="max-width: 1400px;">
+    <div class="row mb-4">
+        <div class="col">
+            <h1 class="mb-4">Disease Mutations App</h1>
+        </div>
     </div>
-}
+
+    <div class="row mb-4">
+        <div class="col-lg-8 col-xl-6">
+            <div class="card shadow-sm">
+                <div class="card-body">
+                    <h5 class="card-title mb-3">Input Parameters</h5>
+                    <div class="mb-3">
+                        <label for="hgvs" class="form-label">HGVS:</label>
+                        <input id="hgvs" class="form-control" @bind="_hgvs" placeholder="e.g., NC_000001.11:g.12345A>G"/>
+                    </div>
+                    <div class="mb-3">
+                        <label for="before" class="form-label">gRNA size:</label>
+                        <input id="before" type="number" class="form-control" @bind="_gRnaSize" min="1" style="max-width: 200px;"/>
+                    </div>
+                    <button class="btn btn-primary btn-lg mt-2" @onclick="FetchData">
+                        <span>Fetch Data</span>
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    @if (_isLoading)
+    {
+        <div class="row mb-4">
+            <div class="col">
+                <div class="card shadow-sm">
+                    <div class="card-body text-center py-5">
+                        <Spinner Type="SpinnerType.Dots" Color="SpinnerColor.Primary" />
+                        <p class="mt-3 text-muted">Loading sequences and gRNA results...</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+    }
+
+    @if (_original != null && _mutated != null)
+    {
+        <div class="row mb-4">
+            <div class="col">
+                <div class="card shadow-sm mb-3">
+                    <div class="card-body">
+                        <h5 class="card-title mb-3">Original Sequence</h5>
+                        <p class="font-monospace bg-light p-3 rounded" style="word-break: break-all; line-height: 1.8;">@((MarkupString)_original)</p>
+                    </div>
+                </div>
+                <div class="card shadow-sm">
+                    <div class="card-body">
+                        <h5 class="card-title mb-3">Mutated Sequence</h5>
+                        <p class="font-monospace bg-light p-3 rounded" style="word-break: break-all; line-height: 1.8;">@((MarkupString)_mutated)</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="row mb-4">
+            <div class="col">
+                @if (_gRNAs != null && _gRNAs.Any())
+                {
+                    <div class="card shadow-sm">
+                        <div class="card-body">
+                            <h5 class="card-title mb-3">gRNA Results</h5>
+                            <div class="table-responsive">
+                                <table class="table table-hover table-striped align-middle">
+                                    <thead class="table-light">
+                                    <tr>
+                                        <th style="width: 80px;">Action</th>
+                                        <th>gRNA Spacer</th>
+                                        <th>GC Score</th>
+                                        <th>Homopolymer Count</th>
+                                        <th>Seed Region</th>
+                                        <th>Alignments</th>
+                                    </tr>
+                                    </thead>
+                                    <tbody>
+                                    @foreach (var gRNA in _gRNAs)
+                                    {
+                                        <tr>
+                                            <td>
+                                                <button class="btn btn-sm btn-secondary" @onclick="() => HandlegRNACreationButton(gRNA.Sequence)" title="Create gRNA">
+                                                    🔨
+                                                </button>
+                                            </td>
+                                            <td class="font-monospace">@gRNA.Sequence</td>
+                                            <td>@gRNA.GCScore</td>
+                                            <td>@gRNA.HomopolymerCount</td>
+                                            <td>@gRNA.SeedRegion</td>
+                                            <td>@gRNA.Allignments</td>
+                                        </tr>
+                                    }
+                                    </tbody>
+                                </table>
+                            </div>
+                        </div>
+                    </div>
+                }
+            </div>
+        </div>
+
+        <div class="row">
+            <div class="col">
+                <div class="card shadow-sm">
+                    <div class="card-body">
+                        <div class="d-flex justify-content-between align-items-center mb-3">
+                            <h5 class="card-title mb-0">Complete gRNA</h5>
+                            @if (_selectedSpacer != null)
+                            {
+                                <button class="btn btn-sm btn-success" @onclick="CopyCompleteGRNA" title="Copy complete gRNA">
+                                    @if (_copiedToClipboard)
+                                    {
+                                        <span>✓ Copied!</span>
+                                    }
+                                    else
+                                    {
+                                        <span>📋 Copy</span>
+                                    }
+                                </button>
+                            }
+                        </div>
+                        <p class="font-monospace fs-5 mb-0" style="word-break: break-all; line-height: 1.8;">
+                            <span style="color: #d15b5b; font-weight: 500;">GAUUUAGACUACCCCAAAAACGAAGGGGACUAAAAC</span>@if (_selectedSpacer != null)
+                            {<span style="color: #4b4bba; font-weight: 500;">@_selectedSpacer</span>}
+                        </p>
+                        @if (_selectedSpacer == null)
+                        {
+                            <p class="text-muted mt-2 mb-0"><small>Click the 🔨 button on a gRNA spacer to add it here</small></p>
+                        }
+                    </div>
+                </div>
+            </div>
+        </div>
+    }
+</div>
 
 @code {
 
-    private string? hgvs;
-    private int gRNASize = 28;
-    private string? original;
-    private string? mutated;
-    private string? selectedSpacer;
-    private List<GRNAResult>? gRNAs;
+    private string? _hgvs;
+    private int _gRnaSize = 28;
+    private string? _original;
+    private string? _mutated;
+    private string? _selectedSpacer;
+    private List<GRNAResult>? _gRNAs;
+    private bool _isLoading;
+    private bool _copiedToClipboard;
 
     private async Task FetchData()
     {
-        if (!string.IsNullOrWhiteSpace(hgvs) && gRNASize > 0)
+        if (!string.IsNullOrWhiteSpace(_hgvs) && _gRnaSize > 0)
         {
-            var hgvsObj = new HGVS(hgvs);
-            var sequence = await SequenceRepository.GetSequence(hgvsObj.Accession);
-            var extraNucleotids = gRNASize - hgvsObj.GetMutationLength();
+            // Set loading state and clean previous results
+            _isLoading = true;
+            _original = null;
+            _mutated = null;
+            _gRNAs = null;
+            _selectedSpacer = null;
+            _copiedToClipboard = false;
+            
+            try
+            {
+                var result = await Api.GetBestgRNAFromHgvs(_hgvs, _gRnaSize);
+                _original = result.OriginalSequence;
+                _mutated = result.MutatedSequence;
+                _gRNAs = result.gRNA;
+                var extraNucleotids = result.ExtraNucleotids;
 
 
-            (mutated, original) = sequence.GetMutatedSubsequence(hgvsObj, extraNucleotids, extraNucleotids);
-
-            gRNAs = await Api.GetBestgRNA(gRNASize, mutated);
-
-            Console.WriteLine($"original size: {original.Length}, mutated size: {mutated.Length}, left: {extraNucleotids}, right: {extraNucleotids}");
-            original = original.Insert(extraNucleotids, "<b>");
-            original = original.Insert(original.Length - extraNucleotids, "</b>");
-            mutated = mutated.Insert(extraNucleotids, "<b>");
-            mutated = mutated.Insert(mutated.Length - extraNucleotids, "</b>");
+                Console.WriteLine($"original size: {_original.Length}, mutated size: {_mutated.Length}, left: {extraNucleotids}, right: {extraNucleotids}");
+                _original = _original.Insert(extraNucleotids, "<b>");
+                _original = _original.Insert(_original.Length - extraNucleotids, "</b>");
+                _mutated = _mutated.Insert(extraNucleotids, "<b>");
+                _mutated = _mutated.Insert(_mutated.Length - extraNucleotids, "</b>");
+            }
+            finally
+            {
+                _isLoading = false;
+            }
         }
         else
         {
-            original = "Invalid input. Please check the values.";
-            mutated = "";
+            _original = "Invalid input. Please check the values.";
+            _mutated = "";
+            _isLoading = false;
         }
     }
 
     private void HandlegRNACreationButton(string spacer)
     {
-        selectedSpacer = spacer;
+        _selectedSpacer = spacer;
+        _copiedToClipboard = false;
+    }
+
+    private async Task CopyCompleteGRNA()
+    {
+        if (_selectedSpacer != null)
+        {
+            _copiedToClipboard = true;
+            StateHasChanged();
+            var completeGRNA = "GAUUUAGACUACCCCAAAAACGAAGGGGACUAAAAC" + _selectedSpacer;
+            await JSRuntime.InvokeVoidAsync("navigator.clipboard.writeText", completeGRNA);
+        }
     }
 
 }

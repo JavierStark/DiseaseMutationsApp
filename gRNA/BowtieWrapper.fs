@@ -11,8 +11,9 @@ open System.Threading.Tasks
 // ./bowtie-align-s -x GCA_000001405.15_GRCh38_no_alt_analysis_set -c SEQUENCE -v MISMATCHES -k 2
 let runBowtie(mismatches: int) (threads: int)  (sequence: string) : Task<string array> = task {
     let startInfo = ProcessStartInfo()
+    let maxAllignment = 6
     startInfo.FileName <- "bowtie/bowtie-align-s"
-    startInfo.Arguments <- sprintf "-x \"GCA_000001405.15_GRCh38_no_alt_analysis_set\" -c %s -v %d -k 2 --threads %d" sequence mismatches threads
+    startInfo.Arguments <- sprintf "-x \"GCA_000001405.15_GRCh38_no_alt_analysis_set\" -c %s -v %d -k %d --threads %d" sequence mismatches maxAllignment threads
     startInfo.RedirectStandardOutput <- true
     startInfo.RedirectStandardError <- true
     startInfo.UseShellExecute <- false
@@ -55,11 +56,13 @@ let runBowtie(mismatches: int) (threads: int)  (sequence: string) : Task<string 
            
 }
 
-let runBowtieForMultipleSequences (sequences: string list) (mismatches: int) (threads: int) : Task<int list> = task {
+let runBowtieForMultipleSequences (sequences: string list) (mismatches: int) (threads: int) : Async<int list> = async {
     let! results =
         sequences
         |> String.concat ","
         |> runBowtie mismatches threads
+        |> Async.AwaitTask
+        
         
     let nOfAllignments =
         results

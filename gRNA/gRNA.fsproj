@@ -6,11 +6,12 @@
     </PropertyGroup>
 
     <ItemGroup>
-        <Compile Include="BowtieWrapper.fs" />
         <Compile Include="HGVS.fs" />
         <Compile Include="Sequence.fs" />
         <Compile Include="SequenceRepository.fs" />
+        <Compile Include="BowtieWrapper.fs" />
         <Compile Include="SpacerFinder.fs" />
+        <Compile Include="Main.fs" />
     </ItemGroup>
 
     <ItemGroup>
