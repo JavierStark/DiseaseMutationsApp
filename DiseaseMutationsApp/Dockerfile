@@ -14,10 +14,11 @@ RUN dotnet publish -c Release -o /app/publish
 FROM nginx:alpine AS final
 WORKDIR /usr/share/nginx/html
 
-# Copy compiled WASM output
 COPY --from=build /app/publish/wwwroot ./
 
-# Copy custom Nginx config
+# Remove default nginx config
+RUN rm -f /etc/nginx/conf.d/default.conf
+
 COPY nginx.conf /etc/nginx/nginx.conf
 
 EXPOSE 80
