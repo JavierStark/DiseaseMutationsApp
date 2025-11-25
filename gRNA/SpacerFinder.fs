@@ -39,37 +39,34 @@ type gRNAResult = {
     Allignments: int
 }
 
-let getgRNAResult sequence : Async<gRNAResult> = async {
+let getgRNAResult sequence : gRNAResult =
     let gcContent = calculateGCContent sequence
     let gcScore = calculateGCScore gcContent (40.0, 60.0)
     let homopolymerCount = countHomopolymers sequence
     let seedRegion = sequence[10..17]
-    let! allignments = BowtieWrapper.runBowtie sequence 2 4 |> Async.AwaitTask
     
-    // print allignments for debugging
-    allignments |> Array.iter (printfn "Alignment: %s")
-    
-    return {
+    {
         Sequence = sequence
         GCScore = gcScore
         HomopolymerCount = homopolymerCount
         SeedRegion = seedRegion
-        Allignments = allignments.Length
+        Allignments = 0
     }
-}
 
 let sortByResult (result: gRNAResult) =
     (result.Allignments, -result.GCScore, result.HomopolymerCount)
 
 let getBestgRNA (window: int) (sequence: string) : Task<gRNAResult list> = task {
     let subsequences = slidingWindow sequence window
-    let! results = 
-        subsequences
-        |> List.map getgRNAResult
-        |> Async.Parallel 
+    let results = subsequences |> List.map getgRNAResult
+        
+    let! allignments = BowtieWrapper.runBowtieForMultipleSequences subsequences 2 2
+    let resultsWithAllignments =
+        List.zip results allignments
+        |> List.map (fun (res, align) -> { res with Allignments = align })
+    
     let filteredResults =
-        results
-        |> Array.toList
+        resultsWithAllignments
         |> List.sortBy sortByResult
         |> List.take 5
         

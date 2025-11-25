@@ -4,7 +4,7 @@
 
 
 ### Get best gRNA with window size and sequence
-GET {{Backend_HostAddress}}/getbestrna?window=20&sequence=ATGCGATCGATCGATCGATCGATCG
+GET {{Backend_HostAddress}}/getbestrna?window=15&sequence=ATGCGATCGATCGATCGATCGATCG
 Accept: application/json
 
 ###
