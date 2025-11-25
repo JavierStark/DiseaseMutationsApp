@@ -63,13 +63,19 @@ let runBowtieForMultipleSequences (sequences: string list) (mismatches: int) (th
         |> runBowtie mismatches threads
         |> Async.AwaitTask
         
-        
+    
     let nOfAllignments =
         results
         |> Array.map(fun r -> r.Split '\t' |> Array.head |> int)
         |> Array.groupBy id
-        |> Array.map(fun (key, group) -> group.Length)
-        |> Array.toList
-        
+        |> Array.map(fun (key, group) -> (key, group.Length))
+        |> dict
+        |> fun dict ->
+            sequences
+            |> List.mapi(fun i _ ->
+                match dict.TryGetValue(i) with
+                | true, count -> count
+                | _ -> 0)
+            
     return nOfAllignments
 }
