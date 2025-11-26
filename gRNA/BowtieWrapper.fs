@@ -24,35 +24,56 @@ let runBowtie(mismatches: int) (threads: int)  (sequence: string) : Task<string 
 
     use proc = new Process()
     proc.StartInfo <- startInfo
-    proc.Start() |> ignore
+    
+    try
+        proc.Start() |> ignore
 
-    let! stdout = proc.StandardOutput.ReadToEndAsync()
-    let! stderr = proc.StandardError.ReadToEndAsync()
+        let! stdout = proc.StandardOutput.ReadToEndAsync()
+        let! stderr = proc.StandardError.ReadToEndAsync()
 
-    do! proc.WaitForExitAsync()
+        do! proc.WaitForExitAsync()
 
-    let combinedOutput =
-        if String.IsNullOrWhiteSpace(stdout) && String.IsNullOrWhiteSpace(stderr) then
-            sprintf "Bowtie exited with code %d but produced no output." proc.ExitCode
-        else
-            stdout + "\n" + stderr
+        let combinedOutput =
+            if String.IsNullOrWhiteSpace(stdout) && String.IsNullOrWhiteSpace(stderr) then
+                sprintf "Bowtie exited with code %d but produced no output." proc.ExitCode
+            else
+                stdout + "\n" + stderr
+                
+        //0	+	chr7	147119362	ACTGACTGACTG	IIIIIIIIIIII	478
+        // 0	+	chr9	37515365	ACTGACTGACTG	IIIIIIIIIIII	478//
+        //
+        // # reads processed: 1
+        // # reads with at least one alignment: 1 (100.00%)
+        // # reads that failed to align: 0 (0.00%)
+        // Reported 2 alignments
+
+        let allignments =
+            combinedOutput.Split([|'\n'|])
+            |> Array.takeWhile (fun line -> not (String.IsNullOrEmpty(line)))
+            |> Array.map (_.Trim())
             
-    //0	+	chr7	147119362	ACTGACTGACTG	IIIIIIIIIIII	478
-    // 0	+	chr9	37515365	ACTGACTGACTG	IIIIIIIIIIII	478//
-    //
-    // # reads processed: 1
-    // # reads with at least one alignment: 1 (100.00%)
-    // # reads that failed to align: 0 (0.00%)
-    // Reported 2 alignments
-
-    let allignments =
-        combinedOutput.Split([|'\n'|])
-        |> Array.takeWhile (fun line -> not (String.IsNullOrEmpty(line)))
-        |> Array.map (_.Trim())
+        printfn "Bowtie finished with exit code %d" proc.ExitCode
         
-    printfn "Bowtie finished with exit code %d" proc.ExitCode
+        // Check for memory-related exit codes
+        if proc.ExitCode = 137 then
+            failwith "Bowtie process was killed due to out of memory (OOM). Try processing fewer sequences at once or increase system memory."
+        elif proc.ExitCode <> 0 then
+            printfn "Bowtie stderr: %s" stderr
+            failwith (sprintf "Bowtie exited with code %d. Error: %s" proc.ExitCode stderr)
 
-    return allignments
+        return allignments
+    finally
+        // Ensure process is properly cleaned up
+        if not proc.HasExited then
+            try
+                proc.Kill()
+                printfn "Killed Bowtie process"
+            with
+            | ex -> printfn "Failed to kill Bowtie process: %s" ex.Message
+        
+        // Force garbage collection to clean up resources
+        GC.Collect()
+        GC.WaitForPendingFinalizers()
            
 }
 
