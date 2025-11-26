@@ -2,7 +2,7 @@
 @using DiseaseMutationsApp.Services
 @using BlazorBootstrap
 @inject IJSRuntime JSRuntime
-@inject Services.IDiseaseMutationsApi Api
+@inject IDiseaseMutationsApi Api
 
 <PageTitle>Disease Mutations</PageTitle>
 
@@ -34,55 +34,38 @@
         </div>
     </div>
 
-    @if (_isLoading)
-    {
-        <div class="row mb-4">
-            <div class="col">
-                <div class="card shadow-sm">
-                    <div class="card-body text-center py-5">
-                        <Spinner Type="SpinnerType.Dots" Color="SpinnerColor.Primary" />
-                        <p class="mt-3 text-muted">Loading sequences and gRNA results...</p>
-                    </div>
-                </div>
-            </div>
-        </div>
-    }
-
     @if (_hgvsTabs.Any())
     {
         <div class="row mb-4">
             <div class="col">
-                @if (_hgvsTabs.Count > 1)
-                {
-                    <ul class="nav nav-tabs" role="tablist">
-                        @for (int i = 0; i < _hgvsTabs.Count; i++)
-                        {
-                            var index = i;
-                            var tab = _hgvsTabs[i];
-                            <li class="nav-item" role="presentation">
-                                <button class="nav-link @(index == _activeTabIndex ? "active" : "")" 
-                                        type="button" 
-                                        @onclick="() => _activeTabIndex = index">
-                                    @if (tab.IsLoading)
-                                    {
-                                        <span>⏳ @tab.Hgvs.Substring(0, Math.Min(20, tab.Hgvs.Length))@(tab.Hgvs.Length > 20 ? "..." : "")</span>
-                                    }
-                                    else if (tab.ErrorMessage != null)
-                                    {
-                                        <span style="color: #dc3545;">⚠️ @tab.Hgvs.Substring(0, Math.Min(20, tab.Hgvs.Length))@(tab.Hgvs.Length > 20 ? "..." : "")</span>
-                                    }
-                                    else
-                                    {
-                                        <span>✓ @tab.Hgvs.Substring(0, Math.Min(20, tab.Hgvs.Length))@(tab.Hgvs.Length > 20 ? "..." : "")</span>
-                                    }
-                                </button>
-                            </li>
-                        }
-                    </ul>
-                }
+                <ul class="nav nav-tabs" role="tablist">
+                    @for (int i = 0; i < _hgvsTabs.Count; i++)
+                    {
+                        var index = i;
+                        var tab = _hgvsTabs[i];
+                        <li class="nav-item" role="presentation">
+                            <button class="nav-link @(index == _activeTabIndex ? "active" : "")" 
+                                    type="button" 
+                                    @onclick="() => _activeTabIndex = index">
+                                @if (tab.IsLoading)
+                                {
+                                    <span>⏳ @tab.Hgvs[..Math.Min(20, tab.Hgvs.Length)]@(tab.Hgvs.Length > 20 ? "..." : "")</span>
+                                }
+                                else if (tab.ErrorMessage != null)
+                                {
+                                    <span style="color: #dc3545;">⚠️ @tab.Hgvs[..Math.Min(20, tab.Hgvs.Length)]@(tab.Hgvs.Length > 20 ? "..." : "")</span>
+                                }
+                                else
+                                {
+                                    <span>✓ @tab.Hgvs[..Math.Min(20, tab.Hgvs.Length)]@(tab.Hgvs.Length > 20 ? "..." : "")</span>
+                                }
+                            </button>
+                        </li>
+                    }
+                </ul>
 
                 <div class="tab-content mt-3">
-                    @for (int i = 0; i < _hgvsTabs.Count; i++)
+                    @for (var i = 0; i < _hgvsTabs.Count; i++)
                     {
                         var index = i;
                         var tab = _hgvsTabs[i];
@@ -206,123 +189,19 @@
             </div>
         </div>
     }
-    else if (_original != null && _mutated != null)
-    {
-        <!-- Legacy display for backward compatibility -->
-        <div class="row mb-4">
-            <div class="col">
-                <div class="card shadow-sm mb-3">
-                    <div class="card-body">
-                        <h5 class="card-title mb-3">Original Sequence</h5>
-                        <p class="font-monospace bg-light p-3 rounded" style="word-break: break-all; line-height: 1.8;">@((MarkupString)_original)</p>
-                    </div>
-                </div>
-                <div class="card shadow-sm">
-                    <div class="card-body">
-                        <h5 class="card-title mb-3">Mutated Sequence</h5>
-                        <p class="font-monospace bg-light p-3 rounded" style="word-break: break-all; line-height: 1.8;">@((MarkupString)_mutated)</p>
-                    </div>
-                </div>
-            </div>
-        </div>
-
-        <div class="row mb-4">
-            <div class="col">
-                @if (_gRNAs != null && _gRNAs.Any())
-                {
-                    <div class="card shadow-sm">
-                        <div class="card-body">
-                            <h5 class="card-title mb-3">gRNA Results</h5>
-                            <div class="table-responsive">
-                                <table class="table table-hover table-striped align-middle">
-                                    <thead class="table-light">
-                                    <tr>
-                                        <th style="width: 80px;">Action</th>
-                                        <th>gRNA Spacer</th>
-                                        <th>GC Score</th>
-                                        <th>Homopolymer Count</th>
-                                        <th>Seed Region</th>
-                                        <th>Alignments</th>
-                                    </tr>
-                                    </thead>
-                                    <tbody>
-                                    @foreach (var gRNA in _gRNAs)
-                                    {
-                                        <tr>
-                                            <td>
-                                                <button class="btn btn-sm btn-secondary" @onclick="() => { _selectedSpacer = gRNA.Sequence; _copiedToClipboard = false; }" title="Create gRNA">
-                                                    🔨
-                                                </button>
-                                            </td>
-                                            <td class="font-monospace">@gRNA.Sequence</td>
-                                            <td>@gRNA.GCScore</td>
-                                            <td>@gRNA.HomopolymerCount</td>
-                                            <td>@gRNA.SeedRegion</td>
-                                            <td>@gRNA.Allignments</td>
-                                        </tr>
-                                    }
-                                    </tbody>
-                                </table>
-                            </div>
-                        </div>
-                    </div>
-                }
-            </div>
-        </div>
-
-        <div class="row">
-            <div class="col">
-                <div class="card shadow-sm">
-                    <div class="card-body">
-                        <div class="d-flex justify-content-between align-items-center mb-3">
-                            <h5 class="card-title mb-0">Complete gRNA</h5>
-                            @if (_selectedSpacer != null)
-                            {
-                                <button class="btn btn-sm btn-success" @onclick="CopyCompleteLegacyGRNA" title="Copy complete gRNA">
-                                    @if (_copiedToClipboard)
-                                    {
-                                        <span>✓ Copied!</span>
-                                    }
-                                    else
-                                    {
-                                        <span>📋 Copy</span>
-                                    }
-                                </button>
-                            }
-                        </div>
-                        <p class="font-monospace fs-5 mb-0" style="word-break: break-all; line-height: 1.8;">
-                            <span style="color: #d15b5b; font-weight: 500;">GAUUUAGACUACCCCAAAAACGAAGGGGACUAAAAC</span>@if (_selectedSpacer != null)
-                            {<span style="color: #4b4bba; font-weight: 500;">@_selectedSpacer</span>}
-                        </p>
-                        @if (_selectedSpacer == null)
-                        {
-                            <p class="text-muted mt-2 mb-0"><small>Click the 🔨 button on a gRNA spacer to add it here</small></p>
-                        }
-                    </div>
-                </div>
-            </div>
-        </div>
-    }
 </div>
 
 @code {
 
     private string? _hgvs;
     private int _gRnaSize = 28;
-    private string? _original;
-    private string? _mutated;
-    private string? _selectedSpacer;
-    private List<GRNAResult>? _gRNAs;
-    private bool _isLoading;
-    private bool _copiedToClipboard;
     
-    // New properties for multi-HGVS support
     private List<HgvsTabData> _hgvsTabs = [];
-    private int _activeTabIndex = 0;
+    private int _activeTabIndex;
 
     private class HgvsTabData
     {
-        public string Hgvs { get; set; } = string.Empty;
+        public string Hgvs { get; init; } = string.Empty;
         public string? Original { get; set; }
         public string? Mutated { get; set; }
         public List<GRNAResult>? GRNAs { get; set; }
@@ -336,33 +215,18 @@
     {
         if (!string.IsNullOrWhiteSpace(_hgvs) && _gRnaSize > 0)
         {
-            // Set loading state and clean previous results
-            _isLoading = true;
             _hgvsTabs.Clear();
             _activeTabIndex = 0;
-            _original = null;
-            _mutated = null;
-            _gRNAs = null;
-            _selectedSpacer = null;
-            _copiedToClipboard = false;
             
             try
             {
-                // Split HGVS by comma
                 var hgvsList = _hgvs.Split(',')
                     .Select(h => h.Trim())
                     .Where(h => !string.IsNullOrWhiteSpace(h))
                     .ToList();
 
-                if (hgvsList.Count == 0)
-                {
-                    _original = "Invalid input. Please check the values.";
-                    _mutated = "";
-                    _isLoading = false;
-                    return;
-                }
+                if (hgvsList.Count == 0) return;
 
-                // Initialize all tabs with loading state
                 foreach (var hgvsItem in hgvsList)
                 {
                     _hgvsTabs.Add(new HgvsTabData 
@@ -372,55 +236,19 @@
                     });
                 }
                 
-                // Turn off global loading and show tabs
-                _isLoading = false;
                 StateHasChanged();
 
-                // Fetch data for each HGVS sequentially (API doesn't support concurrent calls)
-                for (int i = 0; i < _hgvsTabs.Count; i++)
-                {
-                    await FetchTabDataAsync(_hgvsTabs[i]);
-                    
-                    // Add delay between requests to allow backend to clean up resources
-                    // This prevents Bowtie from running out of memory (exit code 137)
-                    // if (i < _hgvsTabs.Count - 1)
-                    // {
-                    //     await Task.Delay(200); // 2 second delay between requests
-                    // }
-                }
+                foreach (var t in _hgvsTabs) await FetchTabDataAsync(t);
                 
-                // Turn off global loading after all data is fetched (redundant but safe)
-                _isLoading = false;
-
-                // Set backward compatibility for single HGVS
-                if (_hgvsTabs.Count > 0 && _hgvsTabs[0].ErrorMessage == null)
-                {
-                    _original = _hgvsTabs[0].Original;
-                    _mutated = _hgvsTabs[0].Mutated;
-                    _gRNAs = _hgvsTabs[0].GRNAs;
-                }
             }
             catch (Exception ex)
             {
-                _isLoading = false;
-                // Show error in first tab if available
                 if (_hgvsTabs.Any())
                 {
                     _hgvsTabs[0].ErrorMessage = $"Error: {ex.Message}";
                     _hgvsTabs[0].IsLoading = false;
                 }
-                else
-                {
-                    _original = $"Error: {ex.Message}";
-                    _mutated = "";
-                }
             }
-        }
-        else
-        {
-            _original = "Invalid input. Please check the values.";
-            _mutated = "";
-            _isLoading = false;
         }
     }
 
@@ -429,21 +257,13 @@
         try
         {
             var result = await Api.GetBestgRNAFromHgvs(tabData.Hgvs, _gRnaSize);
-            
-            if (result == null)
-            {
-                tabData.ErrorMessage = "No data returned from API";
-                return;
-            }
-            
+
             tabData.Original = result.OriginalSequence;
             tabData.Mutated = result.MutatedSequence;
             tabData.GRNAs = result.gRNA;
             var extraNucleotids = result.ExtraNucleotids;
 
-            Console.WriteLine($"original size: {tabData.Original?.Length ?? 0}, mutated size: {tabData.Mutated?.Length ?? 0}, left: {extraNucleotids}, right: {extraNucleotids}");
             
-            // Add bold tags to highlight mutation regions
             if (!string.IsNullOrEmpty(tabData.Original) && extraNucleotids >= 0 && extraNucleotids < tabData.Original.Length)
             {
                 tabData.Original = tabData.Original.Insert(extraNucleotids, "<b>");
@@ -470,18 +290,16 @@
         finally
         {
             tabData.IsLoading = false;
-            // Update UI as each tab completes
             await InvokeAsync(StateHasChanged);
         }
     }
 
     private void HandlegRNACreationButton(string spacer, int tabIndex)
     {
-        if (tabIndex >= 0 && tabIndex < _hgvsTabs.Count)
-        {
-            _hgvsTabs[tabIndex].SelectedSpacer = spacer;
-            _hgvsTabs[tabIndex].CopiedToClipboard = false;
-        }
+        if (tabIndex < 0 || tabIndex >= _hgvsTabs.Count) return;
+        
+        _hgvsTabs[tabIndex].SelectedSpacer = spacer;
+        _hgvsTabs[tabIndex].CopiedToClipboard = false;
     }
 
     private async Task CopyCompleteGRNA(int tabIndex)
@@ -491,17 +309,6 @@
             _hgvsTabs[tabIndex].CopiedToClipboard = true;
             StateHasChanged();
             var completeGRNA = "GAUUUAGACUACCCCAAAAACGAAGGGGACUAAAAC" + _hgvsTabs[tabIndex].SelectedSpacer;
-            await JSRuntime.InvokeVoidAsync("navigator.clipboard.writeText", completeGRNA);
-        }
-    }
-
-    private async Task CopyCompleteLegacyGRNA()
-    {
-        if (_selectedSpacer != null)
-        {
-            _copiedToClipboard = true;
-            StateHasChanged();
-            var completeGRNA = "GAUUUAGACUACCCCAAAAACGAAGGGGACUAAAAC" + _selectedSpacer;
             await JSRuntime.InvokeVoidAsync("navigator.clipboard.writeText", completeGRNA);
         }
     }
