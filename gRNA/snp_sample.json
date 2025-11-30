@@ -727,186 +727,7 @@
           {
             "study_name": "ExAC",
             "study_version": 1,
-            "local_row_id": 8997788,
-            "observation": {
-              "seq_id": "NC_000007.13",
-              "position": 117199601,
-              "deleted_sequence": "C",
-              "inserted_sequence": "C"
-            },
-            "allele_count": 121324,
-            "total_count": 121326
-          },
-          {
-            "study_name": "GnomAD_exomes",
-            "study_version": 4,
-            "local_row_id": 27604610,
-            "observation": {
-              "seq_id": "NC_000007.14",
-              "position": 117559547,
-              "deleted_sequence": "C",
-              "inserted_sequence": "C"
-            },
-            "allele_count": 1398931,
-            "total_count": 1399024
-          },
-          {
-            "study_name": "GnomAD_genomes",
-            "study_version": 4,
-            "local_row_id": 294735206,
-            "observation": {
-              "seq_id": "NC_000007.14",
-              "position": 117559547,
-              "deleted_sequence": "C",
-              "inserted_sequence": "C"
-            },
-            "allele_count": 149099,
-            "total_count": 149100
-          },
-          {
-            "study_name": "PAGE_STUDY",
-            "study_version": 1,
-            "local_row_id": 615763,
-            "observation": {
-              "seq_id": "NC_000007.14",
-              "position": 117559547,
-              "deleted_sequence": "C",
-              "inserted_sequence": "C"
-            },
-            "allele_count": 78701,
-            "total_count": 78702
-          },
-          {
-            "study_name": "PRJEB37766",
-            "study_version": 1,
-            "local_row_id": 1854,
-            "observation": {
-              "seq_id": "NC_000007.13",
-              "position": 117199601,
-              "deleted_sequence": "C",
-              "inserted_sequence": "C"
-            },
-            "allele_count": 3288,
-            "total_count": 3294
-          },
-          {
-            "study_name": "dbGaP_PopFreq",
-            "study_version": 1,
-            "local_row_id": 1325644635,
-            "observation": {
-              "seq_id": "NC_000007.14",
-              "position": 117559547,
-              "deleted_sequence": "C",
-              "inserted_sequence": "C"
-            },
-            "allele_count": 149904,
-            "total_count": 149914
-          }
-        ],
-        "clinical": [],
-        "submissions": [
-          "161109562",
-          "263193356",
-          "483026222",
-          "712801525",
-          "1688917736",
-          "1849949811",
-          "1946218882",
-          "1959046049",
-          "2736720841",
-          "2747910465",
-          "2858212799",
-          "2985418265",
-          "2986049752",
-          "3022772841",
-          "3625936381",
-          "3636872909",
-          "3644952019",
-          "3653307712",
-          "3654179656",
-          "3726475923",
-          "3744295354",
-          "3771394294",
-          "3824311649",
-          "3984448853",
-          "6432289332",
-          "6767825669",
-          "8848151396",
-          "8973021785",
-          "8979839049"
-        ],
-        "assembly_annotation": [
-          {
-            "seq_id": "NC_000007.14",
-            "annotation_release": "Homo sapiens Annotation Release 110",
-            "genes": [
-              {
-                "name": "CF transmembrane conductance regulator",
-                "id": 1080,
-                "locus": "CFTR",
-                "is_pseudo": false,
-                "orientation": "plus",
-                "sequence_ontology": [],
-                "rnas": [
-                  {
-                    "id": "NM_000492.4",
-                    "codon_aligned_transcript_change": {
-                      "seq_id": "NM_000492.4",
-                      "position": 1546,
-                      "deleted_sequence": "CAG",
-                      "inserted_sequence": "CAG"
-                    },
-                    "sequence_ontology": [
-                      {
-                        "name": "coding_sequence_variant",
-                        "accession": "SO:0001580"
-                      }
-                    ],
-                    "product_id": "NP_000483.3",
-                    "protein": {
-                      "variant": {
-                        "spdi": {
-                          "seq_id": "NP_000483.3",
-                          "position": 492,
-                          "deleted_sequence": "Q",
-                          "inserted_sequence": "Q"
-                        }
-                      },
-                      "sequence_ontology": []
-                    },
-                    "hgvs": "NM_000492.4:c.1477="
-                  }
-                ]
-              },
-              {
-                "name": "CFTR antisense RNA 1",
-                "id": 111082987,
-                "locus": "CFTR-AS1",
-                "is_pseudo": false,
-                "orientation": "minus",
-                "sequence_ontology": [],
-                "rnas": [
-                  {
-                    "id": "NR_149084.1",
-                    "sequence_ontology": [
-                      {
-                        "name": "intron_variant",
-                        "accession": "SO:0001627"
-                      }
-                    ]
-                  }
-                ]
-              }
-            ]
-          }
-        ]
-      },
-      {
-        "frequency": [
-          {
-            "study_name": "ExAC",
-            "study_version": 1,
-            "local_row_id": 8997788,
+            "local_row_id": 13790450310,
             "observation": {
               "seq_id": "NC_000007.13",
               "position": 117199601,
@@ -919,7 +740,7 @@
           {
             "study_name": "GnomAD_exomes",
             "study_version": 4,
-            "local_row_id": 27604610,
+            "local_row_id": 13790450310,
             "observation": {
               "seq_id": "NC_000007.14",
               "position": 117559547,
@@ -932,7 +753,7 @@
           {
             "study_name": "GnomAD_genomes",
             "study_version": 4,
-            "local_row_id": 294735206,
+            "local_row_id": 13790450310,
             "observation": {
               "seq_id": "NC_000007.14",
               "position": 117559547,
@@ -945,7 +766,7 @@
           {
             "study_name": "PAGE_STUDY",
             "study_version": 1,
-            "local_row_id": 615763,
+            "local_row_id": 13790450310,
             "observation": {
               "seq_id": "NC_000007.14",
               "position": 117559547,
@@ -958,7 +779,7 @@
           {
             "study_name": "PRJEB37766",
             "study_version": 1,
-            "local_row_id": 1854,
+            "local_row_id": 13790450310,
             "observation": {
               "seq_id": "NC_000007.13",
               "position": 117199601,
@@ -971,7 +792,7 @@
           {
             "study_name": "dbGaP_PopFreq",
             "study_version": 1,
-            "local_row_id": 1325644635,
+            "local_row_id": 13790450310,
             "observation": {
               "seq_id": "NC_000007.14",
               "position": 117559547,

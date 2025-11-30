@@ -52,12 +52,13 @@ app.MapGet("/getbestgrnafromhgvs", async (string hgvs, int window) =>
     return Results.Ok(result);
 }).WithName("GetBestgRNAFromHgvs");
 
-app.MapGet("/gethgvsfromsnp", async (int rsid) => 
+app.MapGet("/gethgvsfromsnp", async (string rsid) => 
 {
     var fsharpAsync = SNP.getHgvsNotationsAsync(rsid);
     var task = StartAsTask(fsharpAsync, null, null);
     var result = await task;
-    return Results.Ok(result);
+    Console.WriteLine($"HGVS notations for rsid {rsid}: {string.Join(", ", result)}");
+    return Results.Ok(result.ToList());
 }).WithName("GetHGVSFromSNP");
 
 

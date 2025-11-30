@@ -2,6 +2,9 @@
 FROM mcr.microsoft.com/dotnet/sdk:9.0 AS build
 WORKDIR /src
 
+# Copy and cache the heavy bowtie folder EARLY (before dependencies)
+COPY bowtie/ /bowtie/
+
 # Copy solution file and project files
 COPY ["Backend/Backend.csproj", "Backend/"]
 COPY ["gRNA/gRNA.fsproj", "gRNA/"]
@@ -28,12 +31,11 @@ WORKDIR /app
 # Copy published application
 COPY --from=publish /app/publish .
 
-# Copy bowtie folder from host
-COPY bowtie/ ./bowtie/
+# Copy bowtie from the build stage (already cached there)
+COPY --from=build /bowtie ./bowtie/
 
 # Expose port
 EXPOSE 80
 
 # Set the entry point
 ENTRYPOINT ["dotnet", "Backend.dll"]
-

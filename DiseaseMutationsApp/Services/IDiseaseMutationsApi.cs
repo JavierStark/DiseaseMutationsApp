@@ -4,25 +4,13 @@ namespace DiseaseMutationsApp.Services;
 
 public interface IDiseaseMutationsApi
 {
-    [Get("/getbestrna")]
-    Task<List<GRNAResult>> GetBestgRNA([Query] int window, [Query] string sequence);
-    
-    //string -> int -> Async<gRNAResult list * string * string * int>
     [Get("/getbestgrnafromhgvs")]
     Task<ResultFromHGVS> GetBestgRNAFromHgvs([Query] string hgvs, [Query] int window);
     
+    [Get("/gethgvsfromsnp")]
+    Task<List<string>> GetHgvsFromSnp([Query] string rsid);
+    
 }
-/*
- *
- *         type gRNAResult = {
-        Sequence: string
-        GCScore: float
-        HomopolymerCount: int
-        SeedRegion: string
-        Allignments: int
-    }
-
- */
 
 public record GRNAResult
 {
@@ -32,14 +20,6 @@ public record GRNAResult
     public string SeedRegion { get; init; }
     public int Allignments { get; init; }
 }
-
-// type ResultFromHGVS = {
-//     gRNA: SpacerFinder.gRNAResult list
-//     mutatedSequence: string
-//     originalSequence: string
-//     extraNucleotids: int
-// }
-//
 
 public record ResultFromHGVS
 {
