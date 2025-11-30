@@ -39,13 +39,7 @@ app.UseHttpsRedirection();
 
 app.MapGet("/", () => "Disease Mutations Backend is running.");
 
-app.MapGet("/getbestrna", async (int window, string sequence) => 
-{
-    var fsharpAsync = SpacerFinder.getBestgRNA(window, sequence);
-    var task = StartAsTask(fsharpAsync, null, null);
-    var result = await task;
-    return Results.Ok(result);
-}).WithName("GetBestgRNA");
+
 
 app.MapGet("/getallignments", async (string sequence, int mismatches, int threads) => 
     Results.Ok(await BowtieWrapper.runBowtie(mismatches, threads, sequence))).WithName("GetAllAlignments");
@@ -57,6 +51,14 @@ app.MapGet("/getbestgrnafromhgvs", async (string hgvs, int window) =>
     var result = await task;
     return Results.Ok(result);
 }).WithName("GetBestgRNAFromHgvs");
+
+app.MapGet("/gethgvsfromsnp", async (int rsid) => 
+{
+    var fsharpAsync = SNP.getHgvsNotationsAsync(rsid);
+    var task = StartAsTask(fsharpAsync, null, null);
+    var result = await task;
+    return Results.Ok(result);
+}).WithName("GetHGVSFromSNP");
 
 
 
