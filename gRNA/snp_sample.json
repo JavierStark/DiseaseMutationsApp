@@ -1,0 +1,3142 @@
+﻿{
+  "refsnp_id": "77101217",
+  "create_date": "2009-12-1T15:45Z",
+  "last_update_date": "2024-10-31T22:09Z",
+  "last_update_build_id": "157",
+  "dbsnp1_merges": [],
+  "citations": [2236053, 18456578, 23974870],
+  "lost_obs_movements": [],
+  "present_obs_movements": [
+    {
+      "component_ids": [
+        {
+          "type": "frequency",
+          "value": "ExAC.1:8997788"
+        },
+        {
+          "type": "frequency",
+          "value": "PRJEB37766.1:1854"
+        },
+        {
+          "type": "subsnp",
+          "value": "483026222"
+        },
+        {
+          "type": "subsnp",
+          "value": "712801525"
+        },
+        {
+          "type": "subsnp",
+          "value": "1688917736"
+        },
+        {
+          "type": "subsnp",
+          "value": "1849949811"
+        },
+        {
+          "type": "subsnp",
+          "value": "1946218882"
+        },
+        {
+          "type": "subsnp",
+          "value": "1959046049"
+        },
+        {
+          "type": "subsnp",
+          "value": "2736720841"
+        },
+        {
+          "type": "subsnp",
+          "value": "2747910465"
+        },
+        {
+          "type": "subsnp",
+          "value": "2858212799"
+        },
+        {
+          "type": "subsnp",
+          "value": "2985418265"
+        },
+        {
+          "type": "subsnp",
+          "value": "2986049752"
+        },
+        {
+          "type": "subsnp",
+          "value": "3022772841"
+        },
+        {
+          "type": "subsnp",
+          "value": "3625936381"
+        },
+        {
+          "type": "subsnp",
+          "value": "3636872909"
+        },
+        {
+          "type": "subsnp",
+          "value": "3644952019"
+        },
+        {
+          "type": "subsnp",
+          "value": "3653307712"
+        },
+        {
+          "type": "subsnp",
+          "value": "3654179656"
+        },
+        {
+          "type": "subsnp",
+          "value": "3744295354"
+        },
+        {
+          "type": "subsnp",
+          "value": "3824311649"
+        },
+        {
+          "type": "subsnp",
+          "value": "3984448853"
+        },
+        {
+          "type": "subsnp",
+          "value": "8848151396"
+        },
+        {
+          "type": "subsnp",
+          "value": "8973021785"
+        },
+        {
+          "type": "subsnp",
+          "value": "8979839049"
+        }
+      ],
+      "observation": {
+        "seq_id": "NC_000007.13",
+        "position": 117199601,
+        "deleted_sequence": "C",
+        "inserted_sequence": "C"
+      },
+      "allele_in_cur_release": {
+        "seq_id": "NC_000007.14",
+        "position": 117559547,
+        "deleted_sequence": "C",
+        "inserted_sequence": "C"
+      },
+      "other_rsids_in_cur_release": [],
+      "previous_release": {
+        "allele": {
+          "seq_id": "NC_000007.14",
+          "position": 117559547,
+          "deleted_sequence": "C",
+          "inserted_sequence": "C"
+        },
+        "rsids": [
+          "77101217"
+        ]
+      },
+      "last_added_to_this_rs": "151"
+    },
+    {
+      "component_ids": [
+        {
+          "type": "frequency",
+          "value": "GnomAD_exomes.4:27604610"
+        },
+        {
+          "type": "frequency",
+          "value": "GnomAD_genomes.4:294735206"
+        },
+        {
+          "type": "frequency",
+          "value": "PAGE_STUDY.1:615763"
+        },
+        {
+          "type": "frequency",
+          "value": "dbGaP_PopFreq.1:1325644635"
+        },
+        {
+          "type": "subsnp",
+          "value": "263193356"
+        },
+        {
+          "type": "subsnp",
+          "value": "3726475923"
+        },
+        {
+          "type": "subsnp",
+          "value": "3771394294"
+        },
+        {
+          "type": "subsnp",
+          "value": "6432289332"
+        },
+        {
+          "type": "subsnp",
+          "value": "6767825669"
+        }
+      ],
+      "observation": {
+        "seq_id": "NC_000007.14",
+        "position": 117559547,
+        "deleted_sequence": "C",
+        "inserted_sequence": "C"
+      },
+      "allele_in_cur_release": {
+        "seq_id": "NC_000007.14",
+        "position": 117559547,
+        "deleted_sequence": "C",
+        "inserted_sequence": "C"
+      },
+      "other_rsids_in_cur_release": [],
+      "previous_release": {
+        "allele": {
+          "seq_id": "NC_000007.14",
+          "position": 117559547,
+          "deleted_sequence": "C",
+          "inserted_sequence": "C"
+        },
+        "rsids": [
+          "77101217"
+        ]
+      },
+      "last_added_to_this_rs": "151"
+    },
+    {
+      "component_ids": [
+        {
+          "type": "subsnp",
+          "value": "161109562"
+        }
+      ],
+      "observation": {
+        "seq_id": "NT_007933.15",
+        "position": 55232444,
+        "deleted_sequence": "C",
+        "inserted_sequence": "C"
+      },
+      "allele_in_cur_release": {
+        "seq_id": "NC_000007.14",
+        "position": 117559547,
+        "deleted_sequence": "C",
+        "inserted_sequence": "C"
+      },
+      "other_rsids_in_cur_release": [],
+      "previous_release": {
+        "allele": {
+          "seq_id": "NC_000007.14",
+          "position": 117559547,
+          "deleted_sequence": "C",
+          "inserted_sequence": "C"
+        },
+        "rsids": [
+          "77101217"
+        ]
+      },
+      "last_added_to_this_rs": "151"
+    },
+    {
+      "component_ids": [
+        {
+          "type": "frequency",
+          "value": "ExAC.1:8997788"
+        },
+        {
+          "type": "frequency",
+          "value": "PRJEB37766.1:1854"
+        },
+        {
+          "type": "subsnp",
+          "value": "483026222"
+        },
+        {
+          "type": "subsnp",
+          "value": "712801525"
+        },
+        {
+          "type": "subsnp",
+          "value": "1688917736"
+        },
+        {
+          "type": "subsnp",
+          "value": "1849949811"
+        },
+        {
+          "type": "subsnp",
+          "value": "1946218882"
+        },
+        {
+          "type": "subsnp",
+          "value": "1959046049"
+        },
+        {
+          "type": "subsnp",
+          "value": "2736720841"
+        },
+        {
+          "type": "subsnp",
+          "value": "2747910465"
+        },
+        {
+          "type": "subsnp",
+          "value": "2858212799"
+        },
+        {
+          "type": "subsnp",
+          "value": "2985418265"
+        },
+        {
+          "type": "subsnp",
+          "value": "2986049752"
+        },
+        {
+          "type": "subsnp",
+          "value": "3022772841"
+        },
+        {
+          "type": "subsnp",
+          "value": "3625936381"
+        },
+        {
+          "type": "subsnp",
+          "value": "3636872909"
+        },
+        {
+          "type": "subsnp",
+          "value": "3644952019"
+        },
+        {
+          "type": "subsnp",
+          "value": "3653307712"
+        },
+        {
+          "type": "subsnp",
+          "value": "3654179656"
+        },
+        {
+          "type": "subsnp",
+          "value": "3744295354"
+        },
+        {
+          "type": "subsnp",
+          "value": "3824311649"
+        },
+        {
+          "type": "subsnp",
+          "value": "3984448853"
+        },
+        {
+          "type": "subsnp",
+          "value": "8848151396"
+        },
+        {
+          "type": "subsnp",
+          "value": "8973021785"
+        },
+        {
+          "type": "subsnp",
+          "value": "8979839049"
+        }
+      ],
+      "observation": {
+        "seq_id": "NC_000007.13",
+        "position": 117199601,
+        "deleted_sequence": "C",
+        "inserted_sequence": "T"
+      },
+      "allele_in_cur_release": {
+        "seq_id": "NC_000007.14",
+        "position": 117559547,
+        "deleted_sequence": "C",
+        "inserted_sequence": "T"
+      },
+      "other_rsids_in_cur_release": [],
+      "previous_release": {
+        "allele": {
+          "seq_id": "NC_000007.14",
+          "position": 117559547,
+          "deleted_sequence": "C",
+          "inserted_sequence": "T"
+        },
+        "rsids": [
+          "77101217"
+        ]
+      },
+      "last_added_to_this_rs": "151"
+    },
+    {
+      "component_ids": [
+        {
+          "type": "clinvar",
+          "value": "RCV000007526.33"
+        },
+        {
+          "type": "clinvar",
+          "value": "RCV000727628.25"
+        },
+        {
+          "type": "clinvar",
+          "value": "RCV001004456.9"
+        },
+        {
+          "type": "clinvar",
+          "value": "RCV001835623.9"
+        },
+        {
+          "type": "clinvar",
+          "value": "RCV002288473.9"
+        },
+        {
+          "type": "clinvar",
+          "value": "RCV002496294.8"
+        },
+        {
+          "type": "clinvar",
+          "value": "RCV003472999.2"
+        },
+        {
+          "type": "frequency",
+          "value": "GnomAD_exomes.4:27604610"
+        },
+        {
+          "type": "frequency",
+          "value": "GnomAD_genomes.4:294735206"
+        },
+        {
+          "type": "frequency",
+          "value": "PAGE_STUDY.1:615763"
+        },
+        {
+          "type": "frequency",
+          "value": "dbGaP_PopFreq.1:1325644635"
+        },
+        {
+          "type": "subsnp",
+          "value": "263193356"
+        },
+        {
+          "type": "subsnp",
+          "value": "3726475923"
+        },
+        {
+          "type": "subsnp",
+          "value": "3771394294"
+        },
+        {
+          "type": "subsnp",
+          "value": "6432289332"
+        },
+        {
+          "type": "subsnp",
+          "value": "6767825669"
+        }
+      ],
+      "observation": {
+        "seq_id": "NC_000007.14",
+        "position": 117559547,
+        "deleted_sequence": "C",
+        "inserted_sequence": "T"
+      },
+      "allele_in_cur_release": {
+        "seq_id": "NC_000007.14",
+        "position": 117559547,
+        "deleted_sequence": "C",
+        "inserted_sequence": "T"
+      },
+      "other_rsids_in_cur_release": [],
+      "previous_release": {
+        "allele": {
+          "seq_id": "NC_000007.14",
+          "position": 117559547,
+          "deleted_sequence": "C",
+          "inserted_sequence": "T"
+        },
+        "rsids": [
+          "77101217"
+        ]
+      },
+      "last_added_to_this_rs": "151"
+    },
+    {
+      "component_ids": [
+        {
+          "type": "subsnp",
+          "value": "161109562"
+        }
+      ],
+      "observation": {
+        "seq_id": "NT_007933.15",
+        "position": 55232444,
+        "deleted_sequence": "C",
+        "inserted_sequence": "T"
+      },
+      "allele_in_cur_release": {
+        "seq_id": "NC_000007.14",
+        "position": 117559547,
+        "deleted_sequence": "C",
+        "inserted_sequence": "T"
+      },
+      "other_rsids_in_cur_release": [],
+      "previous_release": {
+        "allele": {
+          "seq_id": "NC_000007.14",
+          "position": 117559547,
+          "deleted_sequence": "C",
+          "inserted_sequence": "T"
+        },
+        "rsids": [
+          "77101217"
+        ]
+      },
+      "last_added_to_this_rs": "151"
+    }
+  ],
+  "primary_snapshot_data": {
+    "placements_with_allele": [
+      {
+        "seq_id": "NC_000007.14",
+        "is_ptlp": true,
+        "placement_annot": {
+          "seq_type": "refseq_chromosome",
+          "mol_type": "genomic",
+          "seq_id_traits_by_assembly": [
+            {
+              "assembly_name": "GRCh38.p14",
+              "assembly_accession": "GCF_000001405.40",
+              "is_top_level": true,
+              "is_alt": false,
+              "is_patch": false,
+              "is_chromosome": true
+            }
+          ],
+          "is_aln_opposite_orientation": false,
+          "is_mismatch": false
+        },
+        "alleles": [
+          {
+            "allele": {
+              "spdi": {
+                "seq_id": "NC_000007.14",
+                "position": 117559547,
+                "deleted_sequence": "C",
+                "inserted_sequence": "C"
+              }
+            },
+            "hgvs": "NC_000007.14:g.117559548="
+          },
+          {
+            "allele": {
+              "spdi": {
+                "seq_id": "NC_000007.14",
+                "position": 117559547,
+                "deleted_sequence": "C",
+                "inserted_sequence": "T"
+              }
+            },
+            "hgvs": "NC_000007.14:g.117559548C\u003ET"
+          }
+        ]
+      },
+      {
+        "seq_id": "NC_000007.13",
+        "is_ptlp": false,
+        "placement_annot": {
+          "seq_type": "refseq_chromosome",
+          "mol_type": "genomic",
+          "seq_id_traits_by_assembly": [
+            {
+              "assembly_name": "GRCh37.p13",
+              "assembly_accession": "GCF_000001405.25",
+              "is_top_level": true,
+              "is_alt": false,
+              "is_patch": false,
+              "is_chromosome": true
+            }
+          ],
+          "is_aln_opposite_orientation": false,
+          "is_mismatch": false
+        },
+        "alleles": [
+          {
+            "allele": {
+              "spdi": {
+                "seq_id": "NC_000007.13",
+                "position": 117199601,
+                "deleted_sequence": "C",
+                "inserted_sequence": "C"
+              }
+            },
+            "hgvs": "NC_000007.13:g.117199602="
+          },
+          {
+            "allele": {
+              "spdi": {
+                "seq_id": "NC_000007.13",
+                "position": 117199601,
+                "deleted_sequence": "C",
+                "inserted_sequence": "T"
+              }
+            },
+            "hgvs": "NC_000007.13:g.117199602C\u003ET"
+          }
+        ]
+      },
+      {
+        "seq_id": "NG_016465.4",
+        "is_ptlp": false,
+        "placement_annot": {
+          "seq_type": "refseq_genomic",
+          "mol_type": "genomic",
+          "seq_id_traits_by_assembly": [],
+          "is_aln_opposite_orientation": false,
+          "is_mismatch": false
+        },
+        "alleles": [
+          {
+            "allele": {
+              "spdi": {
+                "seq_id": "NG_016465.4",
+                "position": 98764,
+                "deleted_sequence": "C",
+                "inserted_sequence": "C"
+              }
+            },
+            "hgvs": "NG_016465.4:g.98765="
+          },
+          {
+            "allele": {
+              "spdi": {
+                "seq_id": "NG_016465.4",
+                "position": 98764,
+                "deleted_sequence": "C",
+                "inserted_sequence": "T"
+              }
+            },
+            "hgvs": "NG_016465.4:g.98765C\u003ET"
+          }
+        ]
+      },
+      {
+        "seq_id": "NM_000492.4",
+        "is_ptlp": false,
+        "placement_annot": {
+          "seq_type": "refseq_mrna",
+          "mol_type": "rna",
+          "seq_id_traits_by_assembly": [],
+          "is_aln_opposite_orientation": false,
+          "is_mismatch": false
+        },
+        "alleles": [
+          {
+            "allele": {
+              "spdi": {
+                "seq_id": "NM_000492.4",
+                "position": 1546,
+                "deleted_sequence": "C",
+                "inserted_sequence": "C"
+              }
+            },
+            "hgvs": "NM_000492.4:c.1477="
+          },
+          {
+            "allele": {
+              "spdi": {
+                "seq_id": "NM_000492.4",
+                "position": 1546,
+                "deleted_sequence": "C",
+                "inserted_sequence": "T"
+              }
+            },
+            "hgvs": "NM_000492.4:c.1477C\u003ET"
+          }
+        ]
+      },
+      {
+        "seq_id": "NM_000492.3",
+        "is_ptlp": false,
+        "placement_annot": {
+          "seq_type": "refseq_mrna",
+          "mol_type": "rna",
+          "seq_id_traits_by_assembly": [],
+          "is_aln_opposite_orientation": false,
+          "is_mismatch": false
+        },
+        "alleles": [
+          {
+            "allele": {
+              "spdi": {
+                "seq_id": "NM_000492.3",
+                "position": 1608,
+                "deleted_sequence": "C",
+                "inserted_sequence": "C"
+              }
+            },
+            "hgvs": "NM_000492.3:c.1477="
+          },
+          {
+            "allele": {
+              "spdi": {
+                "seq_id": "NM_000492.3",
+                "position": 1608,
+                "deleted_sequence": "C",
+                "inserted_sequence": "T"
+              }
+            },
+            "hgvs": "NM_000492.3:c.1477C\u003ET"
+          }
+        ]
+      },
+      {
+        "seq_id": "NP_000483.3",
+        "is_ptlp": false,
+        "placement_annot": {
+          "seq_type": "refseq_prot",
+          "mol_type": "protein",
+          "seq_id_traits_by_assembly": [],
+          "is_aln_opposite_orientation": false,
+          "is_mismatch": false
+        },
+        "alleles": [
+          {
+            "allele": {
+              "spdi": {
+                "seq_id": "NP_000483.3",
+                "position": 492,
+                "deleted_sequence": "Q",
+                "inserted_sequence": "Q"
+              }
+            },
+            "hgvs": "NP_000483.3:p.Gln493="
+          },
+          {
+            "allele": {
+              "spdi": {
+                "seq_id": "NP_000483.3",
+                "position": 492,
+                "deleted_sequence": "Q",
+                "inserted_sequence": "*"
+              }
+            },
+            "hgvs": "NP_000483.3:p.Gln493Ter"
+          }
+        ]
+      }
+    ],
+    "allele_annotations": [
+      {
+        "frequency": [
+          {
+            "study_name": "ExAC",
+            "study_version": 1,
+            "local_row_id": 8997788,
+            "observation": {
+              "seq_id": "NC_000007.13",
+              "position": 117199601,
+              "deleted_sequence": "C",
+              "inserted_sequence": "C"
+            },
+            "allele_count": 121324,
+            "total_count": 121326
+          },
+          {
+            "study_name": "GnomAD_exomes",
+            "study_version": 4,
+            "local_row_id": 27604610,
+            "observation": {
+              "seq_id": "NC_000007.14",
+              "position": 117559547,
+              "deleted_sequence": "C",
+              "inserted_sequence": "C"
+            },
+            "allele_count": 1398931,
+            "total_count": 1399024
+          },
+          {
+            "study_name": "GnomAD_genomes",
+            "study_version": 4,
+            "local_row_id": 294735206,
+            "observation": {
+              "seq_id": "NC_000007.14",
+              "position": 117559547,
+              "deleted_sequence": "C",
+              "inserted_sequence": "C"
+            },
+            "allele_count": 149099,
+            "total_count": 149100
+          },
+          {
+            "study_name": "PAGE_STUDY",
+            "study_version": 1,
+            "local_row_id": 615763,
+            "observation": {
+              "seq_id": "NC_000007.14",
+              "position": 117559547,
+              "deleted_sequence": "C",
+              "inserted_sequence": "C"
+            },
+            "allele_count": 78701,
+            "total_count": 78702
+          },
+          {
+            "study_name": "PRJEB37766",
+            "study_version": 1,
+            "local_row_id": 1854,
+            "observation": {
+              "seq_id": "NC_000007.13",
+              "position": 117199601,
+              "deleted_sequence": "C",
+              "inserted_sequence": "C"
+            },
+            "allele_count": 3288,
+            "total_count": 3294
+          },
+          {
+            "study_name": "dbGaP_PopFreq",
+            "study_version": 1,
+            "local_row_id": 1325644635,
+            "observation": {
+              "seq_id": "NC_000007.14",
+              "position": 117559547,
+              "deleted_sequence": "C",
+              "inserted_sequence": "C"
+            },
+            "allele_count": 149904,
+            "total_count": 149914
+          }
+        ],
+        "clinical": [],
+        "submissions": [
+          "161109562",
+          "263193356",
+          "483026222",
+          "712801525",
+          "1688917736",
+          "1849949811",
+          "1946218882",
+          "1959046049",
+          "2736720841",
+          "2747910465",
+          "2858212799",
+          "2985418265",
+          "2986049752",
+          "3022772841",
+          "3625936381",
+          "3636872909",
+          "3644952019",
+          "3653307712",
+          "3654179656",
+          "3726475923",
+          "3744295354",
+          "3771394294",
+          "3824311649",
+          "3984448853",
+          "6432289332",
+          "6767825669",
+          "8848151396",
+          "8973021785",
+          "8979839049"
+        ],
+        "assembly_annotation": [
+          {
+            "seq_id": "NC_000007.14",
+            "annotation_release": "Homo sapiens Annotation Release 110",
+            "genes": [
+              {
+                "name": "CF transmembrane conductance regulator",
+                "id": 1080,
+                "locus": "CFTR",
+                "is_pseudo": false,
+                "orientation": "plus",
+                "sequence_ontology": [],
+                "rnas": [
+                  {
+                    "id": "NM_000492.4",
+                    "codon_aligned_transcript_change": {
+                      "seq_id": "NM_000492.4",
+                      "position": 1546,
+                      "deleted_sequence": "CAG",
+                      "inserted_sequence": "CAG"
+                    },
+                    "sequence_ontology": [
+                      {
+                        "name": "coding_sequence_variant",
+                        "accession": "SO:0001580"
+                      }
+                    ],
+                    "product_id": "NP_000483.3",
+                    "protein": {
+                      "variant": {
+                        "spdi": {
+                          "seq_id": "NP_000483.3",
+                          "position": 492,
+                          "deleted_sequence": "Q",
+                          "inserted_sequence": "Q"
+                        }
+                      },
+                      "sequence_ontology": []
+                    },
+                    "hgvs": "NM_000492.4:c.1477="
+                  }
+                ]
+              },
+              {
+                "name": "CFTR antisense RNA 1",
+                "id": 111082987,
+                "locus": "CFTR-AS1",
+                "is_pseudo": false,
+                "orientation": "minus",
+                "sequence_ontology": [],
+                "rnas": [
+                  {
+                    "id": "NR_149084.1",
+                    "sequence_ontology": [
+                      {
+                        "name": "intron_variant",
+                        "accession": "SO:0001627"
+                      }
+                    ]
+                  }
+                ]
+              }
+            ]
+          }
+        ]
+      },
+      {
+        "frequency": [
+          {
+            "study_name": "ExAC",
+            "study_version": 1,
+            "local_row_id": 8997788,
+            "observation": {
+              "seq_id": "NC_000007.13",
+              "position": 117199601,
+              "deleted_sequence": "C",
+              "inserted_sequence": "T"
+            },
+            "allele_count": 2,
+            "total_count": 121326
+          },
+          {
+            "study_name": "GnomAD_exomes",
+            "study_version": 4,
+            "local_row_id": 27604610,
+            "observation": {
+              "seq_id": "NC_000007.14",
+              "position": 117559547,
+              "deleted_sequence": "C",
+              "inserted_sequence": "T"
+            },
+            "allele_count": 93,
+            "total_count": 1399024
+          },
+          {
+            "study_name": "GnomAD_genomes",
+            "study_version": 4,
+            "local_row_id": 294735206,
+            "observation": {
+              "seq_id": "NC_000007.14",
+              "position": 117559547,
+              "deleted_sequence": "C",
+              "inserted_sequence": "T"
+            },
+            "allele_count": 1,
+            "total_count": 149100
+          },
+          {
+            "study_name": "PAGE_STUDY",
+            "study_version": 1,
+            "local_row_id": 615763,
+            "observation": {
+              "seq_id": "NC_000007.14",
+              "position": 117559547,
+              "deleted_sequence": "C",
+              "inserted_sequence": "T"
+            },
+            "allele_count": 1,
+            "total_count": 78702
+          },
+          {
+            "study_name": "PRJEB37766",
+            "study_version": 1,
+            "local_row_id": 1854,
+            "observation": {
+              "seq_id": "NC_000007.13",
+              "position": 117199601,
+              "deleted_sequence": "C",
+              "inserted_sequence": "T"
+            },
+            "allele_count": 6,
+            "total_count": 3294
+          },
+          {
+            "study_name": "dbGaP_PopFreq",
+            "study_version": 1,
+            "local_row_id": 1325644635,
+            "observation": {
+              "seq_id": "NC_000007.14",
+              "position": 117559547,
+              "deleted_sequence": "C",
+              "inserted_sequence": "T"
+            },
+            "allele_count": 10,
+            "total_count": 149914
+          }
+        ],
+        "clinical": [
+          {
+            "accession_version": "RCV000007526.33",
+            "allele_id": 22146,
+            "measure_set_id": 7107,
+            "variant_identifiers": [
+              {
+                "organization": "ARUP Laboratories, Molecular Genetics and Genomics, ARUP Laboratories",
+                "accession": "164525"
+              },
+              {
+                "organization": "CFTR-France",
+                "accession": "c.1477C\u003ET"
+              },
+              {
+                "organization": "CFTR2",
+                "accession": "Q493X"
+              },
+              {
+                "organization": "Genetic Testing Registry (GTR)",
+                "accession": "GTR000074114"
+              },
+              {
+                "organization": "Illumina Laboratory Services, Illumina",
+                "accession": "1344001"
+              },
+              {
+                "organization": "OMIM",
+                "accession": "602421.0003"
+              }
+            ],
+            "refsnp_id": "77101217",
+            "create_date": "2013-04-4T00:00Z",
+            "update_date": "2024-07-29T00:00Z",
+            "last_evaluated_date": "2017-03-17T00:00Z",
+            "review_status": "reviewed_by_expert_panel",
+            "disease_names": [
+              "Cystic fibrosis"
+            ],
+            "clinical_significances": [
+              "pathogenic"
+            ],
+            "disease_ids": [
+              {
+                "organization": "GeneReviews",
+                "accession": "NBK1250"
+              },
+              {
+                "organization": "Genetic Testing Registry (GTR)",
+                "accession": "GTR000004176"
+              },
+              {
+                "organization": "Genetic Testing Registry (GTR)",
+                "accession": "GTR000005248"
+              },
+              {
+                "organization": "Genetic Testing Registry (GTR)",
+                "accession": "GTR000025280"
+              },
+              {
+                "organization": "Genetic Testing Registry (GTR)",
+                "accession": "GTR000028916"
+              },
+              {
+                "organization": "Genetic Testing Registry (GTR)",
+                "accession": "GTR000074114"
+              },
+              {
+                "organization": "Genetic Testing Registry (GTR)",
+                "accession": "GTR000209428"
+              },
+              {
+                "organization": "Genetic Testing Registry (GTR)",
+                "accession": "GTR000226639"
+              },
+              {
+                "organization": "Genetic Testing Registry (GTR)",
+                "accession": "GTR000246717"
+              },
+              {
+                "organization": "Genetic Testing Registry (GTR)",
+                "accession": "GTR000277984"
+              },
+              {
+                "organization": "Genetic Testing Registry (GTR)",
+                "accession": "GTR000320929"
+              },
+              {
+                "organization": "Genetic Testing Registry (GTR)",
+                "accession": "GTR000328569"
+              },
+              {
+                "organization": "Genetic Testing Registry (GTR)",
+                "accession": "GTR000330969"
+              },
+              {
+                "organization": "Genetic Testing Registry (GTR)",
+                "accession": "GTR000332363"
+              },
+              {
+                "organization": "Genetic Testing Registry (GTR)",
+                "accession": "GTR000501120"
+              },
+              {
+                "organization": "Genetic Testing Registry (GTR)",
+                "accession": "GTR000501918"
+              },
+              {
+                "organization": "Genetic Testing Registry (GTR)",
+                "accession": "GTR000501920"
+              },
+              {
+                "organization": "Genetic Testing Registry (GTR)",
+                "accession": "GTR000501921"
+              },
+              {
+                "organization": "Genetic Testing Registry (GTR)",
+                "accession": "GTR000507003"
+              },
+              {
+                "organization": "Genetic Testing Registry (GTR)",
+                "accession": "GTR000507006"
+              },
+              {
+                "organization": "Genetic Testing Registry (GTR)",
+                "accession": "GTR000507010"
+              },
+              {
+                "organization": "Genetic Testing Registry (GTR)",
+                "accession": "GTR000507864"
+              },
+              {
+                "organization": "Genetic Testing Registry (GTR)",
+                "accession": "GTR000507950"
+              },
+              {
+                "organization": "Genetic Testing Registry (GTR)",
+                "accession": "GTR000508782"
+              },
+              {
+                "organization": "Genetic Testing Registry (GTR)",
+                "accession": "GTR000508810"
+              },
+              {
+                "organization": "Genetic Testing Registry (GTR)",
+                "accession": "GTR000508811"
+              },
+              {
+                "organization": "Genetic Testing Registry (GTR)",
+                "accession": "GTR000508812"
+              },
+              {
+                "organization": "Genetic Testing Registry (GTR)",
+                "accession": "GTR000508889"
+              },
+              {
+                "organization": "Genetic Testing Registry (GTR)",
+                "accession": "GTR000508890"
+              },
+              {
+                "organization": "Genetic Testing Registry (GTR)",
+                "accession": "GTR000508893"
+              },
+              {
+                "organization": "Genetic Testing Registry (GTR)",
+                "accession": "GTR000508894"
+              },
+              {
+                "organization": "Genetic Testing Registry (GTR)",
+                "accession": "GTR000514611"
+              },
+              {
+                "organization": "Genetic Testing Registry (GTR)",
+                "accession": "GTR000520059"
+              },
+              {
+                "organization": "Genetic Testing Registry (GTR)",
+                "accession": "GTR000521905"
+              },
+              {
+                "organization": "Genetic Testing Registry (GTR)",
+                "accession": "GTR000522527"
+              },
+              {
+                "organization": "Genetic Testing Registry (GTR)",
+                "accession": "GTR000528606"
+              },
+              {
+                "organization": "Genetic Testing Registry (GTR)",
+                "accession": "GTR000529460"
+              },
+              {
+                "organization": "Genetic Testing Registry (GTR)",
+                "accession": "GTR000530118"
+              },
+              {
+                "organization": "Genetic Testing Registry (GTR)",
+                "accession": "GTR000556535"
+              },
+              {
+                "organization": "Genetic Testing Registry (GTR)",
+                "accession": "GTR000556536"
+              },
+              {
+                "organization": "Genetic Testing Registry (GTR)",
+                "accession": "GTR000558875"
+              },
+              {
+                "organization": "Genetic Testing Registry (GTR)",
+                "accession": "GTR000558928"
+              },
+              {
+                "organization": "Genetic Testing Registry (GTR)",
+                "accession": "GTR000568279"
+              },
+              {
+                "organization": "Genetic Testing Registry (GTR)",
+                "accession": "GTR000569406"
+              },
+              {
+                "organization": "Genetic Testing Registry (GTR)",
+                "accession": "GTR000569426"
+              },
+              {
+                "organization": "Genetic Testing Registry (GTR)",
+                "accession": "GTR000569602"
+              },
+              {
+                "organization": "Genetic Testing Registry (GTR)",
+                "accession": "GTR000569639"
+              },
+              {
+                "organization": "Genetic Testing Registry (GTR)",
+                "accession": "GTR000569790"
+              },
+              {
+                "organization": "Genetic Testing Registry (GTR)",
+                "accession": "GTR000569791"
+              },
+              {
+                "organization": "Genetic Testing Registry (GTR)",
+                "accession": "GTR000569946"
+              },
+              {
+                "organization": "Genetic Testing Registry (GTR)",
+                "accession": "GTR000569960"
+              },
+              {
+                "organization": "Genetic Testing Registry (GTR)",
+                "accession": "GTR000569982"
+              },
+              {
+                "organization": "Genetic Testing Registry (GTR)",
+                "accession": "GTR000569983"
+              },
+              {
+                "organization": "Genetic Testing Registry (GTR)",
+                "accession": "GTR000570010"
+              },
+              {
+                "organization": "Genetic Testing Registry (GTR)",
+                "accession": "GTR000570019"
+              },
+              {
+                "organization": "Genetic Testing Registry (GTR)",
+                "accession": "GTR000570054"
+              },
+              {
+                "organization": "Genetic Testing Registry (GTR)",
+                "accession": "GTR000570317"
+              },
+              {
+                "organization": "Genetic Testing Registry (GTR)",
+                "accession": "GTR000571198"
+              },
+              {
+                "organization": "Genetic Testing Registry (GTR)",
+                "accession": "GTR000576178"
+              },
+              {
+                "organization": "Genetic Testing Registry (GTR)",
+                "accession": "GTR000591289"
+              },
+              {
+                "organization": "Genetic Testing Registry (GTR)",
+                "accession": "GTR000592286"
+              },
+              {
+                "organization": "Genetic Testing Registry (GTR)",
+                "accession": "GTR000592287"
+              },
+              {
+                "organization": "Genetic Testing Registry (GTR)",
+                "accession": "GTR000592289"
+              },
+              {
+                "organization": "Genetic Testing Registry (GTR)",
+                "accession": "GTR000592290"
+              },
+              {
+                "organization": "Genetic Testing Registry (GTR)",
+                "accession": "GTR000592334"
+              },
+              {
+                "organization": "Genetic Testing Registry (GTR)",
+                "accession": "GTR000592960"
+              },
+              {
+                "organization": "Office of Rare Diseases",
+                "accession": "6233"
+              },
+              {
+                "organization": "MONDO",
+                "accession": "MONDO:0009061"
+              },
+              {
+                "organization": "MedGen",
+                "accession": "C0010674"
+              },
+              {
+                "organization": "Orphanet",
+                "accession": "586"
+              },
+              {
+                "organization": "OMIM",
+                "accession": "219700"
+              }
+            ],
+            "origins": [
+              "unknown",
+              "germline"
+            ],
+            "collection_method": [
+              "clinical-testing",
+              "literature-only",
+              "research",
+              "curation",
+              "phenotyping-only"
+            ],
+            "citations": [2236053],
+            "gene_ids": [
+              "1080",
+              "111082987"
+            ]
+          },
+          {
+            "accession_version": "RCV000727628.25",
+            "allele_id": 22146,
+            "measure_set_id": 7107,
+            "variant_identifiers": [
+              {
+                "organization": "ARUP Laboratories, Molecular Genetics and Genomics, ARUP Laboratories",
+                "accession": "164525"
+              },
+              {
+                "organization": "CFTR-France",
+                "accession": "c.1477C\u003ET"
+              },
+              {
+                "organization": "CFTR2",
+                "accession": "Q493X"
+              },
+              {
+                "organization": "Genetic Testing Registry (GTR)",
+                "accession": "GTR000074114"
+              },
+              {
+                "organization": "Illumina Laboratory Services, Illumina",
+                "accession": "1344001"
+              },
+              {
+                "organization": "OMIM",
+                "accession": "602421.0003"
+              }
+            ],
+            "refsnp_id": "77101217",
+            "create_date": "2018-12-16T00:00Z",
+            "update_date": "2024-07-29T00:00Z",
+            "last_evaluated_date": "2023-11-10T00:00Z",
+            "review_status": "criteria_provided_multiple_submitters_no_conflicts",
+            "disease_names": [
+              "not provided"
+            ],
+            "clinical_significances": [
+              "pathogenic"
+            ],
+            "disease_ids": [
+              {
+                "organization": "MedGen",
+                "accession": "C3661900"
+              }
+            ],
+            "origins": [
+              "germline"
+            ],
+            "collection_method": [
+              "clinical-testing"
+            ],
+            "citations": [],
+            "gene_ids": [
+              "1080",
+              "111082987"
+            ]
+          },
+          {
+            "accession_version": "RCV001004456.9",
+            "allele_id": 22146,
+            "measure_set_id": 7107,
+            "variant_identifiers": [
+              {
+                "organization": "ARUP Laboratories, Molecular Genetics and Genomics, ARUP Laboratories",
+                "accession": "164525"
+              },
+              {
+                "organization": "CFTR-France",
+                "accession": "c.1477C\u003ET"
+              },
+              {
+                "organization": "CFTR2",
+                "accession": "Q493X"
+              },
+              {
+                "organization": "Genetic Testing Registry (GTR)",
+                "accession": "GTR000074114"
+              },
+              {
+                "organization": "Illumina Laboratory Services, Illumina",
+                "accession": "1344001"
+              },
+              {
+                "organization": "OMIM",
+                "accession": "602421.0003"
+              }
+            ],
+            "refsnp_id": "77101217",
+            "create_date": "2020-03-1T00:00Z",
+            "update_date": "2024-07-29T00:00Z",
+            "review_status": "criteria_provided_single_submitter",
+            "disease_names": [
+              "Congenital bilateral aplasia of vas deferens from CFTR mutation",
+              "Cystic fibrosis"
+            ],
+            "clinical_significances": [
+              "pathogenic"
+            ],
+            "disease_ids": [
+              {
+                "organization": "GeneReviews",
+                "accession": "NBK1250"
+              },
+              {
+                "organization": "Genetic Testing Registry (GTR)",
+                "accession": "GTR000004176"
+              },
+              {
+                "organization": "Genetic Testing Registry (GTR)",
+                "accession": "GTR000005248"
+              },
+              {
+                "organization": "Genetic Testing Registry (GTR)",
+                "accession": "GTR000025280"
+              },
+              {
+                "organization": "Genetic Testing Registry (GTR)",
+                "accession": "GTR000028916"
+              },
+              {
+                "organization": "Genetic Testing Registry (GTR)",
+                "accession": "GTR000074114"
+              },
+              {
+                "organization": "Genetic Testing Registry (GTR)",
+                "accession": "GTR000209428"
+              },
+              {
+                "organization": "Genetic Testing Registry (GTR)",
+                "accession": "GTR000226639"
+              },
+              {
+                "organization": "Genetic Testing Registry (GTR)",
+                "accession": "GTR000246717"
+              },
+              {
+                "organization": "Genetic Testing Registry (GTR)",
+                "accession": "GTR000277984"
+              },
+              {
+                "organization": "Genetic Testing Registry (GTR)",
+                "accession": "GTR000320929"
+              },
+              {
+                "organization": "Genetic Testing Registry (GTR)",
+                "accession": "GTR000328569"
+              },
+              {
+                "organization": "Genetic Testing Registry (GTR)",
+                "accession": "GTR000330969"
+              },
+              {
+                "organization": "Genetic Testing Registry (GTR)",
+                "accession": "GTR000332363"
+              },
+              {
+                "organization": "Genetic Testing Registry (GTR)",
+                "accession": "GTR000501120"
+              },
+              {
+                "organization": "Genetic Testing Registry (GTR)",
+                "accession": "GTR000501918"
+              },
+              {
+                "organization": "Genetic Testing Registry (GTR)",
+                "accession": "GTR000501920"
+              },
+              {
+                "organization": "Genetic Testing Registry (GTR)",
+                "accession": "GTR000501921"
+              },
+              {
+                "organization": "Genetic Testing Registry (GTR)",
+                "accession": "GTR000507003"
+              },
+              {
+                "organization": "Genetic Testing Registry (GTR)",
+                "accession": "GTR000507006"
+              },
+              {
+                "organization": "Genetic Testing Registry (GTR)",
+                "accession": "GTR000507010"
+              },
+              {
+                "organization": "Genetic Testing Registry (GTR)",
+                "accession": "GTR000507864"
+              },
+              {
+                "organization": "Genetic Testing Registry (GTR)",
+                "accession": "GTR000507950"
+              },
+              {
+                "organization": "Genetic Testing Registry (GTR)",
+                "accession": "GTR000508782"
+              },
+              {
+                "organization": "Genetic Testing Registry (GTR)",
+                "accession": "GTR000508810"
+              },
+              {
+                "organization": "Genetic Testing Registry (GTR)",
+                "accession": "GTR000508811"
+              },
+              {
+                "organization": "Genetic Testing Registry (GTR)",
+                "accession": "GTR000508812"
+              },
+              {
+                "organization": "Genetic Testing Registry (GTR)",
+                "accession": "GTR000508889"
+              },
+              {
+                "organization": "Genetic Testing Registry (GTR)",
+                "accession": "GTR000508890"
+              },
+              {
+                "organization": "Genetic Testing Registry (GTR)",
+                "accession": "GTR000508893"
+              },
+              {
+                "organization": "Genetic Testing Registry (GTR)",
+                "accession": "GTR000508894"
+              },
+              {
+                "organization": "Genetic Testing Registry (GTR)",
+                "accession": "GTR000514611"
+              },
+              {
+                "organization": "Genetic Testing Registry (GTR)",
+                "accession": "GTR000520059"
+              },
+              {
+                "organization": "Genetic Testing Registry (GTR)",
+                "accession": "GTR000521905"
+              },
+              {
+                "organization": "Genetic Testing Registry (GTR)",
+                "accession": "GTR000522527"
+              },
+              {
+                "organization": "Genetic Testing Registry (GTR)",
+                "accession": "GTR000528606"
+              },
+              {
+                "organization": "Genetic Testing Registry (GTR)",
+                "accession": "GTR000529460"
+              },
+              {
+                "organization": "Genetic Testing Registry (GTR)",
+                "accession": "GTR000530118"
+              },
+              {
+                "organization": "Genetic Testing Registry (GTR)",
+                "accession": "GTR000556535"
+              },
+              {
+                "organization": "Genetic Testing Registry (GTR)",
+                "accession": "GTR000556536"
+              },
+              {
+                "organization": "Genetic Testing Registry (GTR)",
+                "accession": "GTR000558875"
+              },
+              {
+                "organization": "Genetic Testing Registry (GTR)",
+                "accession": "GTR000558928"
+              },
+              {
+                "organization": "Genetic Testing Registry (GTR)",
+                "accession": "GTR000568279"
+              },
+              {
+                "organization": "Genetic Testing Registry (GTR)",
+                "accession": "GTR000569406"
+              },
+              {
+                "organization": "Genetic Testing Registry (GTR)",
+                "accession": "GTR000569426"
+              },
+              {
+                "organization": "Genetic Testing Registry (GTR)",
+                "accession": "GTR000569602"
+              },
+              {
+                "organization": "Genetic Testing Registry (GTR)",
+                "accession": "GTR000569639"
+              },
+              {
+                "organization": "Genetic Testing Registry (GTR)",
+                "accession": "GTR000569790"
+              },
+              {
+                "organization": "Genetic Testing Registry (GTR)",
+                "accession": "GTR000569791"
+              },
+              {
+                "organization": "Genetic Testing Registry (GTR)",
+                "accession": "GTR000569946"
+              },
+              {
+                "organization": "Genetic Testing Registry (GTR)",
+                "accession": "GTR000569960"
+              },
+              {
+                "organization": "Genetic Testing Registry (GTR)",
+                "accession": "GTR000569982"
+              },
+              {
+                "organization": "Genetic Testing Registry (GTR)",
+                "accession": "GTR000569983"
+              },
+              {
+                "organization": "Genetic Testing Registry (GTR)",
+                "accession": "GTR000570010"
+              },
+              {
+                "organization": "Genetic Testing Registry (GTR)",
+                "accession": "GTR000570019"
+              },
+              {
+                "organization": "Genetic Testing Registry (GTR)",
+                "accession": "GTR000570054"
+              },
+              {
+                "organization": "Genetic Testing Registry (GTR)",
+                "accession": "GTR000570317"
+              },
+              {
+                "organization": "Genetic Testing Registry (GTR)",
+                "accession": "GTR000571198"
+              },
+              {
+                "organization": "Genetic Testing Registry (GTR)",
+                "accession": "GTR000576178"
+              },
+              {
+                "organization": "Genetic Testing Registry (GTR)",
+                "accession": "GTR000591289"
+              },
+              {
+                "organization": "Genetic Testing Registry (GTR)",
+                "accession": "GTR000592286"
+              },
+              {
+                "organization": "Genetic Testing Registry (GTR)",
+                "accession": "GTR000592287"
+              },
+              {
+                "organization": "Genetic Testing Registry (GTR)",
+                "accession": "GTR000592289"
+              },
+              {
+                "organization": "Genetic Testing Registry (GTR)",
+                "accession": "GTR000592290"
+              },
+              {
+                "organization": "Genetic Testing Registry (GTR)",
+                "accession": "GTR000592334"
+              },
+              {
+                "organization": "Genetic Testing Registry (GTR)",
+                "accession": "GTR000592960"
+              },
+              {
+                "organization": "Office of Rare Diseases",
+                "accession": "6233"
+              },
+              {
+                "organization": "GeneReviews",
+                "accession": "NBK1250"
+              },
+              {
+                "organization": "Genetic Testing Registry (GTR)",
+                "accession": "GTR000028916"
+              },
+              {
+                "organization": "Genetic Testing Registry (GTR)",
+                "accession": "GTR000508890"
+              },
+              {
+                "organization": "Genetic Testing Registry (GTR)",
+                "accession": "GTR000508893"
+              },
+              {
+                "organization": "Genetic Testing Registry (GTR)",
+                "accession": "GTR000528606"
+              },
+              {
+                "organization": "Genetic Testing Registry (GTR)",
+                "accession": "GTR000558875"
+              },
+              {
+                "organization": "Genetic Testing Registry (GTR)",
+                "accession": "GTR000558928"
+              },
+              {
+                "organization": "Genetic Testing Registry (GTR)",
+                "accession": "GTR000569639"
+              },
+              {
+                "organization": "Office of Rare Diseases",
+                "accession": "15243"
+              },
+              {
+                "organization": "MONDO",
+                "accession": "MONDO:0009061"
+              },
+              {
+                "organization": "MedGen",
+                "accession": "C0010674"
+              },
+              {
+                "organization": "Orphanet",
+                "accession": "586"
+              },
+              {
+                "organization": "OMIM",
+                "accession": "219700"
+              },
+              {
+                "organization": "MONDO",
+                "accession": "MONDO:0010178"
+              },
+              {
+                "organization": "MedGen",
+                "accession": "C0403814"
+              },
+              {
+                "organization": "Orphanet",
+                "accession": "48"
+              },
+              {
+                "organization": "OMIM",
+                "accession": "277180"
+              }
+            ],
+            "origins": [
+              "germline"
+            ],
+            "collection_method": [
+              "clinical-testing"
+            ],
+            "citations": [],
+            "gene_ids": [
+              "1080",
+              "111082987"
+            ]
+          },
+          {
+            "accession_version": "RCV001835623.9",
+            "allele_id": 22146,
+            "measure_set_id": 7107,
+            "variant_identifiers": [
+              {
+                "organization": "ARUP Laboratories, Molecular Genetics and Genomics, ARUP Laboratories",
+                "accession": "164525"
+              },
+              {
+                "organization": "CFTR-France",
+                "accession": "c.1477C\u003ET"
+              },
+              {
+                "organization": "CFTR2",
+                "accession": "Q493X"
+              },
+              {
+                "organization": "Genetic Testing Registry (GTR)",
+                "accession": "GTR000074114"
+              },
+              {
+                "organization": "Illumina Laboratory Services, Illumina",
+                "accession": "1344001"
+              },
+              {
+                "organization": "OMIM",
+                "accession": "602421.0003"
+              }
+            ],
+            "refsnp_id": "77101217",
+            "create_date": "2022-02-13T00:00Z",
+            "update_date": "2024-07-29T00:00Z",
+            "last_evaluated_date": "2017-03-17T00:00Z",
+            "review_status": "no_assertion_criteria_provided",
+            "disease_names": [
+              "CFTR-related disorder"
+            ],
+            "clinical_significances": [
+              "pathogenic"
+            ],
+            "disease_ids": [],
+            "origins": [
+              "germline"
+            ],
+            "collection_method": [
+              "clinical-testing"
+            ],
+            "citations": [],
+            "gene_ids": [
+              "1080",
+              "111082987"
+            ]
+          },
+          {
+            "accession_version": "RCV002288473.9",
+            "allele_id": 22146,
+            "measure_set_id": 7107,
+            "variant_identifiers": [
+              {
+                "organization": "ARUP Laboratories, Molecular Genetics and Genomics, ARUP Laboratories",
+                "accession": "164525"
+              },
+              {
+                "organization": "CFTR-France",
+                "accession": "c.1477C\u003ET"
+              },
+              {
+                "organization": "CFTR2",
+                "accession": "Q493X"
+              },
+              {
+                "organization": "Genetic Testing Registry (GTR)",
+                "accession": "GTR000074114"
+              },
+              {
+                "organization": "Illumina Laboratory Services, Illumina",
+                "accession": "1344001"
+              },
+              {
+                "organization": "OMIM",
+                "accession": "602421.0003"
+              }
+            ],
+            "refsnp_id": "77101217",
+            "create_date": "2022-10-15T00:00Z",
+            "update_date": "2024-07-29T00:00Z",
+            "last_evaluated_date": "2021-12-23T00:00Z",
+            "review_status": "criteria_provided_single_submitter",
+            "disease_names": [
+              "Congenital bilateral aplasia of vas deferens from CFTR mutation"
+            ],
+            "clinical_significances": [
+              "pathogenic"
+            ],
+            "disease_ids": [
+              {
+                "organization": "GeneReviews",
+                "accession": "NBK1250"
+              },
+              {
+                "organization": "Genetic Testing Registry (GTR)",
+                "accession": "GTR000028916"
+              },
+              {
+                "organization": "Genetic Testing Registry (GTR)",
+                "accession": "GTR000508890"
+              },
+              {
+                "organization": "Genetic Testing Registry (GTR)",
+                "accession": "GTR000508893"
+              },
+              {
+                "organization": "Genetic Testing Registry (GTR)",
+                "accession": "GTR000528606"
+              },
+              {
+                "organization": "Genetic Testing Registry (GTR)",
+                "accession": "GTR000558875"
+              },
+              {
+                "organization": "Genetic Testing Registry (GTR)",
+                "accession": "GTR000558928"
+              },
+              {
+                "organization": "Genetic Testing Registry (GTR)",
+                "accession": "GTR000569639"
+              },
+              {
+                "organization": "Office of Rare Diseases",
+                "accession": "15243"
+              },
+              {
+                "organization": "MONDO",
+                "accession": "MONDO:0010178"
+              },
+              {
+                "organization": "MedGen",
+                "accession": "C0403814"
+              },
+              {
+                "organization": "Orphanet",
+                "accession": "48"
+              },
+              {
+                "organization": "OMIM",
+                "accession": "277180"
+              }
+            ],
+            "origins": [
+              "germline"
+            ],
+            "collection_method": [
+              "clinical-testing"
+            ],
+            "citations": [],
+            "gene_ids": [
+              "1080",
+              "111082987"
+            ]
+          },
+          {
+            "accession_version": "RCV002496294.8",
+            "allele_id": 22146,
+            "measure_set_id": 7107,
+            "variant_identifiers": [
+              {
+                "organization": "ARUP Laboratories, Molecular Genetics and Genomics, ARUP Laboratories",
+                "accession": "164525"
+              },
+              {
+                "organization": "CFTR-France",
+                "accession": "c.1477C\u003ET"
+              },
+              {
+                "organization": "CFTR2",
+                "accession": "Q493X"
+              },
+              {
+                "organization": "Genetic Testing Registry (GTR)",
+                "accession": "GTR000074114"
+              },
+              {
+                "organization": "Illumina Laboratory Services, Illumina",
+                "accession": "1344001"
+              },
+              {
+                "organization": "OMIM",
+                "accession": "602421.0003"
+              }
+            ],
+            "refsnp_id": "77101217",
+            "create_date": "2022-12-31T00:00Z",
+            "update_date": "2024-07-29T00:00Z",
+            "last_evaluated_date": "2022-02-14T00:00Z",
+            "review_status": "criteria_provided_single_submitter",
+            "disease_names": [
+              "Bronchiectasis with or without elevated sweat chloride 1",
+              "Congenital bilateral aplasia of vas deferens from CFTR mutation",
+              "Cystic fibrosis",
+              "Hereditary pancreatitis"
+            ],
+            "clinical_significances": [
+              "pathogenic"
+            ],
+            "disease_ids": [
+              {
+                "organization": "Office of Rare Diseases",
+                "accession": "18054"
+              },
+              {
+                "organization": "GeneReviews",
+                "accession": "NBK1250"
+              },
+              {
+                "organization": "Genetic Testing Registry (GTR)",
+                "accession": "GTR000004176"
+              },
+              {
+                "organization": "Genetic Testing Registry (GTR)",
+                "accession": "GTR000005248"
+              },
+              {
+                "organization": "Genetic Testing Registry (GTR)",
+                "accession": "GTR000025280"
+              },
+              {
+                "organization": "Genetic Testing Registry (GTR)",
+                "accession": "GTR000028916"
+              },
+              {
+                "organization": "Genetic Testing Registry (GTR)",
+                "accession": "GTR000074114"
+              },
+              {
+                "organization": "Genetic Testing Registry (GTR)",
+                "accession": "GTR000209428"
+              },
+              {
+                "organization": "Genetic Testing Registry (GTR)",
+                "accession": "GTR000226639"
+              },
+              {
+                "organization": "Genetic Testing Registry (GTR)",
+                "accession": "GTR000246717"
+              },
+              {
+                "organization": "Genetic Testing Registry (GTR)",
+                "accession": "GTR000277984"
+              },
+              {
+                "organization": "Genetic Testing Registry (GTR)",
+                "accession": "GTR000320929"
+              },
+              {
+                "organization": "Genetic Testing Registry (GTR)",
+                "accession": "GTR000328569"
+              },
+              {
+                "organization": "Genetic Testing Registry (GTR)",
+                "accession": "GTR000330969"
+              },
+              {
+                "organization": "Genetic Testing Registry (GTR)",
+                "accession": "GTR000332363"
+              },
+              {
+                "organization": "Genetic Testing Registry (GTR)",
+                "accession": "GTR000501120"
+              },
+              {
+                "organization": "Genetic Testing Registry (GTR)",
+                "accession": "GTR000501918"
+              },
+              {
+                "organization": "Genetic Testing Registry (GTR)",
+                "accession": "GTR000501920"
+              },
+              {
+                "organization": "Genetic Testing Registry (GTR)",
+                "accession": "GTR000501921"
+              },
+              {
+                "organization": "Genetic Testing Registry (GTR)",
+                "accession": "GTR000507003"
+              },
+              {
+                "organization": "Genetic Testing Registry (GTR)",
+                "accession": "GTR000507006"
+              },
+              {
+                "organization": "Genetic Testing Registry (GTR)",
+                "accession": "GTR000507010"
+              },
+              {
+                "organization": "Genetic Testing Registry (GTR)",
+                "accession": "GTR000507864"
+              },
+              {
+                "organization": "Genetic Testing Registry (GTR)",
+                "accession": "GTR000507950"
+              },
+              {
+                "organization": "Genetic Testing Registry (GTR)",
+                "accession": "GTR000508782"
+              },
+              {
+                "organization": "Genetic Testing Registry (GTR)",
+                "accession": "GTR000508810"
+              },
+              {
+                "organization": "Genetic Testing Registry (GTR)",
+                "accession": "GTR000508811"
+              },
+              {
+                "organization": "Genetic Testing Registry (GTR)",
+                "accession": "GTR000508812"
+              },
+              {
+                "organization": "Genetic Testing Registry (GTR)",
+                "accession": "GTR000508889"
+              },
+              {
+                "organization": "Genetic Testing Registry (GTR)",
+                "accession": "GTR000508890"
+              },
+              {
+                "organization": "Genetic Testing Registry (GTR)",
+                "accession": "GTR000508893"
+              },
+              {
+                "organization": "Genetic Testing Registry (GTR)",
+                "accession": "GTR000508894"
+              },
+              {
+                "organization": "Genetic Testing Registry (GTR)",
+                "accession": "GTR000514611"
+              },
+              {
+                "organization": "Genetic Testing Registry (GTR)",
+                "accession": "GTR000520059"
+              },
+              {
+                "organization": "Genetic Testing Registry (GTR)",
+                "accession": "GTR000521905"
+              },
+              {
+                "organization": "Genetic Testing Registry (GTR)",
+                "accession": "GTR000522527"
+              },
+              {
+                "organization": "Genetic Testing Registry (GTR)",
+                "accession": "GTR000528606"
+              },
+              {
+                "organization": "Genetic Testing Registry (GTR)",
+                "accession": "GTR000529460"
+              },
+              {
+                "organization": "Genetic Testing Registry (GTR)",
+                "accession": "GTR000530118"
+              },
+              {
+                "organization": "Genetic Testing Registry (GTR)",
+                "accession": "GTR000556535"
+              },
+              {
+                "organization": "Genetic Testing Registry (GTR)",
+                "accession": "GTR000556536"
+              },
+              {
+                "organization": "Genetic Testing Registry (GTR)",
+                "accession": "GTR000558875"
+              },
+              {
+                "organization": "Genetic Testing Registry (GTR)",
+                "accession": "GTR000558928"
+              },
+              {
+                "organization": "Genetic Testing Registry (GTR)",
+                "accession": "GTR000568279"
+              },
+              {
+                "organization": "Genetic Testing Registry (GTR)",
+                "accession": "GTR000569406"
+              },
+              {
+                "organization": "Genetic Testing Registry (GTR)",
+                "accession": "GTR000569426"
+              },
+              {
+                "organization": "Genetic Testing Registry (GTR)",
+                "accession": "GTR000569602"
+              },
+              {
+                "organization": "Genetic Testing Registry (GTR)",
+                "accession": "GTR000569639"
+              },
+              {
+                "organization": "Genetic Testing Registry (GTR)",
+                "accession": "GTR000569790"
+              },
+              {
+                "organization": "Genetic Testing Registry (GTR)",
+                "accession": "GTR000569791"
+              },
+              {
+                "organization": "Genetic Testing Registry (GTR)",
+                "accession": "GTR000569946"
+              },
+              {
+                "organization": "Genetic Testing Registry (GTR)",
+                "accession": "GTR000569960"
+              },
+              {
+                "organization": "Genetic Testing Registry (GTR)",
+                "accession": "GTR000569982"
+              },
+              {
+                "organization": "Genetic Testing Registry (GTR)",
+                "accession": "GTR000569983"
+              },
+              {
+                "organization": "Genetic Testing Registry (GTR)",
+                "accession": "GTR000570010"
+              },
+              {
+                "organization": "Genetic Testing Registry (GTR)",
+                "accession": "GTR000570019"
+              },
+              {
+                "organization": "Genetic Testing Registry (GTR)",
+                "accession": "GTR000570054"
+              },
+              {
+                "organization": "Genetic Testing Registry (GTR)",
+                "accession": "GTR000570317"
+              },
+              {
+                "organization": "Genetic Testing Registry (GTR)",
+                "accession": "GTR000571198"
+              },
+              {
+                "organization": "Genetic Testing Registry (GTR)",
+                "accession": "GTR000576178"
+              },
+              {
+                "organization": "Genetic Testing Registry (GTR)",
+                "accession": "GTR000591289"
+              },
+              {
+                "organization": "Genetic Testing Registry (GTR)",
+                "accession": "GTR000592286"
+              },
+              {
+                "organization": "Genetic Testing Registry (GTR)",
+                "accession": "GTR000592287"
+              },
+              {
+                "organization": "Genetic Testing Registry (GTR)",
+                "accession": "GTR000592289"
+              },
+              {
+                "organization": "Genetic Testing Registry (GTR)",
+                "accession": "GTR000592290"
+              },
+              {
+                "organization": "Genetic Testing Registry (GTR)",
+                "accession": "GTR000592334"
+              },
+              {
+                "organization": "Genetic Testing Registry (GTR)",
+                "accession": "GTR000592960"
+              },
+              {
+                "organization": "Office of Rare Diseases",
+                "accession": "6233"
+              },
+              {
+                "organization": "GeneReviews",
+                "accession": "NBK84399"
+              },
+              {
+                "organization": "GeneReviews",
+                "accession": "NBK84399"
+              },
+              {
+                "organization": "Office of Rare Diseases",
+                "accession": "6632"
+              },
+              {
+                "organization": "GeneReviews",
+                "accession": "NBK1250"
+              },
+              {
+                "organization": "Genetic Testing Registry (GTR)",
+                "accession": "GTR000028916"
+              },
+              {
+                "organization": "Genetic Testing Registry (GTR)",
+                "accession": "GTR000508890"
+              },
+              {
+                "organization": "Genetic Testing Registry (GTR)",
+                "accession": "GTR000508893"
+              },
+              {
+                "organization": "Genetic Testing Registry (GTR)",
+                "accession": "GTR000528606"
+              },
+              {
+                "organization": "Genetic Testing Registry (GTR)",
+                "accession": "GTR000558875"
+              },
+              {
+                "organization": "Genetic Testing Registry (GTR)",
+                "accession": "GTR000558928"
+              },
+              {
+                "organization": "Genetic Testing Registry (GTR)",
+                "accession": "GTR000569639"
+              },
+              {
+                "organization": "Office of Rare Diseases",
+                "accession": "15243"
+              },
+              {
+                "organization": "MONDO",
+                "accession": "MONDO:0008887"
+              },
+              {
+                "organization": "MedGen",
+                "accession": "C2749757"
+              },
+              {
+                "organization": "Orphanet",
+                "accession": "60033"
+              },
+              {
+                "organization": "OMIM",
+                "accession": "211400"
+              },
+              {
+                "organization": "MONDO",
+                "accession": "MONDO:0009061"
+              },
+              {
+                "organization": "MedGen",
+                "accession": "C0010674"
+              },
+              {
+                "organization": "Orphanet",
+                "accession": "586"
+              },
+              {
+                "organization": "OMIM",
+                "accession": "219700"
+              },
+              {
+                "organization": "MONDO",
+                "accession": "MONDO:0008185"
+              },
+              {
+                "organization": "MedGen",
+                "accession": "C0238339"
+              },
+              {
+                "organization": "Orphanet",
+                "accession": "676"
+              },
+              {
+                "organization": "OMIM",
+                "accession": "167800"
+              },
+              {
+                "organization": "MONDO",
+                "accession": "MONDO:0010178"
+              },
+              {
+                "organization": "MedGen",
+                "accession": "C0403814"
+              },
+              {
+                "organization": "Orphanet",
+                "accession": "48"
+              },
+              {
+                "organization": "OMIM",
+                "accession": "277180"
+              }
+            ],
+            "origins": [
+              "unknown"
+            ],
+            "collection_method": [
+              "clinical-testing"
+            ],
+            "citations": [],
+            "gene_ids": [
+              "1080",
+              "111082987"
+            ]
+          },
+          {
+            "accession_version": "RCV003472999.2",
+            "allele_id": 22146,
+            "measure_set_id": 7107,
+            "variant_identifiers": [
+              {
+                "organization": "ARUP Laboratories, Molecular Genetics and Genomics, ARUP Laboratories",
+                "accession": "164525"
+              },
+              {
+                "organization": "CFTR-France",
+                "accession": "c.1477C\u003ET"
+              },
+              {
+                "organization": "CFTR2",
+                "accession": "Q493X"
+              },
+              {
+                "organization": "Genetic Testing Registry (GTR)",
+                "accession": "GTR000074114"
+              },
+              {
+                "organization": "Illumina Laboratory Services, Illumina",
+                "accession": "1344001"
+              },
+              {
+                "organization": "OMIM",
+                "accession": "602421.0003"
+              }
+            ],
+            "refsnp_id": "77101217",
+            "create_date": "2023-12-30T00:00Z",
+            "update_date": "2024-07-29T00:00Z",
+            "last_evaluated_date": "2024-03-19T00:00Z",
+            "review_status": "criteria_provided_single_submitter",
+            "disease_names": [
+              "Bronchiectasis with or without elevated sweat chloride 1"
+            ],
+            "clinical_significances": [
+              "pathogenic"
+            ],
+            "disease_ids": [
+              {
+                "organization": "Office of Rare Diseases",
+                "accession": "18054"
+              },
+              {
+                "organization": "MONDO",
+                "accession": "MONDO:0008887"
+              },
+              {
+                "organization": "MedGen",
+                "accession": "C2749757"
+              },
+              {
+                "organization": "Orphanet",
+                "accession": "60033"
+              },
+              {
+                "organization": "OMIM",
+                "accession": "211400"
+              }
+            ],
+            "origins": [
+              "unknown"
+            ],
+            "collection_method": [
+              "clinical-testing"
+            ],
+            "citations": [],
+            "gene_ids": [
+              "1080",
+              "111082987"
+            ]
+          }
+        ],
+        "submissions": [
+          "161109562",
+          "263193356",
+          "483026222",
+          "712801525",
+          "1688917736",
+          "1849949811",
+          "1946218882",
+          "1959046049",
+          "2736720841",
+          "2747910465",
+          "2858212799",
+          "2985418265",
+          "2986049752",
+          "3022772841",
+          "3625936381",
+          "3636872909",
+          "3644952019",
+          "3653307712",
+          "3654179656",
+          "3726475923",
+          "3744295354",
+          "3771394294",
+          "3824311649",
+          "3984448853",
+          "6432289332",
+          "6767825669",
+          "8848151396",
+          "8973021785",
+          "8979839049"
+        ],
+        "assembly_annotation": [
+          {
+            "seq_id": "NC_000007.14",
+            "annotation_release": "Homo sapiens Annotation Release 110",
+            "genes": [
+              {
+                "name": "CF transmembrane conductance regulator",
+                "id": 1080,
+                "locus": "CFTR",
+                "is_pseudo": false,
+                "orientation": "plus",
+                "sequence_ontology": [],
+                "rnas": [
+                  {
+                    "id": "NM_000492.4",
+                    "codon_aligned_transcript_change": {
+                      "seq_id": "NM_000492.4",
+                      "position": 1546,
+                      "deleted_sequence": "CAG",
+                      "inserted_sequence": "TAG"
+                    },
+                    "sequence_ontology": [
+                      {
+                        "name": "coding_sequence_variant",
+                        "accession": "SO:0001580"
+                      }
+                    ],
+                    "product_id": "NP_000483.3",
+                    "protein": {
+                      "variant": {
+                        "spdi": {
+                          "seq_id": "NP_000483.3",
+                          "position": 492,
+                          "deleted_sequence": "Q",
+                          "inserted_sequence": "*"
+                        }
+                      },
+                      "sequence_ontology": [
+                        {
+                          "name": "stop_gained",
+                          "accession": "SO:0001587"
+                        }
+                      ]
+                    },
+                    "hgvs": "NM_000492.4:c.1477C\u003ET"
+                  }
+                ]
+              },
+              {
+                "name": "CFTR antisense RNA 1",
+                "id": 111082987,
+                "locus": "CFTR-AS1",
+                "is_pseudo": false,
+                "orientation": "minus",
+                "sequence_ontology": [],
+                "rnas": [
+                  {
+                    "id": "NR_149084.1",
+                    "sequence_ontology": [
+                      {
+                        "name": "intron_variant",
+                        "accession": "SO:0001627"
+                      }
+                    ]
+                  }
+                ]
+              }
+            ]
+          }
+        ]
+      }
+    ],
+    "support": [
+      {
+        "id": {
+          "type": "subsnp",
+          "value": "ss161109562"
+        },
+        "revision_added": "131",
+        "create_date": "2009-12-1T15:45Z",
+        "submitter_handle": "ILLUMINA"
+      },
+      {
+        "id": {
+          "type": "subsnp",
+          "value": "ss263193356"
+        },
+        "revision_added": "133",
+        "create_date": "2010-10-28T12:51Z",
+        "submitter_handle": "OMIM-CURATED-RECORDS"
+      },
+      {
+        "id": {
+          "type": "subsnp",
+          "value": "ss483026222"
+        },
+        "revision_added": "146",
+        "create_date": "2015-09-8T16:25Z",
+        "submitter_handle": "ILLUMINA"
+      },
+      {
+        "id": {
+          "type": "subsnp",
+          "value": "ss712801525"
+        },
+        "revision_added": "138",
+        "create_date": "2013-04-25T23:59Z",
+        "submitter_handle": "NHLBI-ESP"
+      },
+      {
+        "id": {
+          "type": "subsnp",
+          "value": "ss1688917736"
+        },
+        "revision_added": "144",
+        "create_date": "2015-04-1T10:43Z",
+        "submitter_handle": "EVA_EXAC"
+      },
+      {
+        "id": {
+          "type": "subsnp",
+          "value": "ss1849949811"
+        },
+        "revision_added": "147",
+        "create_date": "2016-02-12T12:05Z",
+        "submitter_handle": "YSAMUELS"
+      },
+      {
+        "id": {
+          "type": "subsnp",
+          "value": "ss1946218882"
+        },
+        "revision_added": "147",
+        "create_date": "2016-02-12T12:05Z",
+        "submitter_handle": "ILLUMINA"
+      },
+      {
+        "id": {
+          "type": "subsnp",
+          "value": "ss1959046049"
+        },
+        "revision_added": "147",
+        "create_date": "2016-02-12T12:05Z",
+        "submitter_handle": "ILLUMINA"
+      },
+      {
+        "id": {
+          "type": "subsnp",
+          "value": "ss2736720841"
+        },
+        "revision_added": "151",
+        "create_date": "2017-11-8T11:52Z",
+        "submitter_handle": "GNOMAD"
+      },
+      {
+        "id": {
+          "type": "subsnp",
+          "value": "ss2747910465"
+        },
+        "revision_added": "151",
+        "create_date": "2017-11-8T11:52Z",
+        "submitter_handle": "GNOMAD"
+      },
+      {
+        "id": {
+          "type": "subsnp",
+          "value": "ss2858212799"
+        },
+        "revision_added": "151",
+        "create_date": "2017-11-8T11:52Z",
+        "submitter_handle": "GNOMAD"
+      },
+      {
+        "id": {
+          "type": "subsnp",
+          "value": "ss2985418265"
+        },
+        "revision_added": "151",
+        "create_date": "2017-11-8T11:52Z",
+        "submitter_handle": "AFFY"
+      },
+      {
+        "id": {
+          "type": "subsnp",
+          "value": "ss2986049752"
+        },
+        "revision_added": "151",
+        "create_date": "2017-11-8T11:52Z",
+        "submitter_handle": "AFFY"
+      },
+      {
+        "id": {
+          "type": "subsnp",
+          "value": "ss3022772841"
+        },
+        "revision_added": "151",
+        "create_date": "2017-11-8T11:52Z",
+        "submitter_handle": "ILLUMINA"
+      },
+      {
+        "id": {
+          "type": "subsnp",
+          "value": "ss3625936381"
+        },
+        "revision_added": "152",
+        "create_date": "2018-10-12T11:21Z",
+        "submitter_handle": "ILLUMINA"
+      },
+      {
+        "id": {
+          "type": "subsnp",
+          "value": "ss3636872909"
+        },
+        "revision_added": "152",
+        "create_date": "2018-10-12T11:21Z",
+        "submitter_handle": "ILLUMINA"
+      },
+      {
+        "id": {
+          "type": "subsnp",
+          "value": "ss3644952019"
+        },
+        "revision_added": "152",
+        "create_date": "2018-10-12T11:21Z",
+        "submitter_handle": "ILLUMINA"
+      },
+      {
+        "id": {
+          "type": "subsnp",
+          "value": "ss3653307712"
+        },
+        "revision_added": "152",
+        "create_date": "2018-10-12T11:21Z",
+        "submitter_handle": "ILLUMINA"
+      },
+      {
+        "id": {
+          "type": "subsnp",
+          "value": "ss3654179656"
+        },
+        "revision_added": "152",
+        "create_date": "2018-10-12T11:21Z",
+        "submitter_handle": "ILLUMINA"
+      },
+      {
+        "id": {
+          "type": "subsnp",
+          "value": "ss3726475923"
+        },
+        "revision_added": "153",
+        "create_date": "2019-07-13T13:30Z",
+        "submitter_handle": "ILLUMINA"
+      },
+      {
+        "id": {
+          "type": "subsnp",
+          "value": "ss3744295354"
+        },
+        "revision_added": "153",
+        "create_date": "2019-07-13T13:30Z",
+        "submitter_handle": "ILLUMINA"
+      },
+      {
+        "id": {
+          "type": "subsnp",
+          "value": "ss3771394294"
+        },
+        "revision_added": "153",
+        "create_date": "2019-07-13T13:30Z",
+        "submitter_handle": "PAGE_CC"
+      },
+      {
+        "id": {
+          "type": "subsnp",
+          "value": "ss3824311649"
+        },
+        "revision_added": "154",
+        "create_date": "2020-04-26T14:48Z",
+        "submitter_handle": "EVA"
+      },
+      {
+        "id": {
+          "type": "subsnp",
+          "value": "ss3984448853"
+        },
+        "revision_added": "155",
+        "create_date": "2021-04-26T12:02Z",
+        "submitter_handle": "EVA"
+      },
+      {
+        "id": {
+          "type": "subsnp",
+          "value": "ss6432289332"
+        },
+        "revision_added": "157",
+        "create_date": "2024-10-31T22:09Z",
+        "submitter_handle": "GNOMAD"
+      },
+      {
+        "id": {
+          "type": "subsnp",
+          "value": "ss6767825669"
+        },
+        "revision_added": "157",
+        "create_date": "2024-10-31T22:09Z",
+        "submitter_handle": "GNOMAD"
+      },
+      {
+        "id": {
+          "type": "subsnp",
+          "value": "ss8848151396"
+        },
+        "revision_added": "157",
+        "create_date": "2024-10-31T22:09Z",
+        "submitter_handle": "EVA"
+      },
+      {
+        "id": {
+          "type": "subsnp",
+          "value": "ss8973021785"
+        },
+        "revision_added": "157",
+        "create_date": "2024-10-31T22:09Z",
+        "submitter_handle": "EVA"
+      },
+      {
+        "id": {
+          "type": "subsnp",
+          "value": "ss8979839049"
+        },
+        "revision_added": "157",
+        "create_date": "2024-10-31T22:09Z",
+        "submitter_handle": "EVA"
+      },
+      {
+        "id": {
+          "type": "frequency",
+          "value": "ExAC.1:8997788"
+        },
+        "revision_added": "152",
+        "create_date": "2018-10-12T11:21Z",
+        "submitter_handle": "ExAC"
+      },
+      {
+        "id": {
+          "type": "frequency",
+          "value": "GnomAD_exomes.4:27604610"
+        },
+        "revision_added": "157",
+        "create_date": "2024-10-31T22:09Z",
+        "submitter_handle": "GnomAD_exomes"
+      },
+      {
+        "id": {
+          "type": "frequency",
+          "value": "GnomAD_genomes.4:294735206"
+        },
+        "revision_added": "157",
+        "create_date": "2024-10-31T22:09Z",
+        "submitter_handle": "GnomAD_genomes"
+      },
+      {
+        "id": {
+          "type": "frequency",
+          "value": "PAGE_STUDY.1:615763"
+        },
+        "revision_added": "153",
+        "create_date": "2019-07-13T13:30Z",
+        "submitter_handle": "PAGE_STUDY"
+      },
+      {
+        "id": {
+          "type": "frequency",
+          "value": "PRJEB37766.1:1854"
+        },
+        "revision_added": "155",
+        "create_date": "2021-04-26T12:02Z",
+        "submitter_handle": "PRJEB37766"
+      },
+      {
+        "id": {
+          "type": "frequency",
+          "value": "dbGaP_PopFreq.1:1325644635"
+        },
+        "revision_added": "157",
+        "create_date": "2024-10-31T22:09Z",
+        "submitter_handle": "dbGaP_PopFreq"
+      },
+      {
+        "id": {
+          "type": "clinvar",
+          "value": "RCV000007526.33"
+        },
+        "revision_added": "157",
+        "create_date": "2024-10-31T22:09Z",
+        "submitter_handle": ""
+      },
+      {
+        "id": {
+          "type": "clinvar",
+          "value": "RCV000727628.25"
+        },
+        "revision_added": "157",
+        "create_date": "2024-10-31T22:09Z",
+        "submitter_handle": ""
+      },
+      {
+        "id": {
+          "type": "clinvar",
+          "value": "RCV001004456.9"
+        },
+        "revision_added": "157",
+        "create_date": "2024-10-31T22:09Z",
+        "submitter_handle": ""
+      },
+      {
+        "id": {
+          "type": "clinvar",
+          "value": "RCV001835623.9"
+        },
+        "revision_added": "157",
+        "create_date": "2024-10-31T22:09Z",
+        "submitter_handle": ""
+      },
+      {
+        "id": {
+          "type": "clinvar",
+          "value": "RCV002288473.9"
+        },
+        "revision_added": "157",
+        "create_date": "2024-10-31T22:09Z",
+        "submitter_handle": ""
+      },
+      {
+        "id": {
+          "type": "clinvar",
+          "value": "RCV002496294.8"
+        },
+        "revision_added": "157",
+        "create_date": "2024-10-31T22:09Z",
+        "submitter_handle": ""
+      },
+      {
+        "id": {
+          "type": "clinvar",
+          "value": "RCV003472999.2"
+        },
+        "revision_added": "157",
+        "create_date": "2024-10-31T22:09Z",
+        "submitter_handle": ""
+      }
+    ],
+    "anchor": "NC_000007.14:0117559547:1:snv",
+    "variant_type": "snv",
+    "ga4gh": {
+      "NC_000007.13:117199601:C:C": {
+        "location": {
+          "type": "SequenceLocation",
+          "interval": {
+            "type": "SimpleInterval",
+            "start": 117199601,
+            "end": 117199602
+          },
+          "sequence_id": "refseq:NC_000007.13"
+        },
+        "state": {
+          "type": "SequenceState",
+          "sequence": "C"
+        },
+        "type": "Allele"
+      },
+      "NC_000007.13:117199601:C:T": {
+        "location": {
+          "type": "SequenceLocation",
+          "interval": {
+            "type": "SimpleInterval",
+            "start": 117199601,
+            "end": 117199602
+          },
+          "sequence_id": "refseq:NC_000007.13"
+        },
+        "state": {
+          "type": "SequenceState",
+          "sequence": "T"
+        },
+        "type": "Allele"
+      },
+      "NC_000007.14:117559547:C:C": {
+        "location": {
+          "type": "SequenceLocation",
+          "interval": {
+            "type": "SimpleInterval",
+            "start": 117559547,
+            "end": 117559548
+          },
+          "sequence_id": "refseq:NC_000007.14"
+        },
+        "state": {
+          "type": "SequenceState",
+          "sequence": "C"
+        },
+        "type": "Allele"
+      },
+      "NC_000007.14:117559547:C:T": {
+        "location": {
+          "type": "SequenceLocation",
+          "interval": {
+            "type": "SimpleInterval",
+            "start": 117559547,
+            "end": 117559548
+          },
+          "sequence_id": "refseq:NC_000007.14"
+        },
+        "state": {
+          "type": "SequenceState",
+          "sequence": "T"
+        },
+        "type": "Allele"
+      },
+      "NG_016465.4:98764:C:C": {
+        "location": {
+          "type": "SequenceLocation",
+          "interval": {
+            "type": "SimpleInterval",
+            "start": 98764,
+            "end": 98765
+          },
+          "sequence_id": "refseq:NG_016465.4"
+        },
+        "state": {
+          "type": "SequenceState",
+          "sequence": "C"
+        },
+        "type": "Allele"
+      },
+      "NG_016465.4:98764:C:T": {
+        "location": {
+          "type": "SequenceLocation",
+          "interval": {
+            "type": "SimpleInterval",
+            "start": 98764,
+            "end": 98765
+          },
+          "sequence_id": "refseq:NG_016465.4"
+        },
+        "state": {
+          "type": "SequenceState",
+          "sequence": "T"
+        },
+        "type": "Allele"
+      },
+      "NM_000492.3:1608:C:C": {
+        "location": {
+          "type": "SequenceLocation",
+          "interval": {
+            "type": "SimpleInterval",
+            "start": 1608,
+            "end": 1609
+          },
+          "sequence_id": "refseq:NM_000492.3"
+        },
+        "state": {
+          "type": "SequenceState",
+          "sequence": "C"
+        },
+        "type": "Allele"
+      },
+      "NM_000492.3:1608:C:T": {
+        "location": {
+          "type": "SequenceLocation",
+          "interval": {
+            "type": "SimpleInterval",
+            "start": 1608,
+            "end": 1609
+          },
+          "sequence_id": "refseq:NM_000492.3"
+        },
+        "state": {
+          "type": "SequenceState",
+          "sequence": "T"
+        },
+        "type": "Allele"
+      },
+      "NM_000492.4:1546:C:C": {
+        "location": {
+          "type": "SequenceLocation",
+          "interval": {
+            "type": "SimpleInterval",
+            "start": 1546,
+            "end": 1547
+          },
+          "sequence_id": "refseq:NM_000492.4"
+        },
+        "state": {
+          "type": "SequenceState",
+          "sequence": "C"
+        },
+        "type": "Allele"
+      },
+      "NM_000492.4:1546:C:T": {
+        "location": {
+          "type": "SequenceLocation",
+          "interval": {
+            "type": "SimpleInterval",
+            "start": 1546,
+            "end": 1547
+          },
+          "sequence_id": "refseq:NM_000492.4"
+        },
+        "state": {
+          "type": "SequenceState",
+          "sequence": "T"
+        },
+        "type": "Allele"
+      },
+      "NP_000483.3:492:Q:*": {
+        "location": {
+          "type": "SequenceLocation",
+          "interval": {
+            "type": "SimpleInterval",
+            "start": 492,
+            "end": 493
+          },
+          "sequence_id": "refseq:NP_000483.3"
+        },
+        "state": {
+          "type": "SequenceState",
+          "sequence": "*"
+        },
+        "type": "Allele"
+      },
+      "NP_000483.3:492:Q:Q": {
+        "location": {
+          "type": "SequenceLocation",
+          "interval": {
+            "type": "SimpleInterval",
+            "start": 492,
+            "end": 493
+          },
+          "sequence_id": "refseq:NP_000483.3"
+        },
+        "state": {
+          "type": "SequenceState",
+          "sequence": "Q"
+        },
+        "type": "Allele"
+      }
+    }
+  },
+  "mane_select_ids": [
+    "NM_000492.4"
+  ]
+}
