@@ -5,6 +5,7 @@ open FSharp.Data.JsonProvider
 open System.Net.Http
 type SnpData = JsonProvider<"snp_sample.json">
 
+
 let private httpClient = new HttpClient()
 
 let loadJsonFromUrlAsync (url: string) : Async<string> =
@@ -13,13 +14,16 @@ let loadJsonFromUrlAsync (url: string) : Async<string> =
         return response
     }
 
-let getHgvsNotationsAsync (rsNumber: int) : Async<string list> =
+let getHgvsNotationsAsync (rsNumber: string) : Async<string list> =
     async {
         let url = $"https://api.ncbi.nlm.nih.gov/variation/v0/refsnp/{rsNumber}"
         
         try
             let! jsonString = loadJsonFromUrlAsync url
+            
             let snpData = SnpData.Parse(jsonString)
+            
+            printfn $"snp object: %A{snpData}"
             
             let hgvsNotations =
                 snpData.PrimarySnapshotData.PlacementsWithAllele
@@ -28,6 +32,8 @@ let getHgvsNotationsAsync (rsNumber: int) : Async<string list> =
                 |> Array.filter (_.StartsWith("NG_"))  // filter for genomic notations
                 |> Array.filter (fun h -> not (h.Contains("=")))  // exclude no-change notations
                 |> Array.toList
+                
+            printfn $"HGVS Notations: %A{hgvsNotations}"
             
             return hgvsNotations
             
