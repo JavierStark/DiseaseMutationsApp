@@ -28,6 +28,11 @@ RUN dotnet publish "Backend.csproj" -c Release -o /app/publish /p:UseAppHost=fal
 FROM mcr.microsoft.com/dotnet/aspnet:9.0 AS final
 WORKDIR /app
 
+# Install Python 3 and pip
+RUN apt-get update && \
+    apt-get install -y python3 python3-pip python3-venv && \
+    pip3 install --break-system-packages --no-cache-dir viennarna
+
 # Copy published application
 COPY --from=publish /app/publish .
 
