@@ -64,6 +64,12 @@ app.MapGet("/gethgvsfromsnp", async (string rsid) =>
 app.MapGet("/getrnafold", async (string sequence) => 
     Results.Ok(await RNAFoldWrapper.fold(sequence))).WithName("GetRNAFold");
 
+app.MapGet("/getfornaurl", (string sequence, string structure) => 
+{
+    var url = $"http://nibiru.tbi.univie.ac.at/forna/forna.html?id=url/name&sequence={sequence}&structure={structure}";
+    return Results.Ok(url);
+}).WithName("GetFornaUrl");
+
 
 
 app.Run();

@@ -197,6 +197,10 @@
         public bool CopiedToClipboard { get; set; }
         public string? ErrorMessage { get; set; }
         public bool IsLoading { get; set; }
+        public bool IsLoadingRnaFold { get; set; }
+        public RNAFoldResult? RnaFoldResult { get; set; }
+        public string? RnaFoldError { get; set; }
+        public string? FornaUrl { get; set; }
     }
 
     private async Task FetchData()
@@ -464,25 +468,70 @@
                                 <h5 class="card-title mb-0">Complete gRNA</h5>
                                 @if (hgvsData.SelectedSpacer != null)
                                 {
-                                    <button class="btn btn-sm btn-success" @onclick="() => CopyCompleteGRNA(hgvsData)" title="Copy complete gRNA">
-                                        @if (hgvsData.CopiedToClipboard)
-                                        {
-                                            <span>✓ Copied!</span>
-                                        }
-                                        else
-                                        {
-                                            <span>📋 Copy</span>
-                                        }
-                                    </button>
+                                    <div>
+                                        <button class="btn btn-sm btn-success me-2" @onclick="() => CopyCompleteGRNA(hgvsData)" title="Copy complete gRNA">
+                                            @if (hgvsData.CopiedToClipboard)
+                                            {
+                                                <span>✓ Copied!</span>
+                                            }
+                                            else
+                                            {
+                                                <span>📋 Copy</span>
+                                            }
+                                        </button>
+                                        <button class="btn btn-sm btn-primary" @onclick="() => GetRnaFolding(hgvsData)" disabled="@hgvsData.IsLoadingRnaFold" title="Get RNA secondary structure">
+                                            @if (hgvsData.IsLoadingRnaFold)
+                                            {
+                                                <span>⏳ Loading...</span>
+                                            }
+                                            else
+                                            {
+                                                <span>🧬 Get Structure</span>
+                                            }
+                                        </button>
+                                    </div>
                                 }
                             </div>
                             <p class="font-monospace fs-5 mb-0" style="word-break: break-all; line-height: 1.8;">
-                                <span style="color: #d15b5b; font-weight: 500;">GAUUUAGACUACCCCAAAAACGAAGGGGACUAAAAC</span>@if (hgvsData.SelectedSpacer != null)
+                                <span style="color: #d15b5b; font-weight: 500;">GATTTAGACTACCCCAAAAACGAAGGGGACTAAAAC</span>@if (hgvsData.SelectedSpacer != null)
                                 {<span style="color: #4b4bba; font-weight: 500;">@hgvsData.SelectedSpacer</span>}
                             </p>
                             @if (hgvsData.SelectedSpacer == null)
                             {
                                 <p class="text-muted mt-2 mb-0"><small>Click the 🔨 button on a gRNA spacer to add it here</small></p>
+                            }
+                            
+                            @if (hgvsData.RnaFoldResult != null)
+                            {
+                                <div class="mt-4 pt-3 border-top">
+                                    <h6 class="mb-3">RNA Secondary Structure</h6>
+                                    
+                                    @if (!string.IsNullOrEmpty(hgvsData.FornaUrl))
+                                    {
+                                        
+                                        <iframe src=@hgvsData.FornaUrl
+                                                style="width: 100%; height: 600px; border: 1px solid #dee2e6; border-radius: 0.375rem;"
+                                                title="RNA Secondary Structure Visualization">
+                                        </iframe>
+                                    }
+                                    
+                                    <div class="mb-2">
+                                        <strong>Dot-Bracket Notation:</strong>
+                                        <p class="font-monospace bg-light p-3 rounded mb-0 mt-2" style="word-break: break-all; line-height: 1.8; font-size: 0.9rem;">
+                                            @hgvsData.RnaFoldResult.Structure
+                                        </p>
+                                    </div>
+                                    
+                                    <p class="mb-0 mt-2"><strong>Minimum Free Energy:</strong> @hgvsData.RnaFoldResult.Energy.ToString("F2") kcal/mol</p>
+                                </div>
+                            }
+                            
+                            @if (hgvsData.RnaFoldError != null)
+                            {
+                                <div class="alert alert-danger mt-3 mb-0" role="alert">
+                                    <strong>Error getting RNA structure:</strong><br/>
+                                    @hgvsData.RnaFoldError
+                                </div>
                             }
                         </div>
                     </div>
@@ -505,9 +554,52 @@
         {
             hgvsData.CopiedToClipboard = true;
             StateHasChanged();
-            var completeGRNA = "GAUUUAGACUACCCCAAAAACGAAGGGGACUAAAAC" + hgvsData.SelectedSpacer;
+            var completeGRNA = "GATTTAGACTACCCCAAAAACGAAGGGGACTAAAAC" + hgvsData.SelectedSpacer;
             await JSRuntime.InvokeVoidAsync("navigator.clipboard.writeText", completeGRNA);
         }
     }
+    
+    private async Task GetRnaFolding(HgvsData hgvsData)
+    {
+        if (hgvsData?.SelectedSpacer == null) return;
+        
+        try
+        {
+            hgvsData.IsLoadingRnaFold = true;
+            hgvsData.RnaFoldError = null;
+            hgvsData.RnaFoldResult = null;
+            hgvsData.FornaUrl = null;
+            StateHasChanged();
+            
+            var completeGRNA = "GATTTAGACTACCCCAAAAACGAAGGGGACTAAAAC" + hgvsData.SelectedSpacer;
+            var result = await Api.GetRnaFold(completeGRNA);
+            
+            hgvsData.RnaFoldResult = result;
+            
+            // Get the Forna URL
+            try
+            {
+                hgvsData.FornaUrl = await Api.GetFornaUrl(completeGRNA, result.Structure);
+                hgvsData.FornaUrl = hgvsData.FornaUrl.Trim('"');
+                
+            }
+            catch (Exception urlEx)
+            {
+                Console.WriteLine($"Error getting Forna URL: {urlEx}");
+                // Continue even if URL fails - we still have the text structure
+            }
+        }
+        catch (Exception ex)
+        {
+            hgvsData.RnaFoldError = ex.Message;
+            Console.WriteLine($"Error getting RNA folding: {ex}");
+        }
+        finally
+        {
+            hgvsData.IsLoadingRnaFold = false;
+            await InvokeAsync(StateHasChanged);
+        }
+    }
+
 
 }
