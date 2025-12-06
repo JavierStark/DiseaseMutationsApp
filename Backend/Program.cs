@@ -61,6 +61,9 @@ app.MapGet("/gethgvsfromsnp", async (string rsid) =>
     return Results.Ok(result.ToList());
 }).WithName("GetHGVSFromSNP");
 
+app.MapGet("/getrnafold", async (string sequence) => 
+    Results.Ok(await RNAFoldWrapper.fold(sequence))).WithName("GetRNAFold");
+
 
 
 app.Run();

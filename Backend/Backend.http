@@ -19,4 +19,6 @@ Accept: application/json
 GET {{Backend_HostAddress}}/getbestgrnafromhgvs?hgvs=NM_000546.6:c.215C>G&window=15
 Accept: application/json
 
+### Get folding of a given sequence
+GET {{Backend_HostAddress}}/getrnafold?sequence=GCGCUUCGCAGGGAUACG
 ###
