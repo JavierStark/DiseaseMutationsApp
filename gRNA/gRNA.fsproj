@@ -7,6 +7,7 @@
 
     <ItemGroup>
         <Compile Include="HGVS.fs" />
+        <Compile Include="RNAFoldWrapper.fs" />
         <Compile Include="Sequence.fs" />
         <Compile Include="SequenceRepository.fs" />
         <Compile Include="BowtieWrapper.fs" />
