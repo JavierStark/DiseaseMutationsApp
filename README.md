@@ -39,9 +39,46 @@ The application consists of three main components:
 - **Key Modules**:
   - `SpacerFinder.fs`: gRNA candidate generation and ranking
   - `BowtieWrapper.fs`: Off-target alignment analysis
+  - `RNAFoldWrapper.fs`: RNA secondary structure prediction (ViennaRNA)
   - `HGVS.fs`: HGVS notation parser
   - `Sequence.fs`: DNA sequence manipulation
   - `SequenceRepository.fs`: NCBI sequence retrieval
+  - `SNP.fs`: SNP database integration
+
+## 🐳 Docker Architecture
+
+The application uses a multi-stage Docker build strategy for efficient deployment:
+
+### Stage 1: Base Image (`Dockerfile.bowtie-base`)
+Creates a reusable base image containing:
+- .NET 9.0 ASP.NET runtime
+- Bowtie alignment tool executable
+- Pre-indexed GRCh38 reference genome (~4GB)
+
+**Benefits**:
+- **One-time build**: Large genome indexes only copied once
+- **Faster rebuilds**: Application changes don't require re-copying genome data
+- **Layer caching**: Docker efficiently caches the base image
+- **Smaller incremental builds**: Only application code is rebuilt during development
+
+### Stage 2: Application Image (`Dockerfile`)
+Multi-stage build process:
+1. **Build stage**: Compiles C# and F# code using .NET SDK
+2. **Publish stage**: Creates optimized production artifacts
+3. **Final stage**: 
+   - Uses pre-built bowtie base image
+   - Installs Python and ViennaRNA for RNA folding
+   - Copies compiled application
+   - Configures runtime environment
+
+**Build Flow**:
+```
+Dockerfile.bowtie-base → disease-mutations-bowtie:latest
+                                    ↓
+                         Dockerfile (multi-stage)
+                                    ↓
+                    disease-mutations-backend:latest
+```
 
 ## 📋 Prerequisites
 
@@ -49,6 +86,8 @@ The application consists of three main components:
 - **.NET 9.0 SDK** or later
 - **Docker** and **Docker Compose** (for containerized deployment)
 - **Bowtie** alignment tool (included in the repository)
+- **Python 3** with **ViennaRNA** library (for RNA folding functionality)
+  - Install: `pip install viennarna` or `pip3 install viennarna`
 
 ### Required Data
 - **GRCh38 Reference Genome** Bowtie indexes (included in `bowtie/indexes/`)
@@ -77,12 +116,26 @@ The application consists of three main components:
 
 3. **Build and run with Docker Compose**:
    ```bash
-   docker-compose up -d
+   docker compose up -d
    ```
 
-4. **Access the application**:
+5. **Access the application**:
    - Frontend: http://localhost:8080
    - Backend API: http://localhost:5000
+
+#### Quick Rebuild During Development
+
+After the initial setup, you can rebuild just the application (without re-copying Bowtie indexes):
+
+```bash
+# Rebuild and restart only the backend
+docker compose up -d --build backend
+
+# View logs
+docker compose logs -f backend
+```
+
+The bowtie base image remains cached, making subsequent builds much faster (seconds instead of minutes).
 
 ### Option 2: Local Development
 
@@ -234,6 +287,37 @@ Complete workflow: Parse HGVS, retrieve sequences, and find best gRNAs.
 
 **Response**: Object containing gRNA results and sequence information
 
+---
+
+### GET `/gethgvsfromsnp`
+Retrieve HGVS notations for a given SNP rsID.
+
+**Parameters**:
+- `rsid` (string): SNP reference ID (e.g., "rs123456")
+
+**Response**: Array of HGVS notation strings
+
+---
+
+### GET `/getrnafold`
+Predict RNA secondary structure using ViennaRNA.
+
+**Parameters**:
+- `sequence` (string): RNA sequence to fold
+
+**Response**: Object with structure and energy
+```json
+{
+  "structure": "(((...)))........",
+  "energy": -2.0999999046325684
+}
+```
+
+**Notes**:
+- Structure uses dot-bracket notation: `(` = paired, `.` = unpaired
+- Energy is minimum free energy (MFE) in kcal/mol
+- More negative energy indicates more stable structure
+
 ## 🧬 Complete gRNA Structure
 
 The application generates complete gRNA sequences consisting of two parts:
@@ -321,6 +405,7 @@ DiseaseMutationsApp/
 │
 ├── docker-compose.yml           # Docker orchestration
 ├── Dockerfile                   # Backend container image
+├── Dockerfile.bowtie-base       # Base image with Bowtie and indexes
 └── DiseaseMutationsApp.sln      # Visual Studio solution
 ```
 
