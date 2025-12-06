@@ -6,10 +6,15 @@ public interface IDiseaseMutationsApi
 {
     [Get("/getbestgrnafromhgvs")]
     Task<ResultFromHGVS> GetBestgRNAFromHgvs([Query] string hgvs, [Query] int window);
-    
+
     [Get("/gethgvsfromsnp")]
     Task<List<string>> GetHgvsFromSnp([Query] string rsid);
-    
+
+    [Get("/getrnafold")]
+    Task<RNAFoldResult> GetRnaFold([Query] string sequence);
+
+    [Get("/getfornaurl")]
+    Task<string> GetFornaUrl([Query] string sequence, [Query] string structure);
 }
 
 public record GRNAResult
@@ -28,3 +33,10 @@ public record ResultFromHGVS
     public string OriginalSequence { get; init; }
     public int ExtraNucleotids { get; init; }
 }
+
+public record RNAFoldResult
+{
+    public string Structure { get; init; }
+    public double Energy { get; init; }
+}
+
