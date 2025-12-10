@@ -10,6 +10,9 @@ public interface IDiseaseMutationsApi
     [Get("/gethgvsfromsnp")]
     Task<List<string>> GetHgvsFromSnp([Query] string rsid);
 
+    [Get("/getrsfromomim")]
+    Task<List<string>> GetRsFromOmim([Query] int omim);
+
     [Get("/getrnafold")]
     Task<RNAFoldResult> GetRnaFold([Query] string sequence);
 
@@ -39,4 +42,3 @@ public record RNAFoldResult
     public string Structure { get; init; }
     public double Energy { get; init; }
 }
-

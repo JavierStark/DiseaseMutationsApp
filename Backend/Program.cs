@@ -61,6 +61,14 @@ app.MapGet("/gethgvsfromsnp", async (string rsid) =>
     return Results.Ok(result.ToList());
 }).WithName("GetHGVSFromSNP");
 
+app.MapGet("/getrsfromomim", async (int omim) =>
+{
+    var fsharpAsync = Omim.rsFromOmim(omim);
+    var task = StartAsTask(fsharpAsync, null, null);
+    var result = await task;
+    return Results.Ok(result);
+}).WithName("GetRsFromOmim");
+
 app.MapGet("/getrnafold", async (string sequence) => 
     Results.Ok(await RNAFoldWrapper.fold(sequence))).WithName("GetRNAFold");
 
