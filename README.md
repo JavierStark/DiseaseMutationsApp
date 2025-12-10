@@ -170,48 +170,58 @@ The bowtie base image remains cached, making subsequent builds much faster (seco
 
 ### Basic Workflow
 
-1. **Enter HGVS Notation**:
-   - Input a mutation in HGVS format (e.g., `NC_000017.11:g.7674220C>T`)
-   - This represents a specific genomic variant
+You can start from an HGVS notation directly, an rsID, or an OMIM identifier. The app guides you through resolving and selecting the variant you want to design gRNAs for.
 
-2. **Set gRNA Size**:
+1. **Provide an input (HGVS, rsID, or OMIM)**:
+   - HGVS example: `NC_000017.11:g.7674220C>T`
+   - rsID example: `rs12345` (will resolve to one or more HGVS notations)
+   - OMIM example: Use the dedicated OMIM→rs page to fetch associated rsIDs.
+
+2. **Resolve inputs when needed**:
+   - For **OMIM IDs**, navigate to the independent OMIM→rs page (menu: "OMIM → rs") to fetch related rsIDs using the backend (`/getrsfromomim`). After selecting an rsID (e.g., `rs12345`), return to the main workflow and proceed with rs→HGVS.
+   - For **rsID inputs**, the app retrieves HGVS notations using the backend (`/gethgvsfromsnp`). These HGVS options appear as **subtabs**; pick the specific variant you want to analyze.
+   - Example HGVS candidates you may see in subtabs:
+     - `NG_016465.4:g.98765C>T`
+     - `NG_056131.3:g.755G>A`
+
+3. **Set gRNA size**:
    - Default: 28 nucleotides
    - Adjust based on your CRISPR system requirements
 
-3. **Click "Fetch Data"**:
-   - The application will:
+4. **Fetch data**:
+   - Click "Fetch Data" to:
      - Parse the HGVS notation
      - Retrieve the genomic sequence
      - Generate mutated sequence
      - Find optimal gRNA candidates
      - Analyze off-target binding
 
-4. **Review Results**:
+5. **Review results**:
    - **Original Sequence**: Reference genome sequence (mutation highlighted in bold)
    - **Mutated Sequence**: Sequence with the mutation applied (mutation highlighted in bold)
    - **gRNA Results Table**: Top 5 candidate spacers ranked by quality
 
-5. **Select a gRNA**:
+6. **Select a gRNA**:
    - Click the 🔨 button next to your preferred spacer
    - The complete gRNA (scaffold + spacer) appears at the bottom
 
-6. **Copy Complete gRNA**:
+7. **Copy complete gRNA**:
    - Click the "📋 Copy" button to copy the full gRNA sequence to clipboard
    - Use this sequence for RNA synthesis or further analysis
 
-### Understanding gRNA Metrics
+#### Understanding gRNA Metrics
 
-#### GC Score (0.0 - 1.0)
+##### GC Score (0.0 - 1.0)
 - **Optimal**: 1.0 (GC content between 40-60%)
 - **Suboptimal**: <1.0 (GC content outside ideal range)
 - Higher is better for stability and efficiency
 
-#### Homopolymer Count
+##### Homopolymer Count
 - Number of homopolymer runs (4+ consecutive identical bases)
 - **Optimal**: 0
 - Homopolymers can cause synthesis errors and reduced efficiency
 
-#### Alignments
+##### Alignments
 - Number of near-perfect matches in the genome
 - **Optimal**: Low numbers (1-2)
 - High numbers indicate potential off-target effects
@@ -375,7 +385,8 @@ DiseaseMutationsApp/
 │
 ├── DiseaseMutationsApp/         # Blazor WebAssembly Frontend
 │   ├── Pages/
-│   │   └── Index.razor          # Main UI page
+│   │   ├── Index.razor          # Main UI page (HGVS / rs workflow)
+│   │   └── OmimToRs.razor       # Independent page for OMIM → rs resolution
 │   ├── Services/
 │   │   └── IDiseaseMutationsApi.cs  # API client interface (Refit)
 │   ├── wwwroot/                 # Static assets
