@@ -17,7 +17,7 @@ let getBestgRNAFromHGVS (hgvsString: string) (grnaSize: int) = async {
     
     let mutated, original = sequence.GetMutatedSubsequence(hgvsObj, extraNucleotids, extraNucleotids)
     
-    let! bestgRna = SpacerFinder.getBestgRNA grnaSize mutated
+    let! bestgRna = SpacerFinder.getOrderedgRna grnaSize mutated
     
     return  {
         gRNA = bestgRna
