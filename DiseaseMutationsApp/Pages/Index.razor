@@ -188,6 +188,9 @@
         public List<HgvsData>? ChildHgvsList { get; set; }
     }
 
+    // Add sort columns for gRNA table
+    private enum GrnaSortColumn { Sequence, GCScore, HomopolymerCount, SeedRegion, Alignments }
+
     private class HgvsData
     {
         public string Hgvs { get; init; } = string.Empty;
@@ -202,6 +205,41 @@
         public RNAFoldResult? RnaFoldResult { get; set; }
         public string? RnaFoldError { get; set; }
         public string? FornaUrl { get; set; }
+        // Sorting state for gRNA table
+        public GrnaSortColumn SortColumn { get; set; } = GrnaSortColumn.Sequence;
+        public bool SortAscending { get; set; } = true;
+    }
+
+    // Helper to get sorted gRNA list for display
+    private IEnumerable<GRNAResult> GetSortedGRNAs(HgvsData hgvsData)
+    {
+        if (hgvsData.GRNAs == null || hgvsData.GRNAs.Count == 0)
+            return Enumerable.Empty<GRNAResult>();
+
+        var asc = hgvsData.SortAscending;
+        return hgvsData.SortColumn switch
+        {
+            GrnaSortColumn.Sequence => asc ? hgvsData.GRNAs.OrderBy(g => g.Sequence) : hgvsData.GRNAs.OrderByDescending(g => g.Sequence),
+            GrnaSortColumn.GCScore => asc ? hgvsData.GRNAs.OrderBy(g => g.GCScore) : hgvsData.GRNAs.OrderByDescending(g => g.GCScore),
+            GrnaSortColumn.HomopolymerCount => asc ? hgvsData.GRNAs.OrderBy(g => g.HomopolymerCount) : hgvsData.GRNAs.OrderByDescending(g => g.HomopolymerCount),
+            GrnaSortColumn.SeedRegion => asc ? hgvsData.GRNAs.OrderBy(g => g.SeedRegion) : hgvsData.GRNAs.OrderByDescending(g => g.SeedRegion),
+            GrnaSortColumn.Alignments => asc ? hgvsData.GRNAs.OrderBy(g => g.Allignments) : hgvsData.GRNAs.OrderByDescending(g => g.Allignments),
+            _ => hgvsData.GRNAs
+        };
+    }
+
+    // Toggle sort state
+    private void SortBy(HgvsData hgvsData, GrnaSortColumn column)
+    {
+        if (hgvsData.SortColumn == column)
+        {
+            hgvsData.SortAscending = !hgvsData.SortAscending;
+        }
+        else
+        {
+            hgvsData.SortColumn = column;
+            hgvsData.SortAscending = true;
+        }
     }
 
     private async Task FetchData()
@@ -424,20 +462,36 @@
                         <div class="card shadow-sm">
                             <div class="card-body">
                                 <h5 class="card-title mb-3">gRNA Results</h5>
-                                <div class="table-responsive">
+                                <p class="text-muted small mb-2">Tip: Click any column header to sort ascending/descending. If more than 5 rows are present, the table becomes scrollable.</p>
+                                <div class="table-responsive" style="@((hgvsData.GRNAs.Count > 5) ? "max-height: 300px; overflow-y: auto;" : null)">
                                     <table class="table table-hover table-striped align-middle">
                                         <thead class="table-light">
                                         <tr>
                                             <th style="width: 80px;">Action</th>
-                                            <th>gRNA Spacer</th>
-                                            <th>GC Score</th>
-                                            <th>Homopolymer Count</th>
-                                            <th>Seed Region</th>
-                                            <th>Alignments</th>
+                                            <th style="cursor: pointer;" @onclick="() => SortBy(hgvsData, GrnaSortColumn.Sequence)">
+                                                gRNA Spacer
+                                                <span>@(hgvsData.SortColumn == GrnaSortColumn.Sequence ? (hgvsData.SortAscending ? " ▲" : " ▼") : string.Empty)</span>
+                                            </th>
+                                            <th style="cursor: pointer;" @onclick="() => SortBy(hgvsData, GrnaSortColumn.GCScore)">
+                                                GC Score
+                                                <span>@(hgvsData.SortColumn == GrnaSortColumn.GCScore ? (hgvsData.SortAscending ? " ▲" : " ▼") : string.Empty)</span>
+                                            </th>
+                                            <th style="cursor: pointer;" @onclick="() => SortBy(hgvsData, GrnaSortColumn.HomopolymerCount)">
+                                                Homopolymer Count
+                                                <span>@(hgvsData.SortColumn == GrnaSortColumn.HomopolymerCount ? (hgvsData.SortAscending ? " ▲" : " ▼") : string.Empty)</span>
+                                            </th>
+                                            <th style="cursor: pointer;" @onclick="() => SortBy(hgvsData, GrnaSortColumn.SeedRegion)">
+                                                Seed Region
+                                                <span>@(hgvsData.SortColumn == GrnaSortColumn.SeedRegion ? (hgvsData.SortAscending ? " ▲" : " ▼") : string.Empty)</span>
+                                            </th>
+                                            <th style="cursor: pointer;" @onclick="() => SortBy(hgvsData, GrnaSortColumn.Alignments)">
+                                                Alignments
+                                                <span>@(hgvsData.SortColumn == GrnaSortColumn.Alignments ? (hgvsData.SortAscending ? " ▲" : " ▼") : string.Empty)</span>
+                                            </th>
                                         </tr>
                                         </thead>
                                         <tbody>
-                                        @foreach (var gRNA in hgvsData.GRNAs)
+                                        @foreach (var gRNA in GetSortedGRNAs(hgvsData))
                                         {
                                             <tr>
                                                 <td>
