@@ -244,28 +244,6 @@ Health check endpoint.
 
 ---
 
-### GET `/getbestrna`
-Generate and rank gRNA candidates for a given sequence.
-
-**Parameters**:
-- `window` (int): Length of the gRNA spacer (typically 20-28)
-- `sequence` (string): DNA sequence to analyze
-
-**Response**: Array of gRNA results
-```json
-[
-  {
-    "sequence": "ACTGACTGACTGACTGACTGACTGAC",
-    "gcScore": 0.95,
-    "homopolymerCount": 0,
-    "seedRegion": "ACTGACTG",
-    "allignments": 2
-  }
-]
-```
-
----
-
 ### GET `/getallignments`
 Get Bowtie alignment results for a sequence.
 
@@ -299,6 +277,16 @@ Retrieve HGVS notations for a given SNP rsID.
 
 ---
 
+### GET `/getrsfromomim`
+Retrieve SNP rsIDs associated with an OMIM entry.
+
+**Parameters**:
+- `omim` (int): OMIM numeric identifier
+
+**Response**: Array or collection of rsIDs associated with the OMIM entry
+
+---
+
 ### GET `/getrnafold`
 Predict RNA secondary structure using ViennaRNA.
 
@@ -317,6 +305,17 @@ Predict RNA secondary structure using ViennaRNA.
 - Structure uses dot-bracket notation: `(` = paired, `.` = unpaired
 - Energy is minimum free energy (MFE) in kcal/mol
 - More negative energy indicates more stable structure
+
+---
+
+### GET `/getfornaurl`
+Generate a FORNA visualization URL for a given RNA sequence and structure.
+
+**Parameters**:
+- `sequence` (string): RNA sequence
+- `structure` (string): Dot-bracket structure
+
+**Response**: URL string for FORNA visualization
 
 ## 🧬 Complete gRNA Structure
 
@@ -577,10 +576,9 @@ This project is licensed under the MIT License - see the LICENSE file for detail
 
 For issues, questions, or suggestions:
 - Open an issue on GitHub
-- Contact: your.email@example.com
+- Contact: javiertorralbocortes@gmail.com
 
 ---
 
-**Last Updated**: November 2025  
+**Last Updated**: December 2025  
 **Version**: 1.0.0
-
