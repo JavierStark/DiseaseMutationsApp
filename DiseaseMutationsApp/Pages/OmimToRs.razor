@@ -1,0 +1,162 @@
+﻿@page "/omim-to-rs"
+@using DiseaseMutationsApp.Services
+@inject IDiseaseMutationsApi Api
+@inject NavigationManager Nav
+
+<PageTitle>Omim to RS</PageTitle>
+
+<div class="container-fluid px-4 py-4" style="max-width: 1000px;">
+    <div class="row mb-4">
+        <div class="col">
+            <h1 class="mb-4">Omim to RS</h1>
+            <p class="text-muted">Enter an OMIM code to fetch associated RS IDs.</p>
+        </div>
+    </div>
+
+    <div class="row mb-4">
+        <div class="col-lg-8 col-xl-6">
+            <div class="card shadow-sm">
+                <div class="card-body">
+                    <div class="mb-3">
+                        <label for="omim" class="form-label">OMIM code</label>
+                        <input id="omim" type="number" class="form-control" @bind="_omim" min="1" placeholder="e.g., 605543" />
+                    </div>
+                    <button class="btn btn-primary" @onclick="FetchRs" disabled="@_isLoading">
+                        @if (_isLoading)
+                        {
+                            <span>⏳ Loading...</span>
+                        }
+                        else
+                        {
+                            <span>Fetch RS IDs</span>
+                        }
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    @if (_errorMessage != null)
+    {
+        <div class="alert alert-danger" role="alert">
+            <strong>Error:</strong><br />
+            @_errorMessage
+        </div>
+    }
+
+    @if (_rsList?.Any() == true)
+    {
+        <div class="row mb-3">
+            <div class="col d-flex justify-content-between align-items-center">
+                <h5 class="mb-0">Found RS IDs</h5>
+                <div>
+                    <button class="btn btn-success btn-sm" @onclick="OpenSelectedInBuilder" disabled="@(!_selectedRs.Any())" title="Open selected RS in gRNA Builder">
+                        Open selected in gRNA Builder (@_selectedRs.Count)
+                    </button>
+                </div>
+            </div>
+        </div>
+        <div class="row">
+            <div class="col">
+                <div class="card shadow-sm">
+                    <div class="card-body">
+                        <div class="table-responsive">
+                            <table class="table table-hover table-striped align-middle">
+                                <thead class="table-light">
+                                <tr>
+                                    <th style="width: 48px;">Sel</th>
+                                    <th style="width: 140px;">RS ID</th>
+                                    <th>Action</th>
+                                </tr>
+                                </thead>
+                                <tbody>
+                                @foreach (var rs in _rsList)
+                                {
+                                    var rsValue = string.IsNullOrWhiteSpace(rs) ? rs : (rs.StartsWith("rs", StringComparison.OrdinalIgnoreCase) ? rs.ToLowerInvariant() : $"rs{rs}");
+                                    var isChecked = _selectedRs.Contains(rsValue);
+                                    <tr>
+                                        <td>
+                                            <input type="checkbox" class="form-check-input" checked="@isChecked" @onchange="(e) => ToggleSelection(rsValue, e.Value as bool? == true)" />
+                                        </td>
+                                        <td class="font-monospace">@rsValue</td>
+                                        <td>
+                                            <a class="btn btn-sm btn-secondary" href="/@(UrlEncodeQueryParam("rs", rsValue))" title="Open in gRNA Builder">Open gRNA Builder</a>
+                                        </td>
+                                    </tr>
+                                }
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    }
+</div>
+
+@code {
+    private int? _omim;
+    private bool _isLoading;
+    private string? _errorMessage;
+    private List<string>? _rsList;
+    private HashSet<string> _selectedRs = new(StringComparer.OrdinalIgnoreCase);
+
+    private async Task FetchRs()
+    {
+        _errorMessage = null;
+        _rsList = null;
+        _selectedRs.Clear();
+
+        if (_omim is null or <= 0)
+        {
+            _errorMessage = "Please enter a valid positive OMIM code.";
+            return;
+        }
+
+        try
+        {
+            _isLoading = true;
+            StateHasChanged();
+            _rsList = await Api.GetRsFromOmim(_omim.Value);
+        }
+        catch (Exception ex)
+        {
+            _errorMessage = $"Error fetching RS from OMIM: {ex.Message}";
+        }
+        finally
+        {
+            _isLoading = false;
+            await InvokeAsync(StateHasChanged);
+        }
+    }
+
+    private void ToggleSelection(string rsValue, bool selected)
+    {
+        if (string.IsNullOrWhiteSpace(rsValue)) return;
+        if (selected)
+        {
+            _selectedRs.Add(rsValue);
+        }
+        else
+        {
+            _selectedRs.Remove(rsValue);
+        }
+    }
+
+    private void OpenSelectedInBuilder()
+    {
+        if (!_selectedRs.Any()) return;
+        // Join selected RS with commas; Index.razor supports comma-separated inputs
+        var joined = string.Join(",", _selectedRs.Select(r => r.Trim()).Where(r => !string.IsNullOrWhiteSpace(r)));
+        var url = "/" + UrlEncodeQueryParam("rs", joined);
+        Nav.NavigateTo(url);
+    }
+
+    private static string UrlEncodeQueryParam(string key, string value)
+    {
+        // Build a URL like "/?rs=rs123,rs456" safely
+        var encodedKey = Uri.EscapeDataString(key);
+        var encodedValue = Uri.EscapeDataString(value);
+        return $"?{encodedKey}={encodedValue}";
+    }
+}

@@ -9,21 +9,16 @@
 
 <div class="@NavMenuCssClass nav-scrollable" @onclick="ToggleNavMenu">
     <nav class="flex-column">
-        @* <div class="nav-item px-3"> *@
-        @*     <NavLink class="nav-link" href="" Match="NavLinkMatch.All"> *@
-        @*         <span class="oi oi-book" aria-hidden="true"></span> Home *@
-        @*     </NavLink> *@
-        @* </div> *@
-        @* <div class="nav-item px-3"> *@
-        @*     <NavLink class="nav-link" href="/rsid_hgvs" Match="NavLinkMatch.All"> *@
-        @*         <span class="oi oi-book" aria-hidden="true"></span> RSID -> HGVS *@
-        @*     </NavLink> *@
-        @* </div> *@
-        @* <div class="nav-item px-3"> *@
-        @*     <NavLink class="nav-link" href="/hgvs_sequence" Match="NavLinkMatch.All"> *@
-        @*         <span class="oi oi-spreadsheet" aria-hidden="true"></span> HGVS -> Sequence *@
-        @*     </NavLink> *@
-        @* </div> *@
+        <div class="nav-item px-3">
+            <NavLink class="nav-link" href="/" Match="NavLinkMatch.All">
+                <span class="oi oi-home" aria-hidden="true"></span> gRNA Builder
+            </NavLink>
+        </div>
+        <div class="nav-item px-3">
+            <NavLink class="nav-link" href="/omim-to-rs" Match="NavLinkMatch.Prefix">
+                <span class="oi oi-list-rich" aria-hidden="true"></span> Omim to RS
+            </NavLink>
+        </div>
     </nav>
 </div>
 

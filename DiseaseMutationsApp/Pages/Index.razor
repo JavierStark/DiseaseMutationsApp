@@ -3,13 +3,14 @@
 @using BlazorBootstrap
 @inject IJSRuntime JSRuntime
 @inject IDiseaseMutationsApi Api
+@inject NavigationManager Nav
 
-<PageTitle>Disease Mutations</PageTitle>
+<PageTitle>gRNA Builder</PageTitle>
 
 <div class="container-fluid px-4 py-4" style="max-width: 1400px;">
     <div class="row mb-4">
         <div class="col">
-            <h1 class="mb-4">Disease Mutations App</h1>
+            <h1 class="mb-4">gRNA Builder</h1>
         </div>
     </div>
 
@@ -555,6 +556,7 @@
             hgvsData.CopiedToClipboard = true;
             StateHasChanged();
             var completeGRNA = "GATTTAGACTACCCCAAAAACGAAGGGGACTAAAAC" + hgvsData.SelectedSpacer;
+            
             await JSRuntime.InvokeVoidAsync("navigator.clipboard.writeText", completeGRNA);
         }
     }
@@ -601,5 +603,24 @@
         }
     }
 
+    protected override async Task OnInitializedAsync()
+    {
+        // Check for rs query parameter and auto-populate
+        try
+        {
+            var uri = new Uri(Nav.Uri);
+            var query = System.Web.HttpUtility.ParseQueryString(uri.Query);
+            var rsParam = query["rs"];
+            if (!string.IsNullOrWhiteSpace(rsParam))
+            {
+                _hgvs = rsParam.Trim();
+                await FetchData();
+            }
+        }
+        catch
+        {
+            // ignore parsing errors
+        }
+    }
 
 }
