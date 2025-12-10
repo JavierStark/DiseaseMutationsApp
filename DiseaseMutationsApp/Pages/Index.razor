@@ -1,9 +1,7 @@
 ﻿@page "/"
 @using DiseaseMutationsApp.Services
+@using DiseaseMutationsApp.Pages
 @using BlazorBootstrap
-@inject IJSRuntime JSRuntime
-@inject IDiseaseMutationsApi Api
-@inject NavigationManager Nav
 
 <PageTitle>gRNA Builder</PageTitle>
 
@@ -21,7 +19,7 @@
                     <h5 class="card-title mb-3">Input Parameters</h5>
                     <div class="mb-3">
                         <label for="hgvs" class="form-label">HGVS or RS codes (comma-separated for multiple):</label>
-                        <textarea id="hgvs" class="form-control" @bind="_hgvs" rows="5" placeholder="e.g., NC_000001.11:g.12345A>G, rs12345, NC_000002.12:g.67890C>T&#10;You can enter multiple HGVS or RS codes separated by commas"></textarea>
+                        <textarea id="hgvs" class="form-control" @bind="_hgvs" rows="5" placeholder="e.g., NG_016465.4:g.98765C>T, rs12345, NG_056131.3:g.755G>A&#10;You can enter multiple HGVS or RS codes separated by commas"></textarea>
                     </div>
                     <div class="mb-3">
                         <label for="before" class="form-label">gRNA size:</label>
@@ -49,8 +47,8 @@
                                     type="button" 
                                     @onclick="() => _activeTabIndex = index">
                                 @{
-                                    var isLoading = tab.IsLoading || (tab.Type == InputType.HGVS && tab.DirectHgvs?.IsLoading == true);
-                                    var hasError = tab.ErrorMessage != null || (tab.Type == InputType.HGVS && tab.DirectHgvs?.ErrorMessage != null);
+                                    var isLoading = tab.IsLoading || tab is { Type: InputType.HGVS, DirectHgvs.IsLoading: true };
+                                    var hasError = tab.ErrorMessage != null || tab is { Type: InputType.HGVS, DirectHgvs.ErrorMessage: not null };
                                 }
                                 @if (isLoading)
                                 {
@@ -94,7 +92,13 @@
                             }
                             else if (tab.Type == InputType.HGVS && tab.DirectHgvs != null)
                             {
-                                @RenderHgvsData(tab.DirectHgvs)
+                                <HgvsDetailPanel 
+                                    Data="tab.DirectHgvs" 
+                                    OnSort="SortBy" 
+                                    GetSorted="GetSortedGRNAs" 
+                                    OnCreateGrna="HandlegRNACreationButton"
+                                    OnCopyComplete="CopyCompleteGRNA"
+                                    OnGetRnaFold="GetRnaFolding" />
                             }
                             else if (tab.Type == InputType.RS && tab.ChildHgvsList != null)
                             {
@@ -138,7 +142,13 @@
                                             var isActiveChild = _activeChildTabIndices.TryGetValue(index, out var activeChild) && activeChild == childIndex;
                                             
                                             <div class="@(isActiveChild ? "d-block" : "d-none")">
-                                                @RenderHgvsData(childHgvs)
+                                                <HgvsDetailPanel 
+                                                    Data="childHgvs" 
+                                                    OnSort="SortBy" 
+                                                    GetSorted="GetSortedGRNAs" 
+                                                    OnCreateGrna="HandlegRNACreationButton"
+                                                    OnCopyComplete="CopyCompleteGRNA"
+                                                    OnGetRnaFold="GetRnaFolding" />
                                             </div>
                                         }
                                     </div>
@@ -159,522 +169,5 @@
 </div>
 
 @code {
-
-    private string? _hgvs;
-    private int _gRnaSize = 28;
-    
-    private List<InputTabData> _inputTabs = [];
-    private int _activeTabIndex;
-    private Dictionary<int, int> _activeChildTabIndices = new();
-
-    private enum InputType
-    {
-        HGVS,
-        RS
-    }
-
-    private class InputTabData
-    {
-        public InputType Type { get; init; }
-        public string DisplayLabel { get; init; } = string.Empty;
-        public string? RsId { get; init; }
-        public string? ErrorMessage { get; set; }
-        public bool IsLoading { get; set; }
-        
-        // For direct HGVS input
-        public HgvsData? DirectHgvs { get; set; }
-        
-        // For RS input with child HGVS
-        public List<HgvsData>? ChildHgvsList { get; set; }
-    }
-
-    // Add sort columns for gRNA table
-    private enum GrnaSortColumn { Sequence, GCScore, HomopolymerCount, SeedRegion, Alignments }
-
-    private class HgvsData
-    {
-        public string Hgvs { get; init; } = string.Empty;
-        public string? Original { get; set; }
-        public string? Mutated { get; set; }
-        public List<GRNAResult>? GRNAs { get; set; }
-        public string? SelectedSpacer { get; set; }
-        public bool CopiedToClipboard { get; set; }
-        public string? ErrorMessage { get; set; }
-        public bool IsLoading { get; set; }
-        public bool IsLoadingRnaFold { get; set; }
-        public RNAFoldResult? RnaFoldResult { get; set; }
-        public string? RnaFoldError { get; set; }
-        public string? FornaUrl { get; set; }
-        // Sorting state for gRNA table
-        public GrnaSortColumn SortColumn { get; set; } = GrnaSortColumn.Sequence;
-        public bool SortAscending { get; set; } = true;
-    }
-
-    // Helper to get sorted gRNA list for display
-    private IEnumerable<GRNAResult> GetSortedGRNAs(HgvsData hgvsData)
-    {
-        if (hgvsData.GRNAs == null || hgvsData.GRNAs.Count == 0)
-            return Enumerable.Empty<GRNAResult>();
-
-        var asc = hgvsData.SortAscending;
-        return hgvsData.SortColumn switch
-        {
-            GrnaSortColumn.Sequence => asc ? hgvsData.GRNAs.OrderBy(g => g.Sequence) : hgvsData.GRNAs.OrderByDescending(g => g.Sequence),
-            GrnaSortColumn.GCScore => asc ? hgvsData.GRNAs.OrderBy(g => g.GCScore) : hgvsData.GRNAs.OrderByDescending(g => g.GCScore),
-            GrnaSortColumn.HomopolymerCount => asc ? hgvsData.GRNAs.OrderBy(g => g.HomopolymerCount) : hgvsData.GRNAs.OrderByDescending(g => g.HomopolymerCount),
-            GrnaSortColumn.SeedRegion => asc ? hgvsData.GRNAs.OrderBy(g => g.SeedRegion) : hgvsData.GRNAs.OrderByDescending(g => g.SeedRegion),
-            GrnaSortColumn.Alignments => asc ? hgvsData.GRNAs.OrderBy(g => g.Allignments) : hgvsData.GRNAs.OrderByDescending(g => g.Allignments),
-            _ => hgvsData.GRNAs
-        };
-    }
-
-    // Toggle sort state
-    private void SortBy(HgvsData hgvsData, GrnaSortColumn column)
-    {
-        if (hgvsData.SortColumn == column)
-        {
-            hgvsData.SortAscending = !hgvsData.SortAscending;
-        }
-        else
-        {
-            hgvsData.SortColumn = column;
-            hgvsData.SortAscending = true;
-        }
-    }
-
-    private async Task FetchData()
-    {
-        if (!string.IsNullOrWhiteSpace(_hgvs) && _gRnaSize > 0)
-        {
-            _inputTabs.Clear();
-            _activeTabIndex = 0;
-            _activeChildTabIndices.Clear();
-            
-            try
-            {
-                var inputs = _hgvs.Split(',')
-                    .Select(h => h.Trim())
-                    .Where(h => !string.IsNullOrWhiteSpace(h))
-                    .Distinct(StringComparer.OrdinalIgnoreCase)
-                    .ToList();
-
-                if (inputs.Count == 0) return;
-
-                // Parse inputs and create tabs
-                foreach (var input in inputs)
-                {
-                    if (System.Text.RegularExpressions.Regex.IsMatch(input, @"^rs\d+$", System.Text.RegularExpressions.RegexOptions.IgnoreCase))
-                    {
-                        // RS code
-                        var rsIdStr = input[2..];
-                        _inputTabs.Add(new InputTabData 
-                        { 
-                            Type = InputType.RS,
-                            DisplayLabel = input.ToLower(),
-                            RsId = rsIdStr,
-                            IsLoading = true
-                        });
-                    }
-                    else
-                    {
-                        // HGVS code
-                        _inputTabs.Add(new InputTabData 
-                        { 
-                            Type = InputType.HGVS,
-                            DisplayLabel = input,
-                            IsLoading = true,
-                            DirectHgvs = new HgvsData 
-                            { 
-                                Hgvs = input,
-                                IsLoading = true
-                            }
-                        });
-                    }
-                }
-                
-                StateHasChanged();
-
-                // Fetch data for each tab
-                for (var i = 0; i < _inputTabs.Count; i++)
-                {
-                    await FetchInputTabDataAsync(_inputTabs[i], i);
-                }
-                
-            }
-            catch (Exception ex)
-            {
-                if (_inputTabs.Any())
-                {
-                    _inputTabs[0].ErrorMessage = $"Error: {ex.Message}";
-                    _inputTabs[0].IsLoading = false;
-                }
-            }
-        }
-    }
-
-    private async Task FetchInputTabDataAsync(InputTabData tabData, int tabIndex)
-    {
-        try
-        {
-            switch (tabData.Type)
-            {
-                case InputType.RS when tabData.RsId != null:
-                {
-                    // Fetch HGVS list from RS
-                    var hgvsList = await Api.GetHgvsFromSnp(tabData.RsId);
-                    Console.WriteLine($"RS{tabData.RsId} returned {hgvsList.Count} HGVS variants.");
-                
-                    // Create child HGVS tabs with loading state
-                    tabData.ChildHgvsList = hgvsList.Select(h => new HgvsData 
-                    { 
-                        Hgvs = h,
-                        IsLoading = true
-                    }).ToList();
-                
-                    // Initialize active child tab for this parent
-                    if (tabData.ChildHgvsList.Any())
-                    {
-                        _activeChildTabIndices[tabIndex] = 0;
-                    }
-                    
-                    // Mark parent as no longer loading so tabs appear immediately
-                    tabData.IsLoading = false;
-                
-                    await InvokeAsync(StateHasChanged);
-                
-                    // Fetch data for each child HGVS
-                    foreach (var childHgvs in tabData.ChildHgvsList)
-                    {
-                        await FetchHgvsDataAsync(childHgvs);
-                    }
-
-                    break;
-                }
-                case InputType.HGVS when tabData.DirectHgvs != null:
-                    // Fetch data for direct HGVS
-                    await FetchHgvsDataAsync(tabData.DirectHgvs);
-                    
-                    // Sync parent tab status with child HGVS status
-                    if (tabData.DirectHgvs.ErrorMessage != null)
-                    {
-                        tabData.ErrorMessage = tabData.DirectHgvs.ErrorMessage;
-                    }
-                    break;
-                default:
-                    throw new ArgumentOutOfRangeException();
-            }
-        }
-        catch (Exception ex)
-        {
-            tabData.ErrorMessage = $"Error fetching data: {ex.Message}";
-            Console.WriteLine($"Error for {tabData.DisplayLabel}: {ex}");
-        }
-        finally
-        {
-            tabData.IsLoading = false;
-            await InvokeAsync(StateHasChanged);
-        }
-    }
-
-    private async Task FetchHgvsDataAsync(HgvsData hgvsData)
-    {
-        try
-        {
-            var result = await Api.GetBestgRNAFromHgvs(hgvsData.Hgvs, _gRnaSize);
-
-            hgvsData.Original = result.OriginalSequence;
-            hgvsData.Mutated = result.MutatedSequence;
-            hgvsData.GRNAs = result.gRNA;
-            var extraNucleotids = result.ExtraNucleotids;
-
-            
-            if (!string.IsNullOrEmpty(hgvsData.Original) && extraNucleotids >= 0 && extraNucleotids < hgvsData.Original.Length)
-            {
-                hgvsData.Original = hgvsData.Original.Insert(extraNucleotids, "<b>");
-                if (hgvsData.Original.Length > extraNucleotids)
-                {
-                    hgvsData.Original = hgvsData.Original.Insert(hgvsData.Original.Length - extraNucleotids, "</b>");
-                }
-            }
-            
-            if (!string.IsNullOrEmpty(hgvsData.Mutated) && extraNucleotids >= 0 && extraNucleotids < hgvsData.Mutated.Length)
-            {
-                hgvsData.Mutated = hgvsData.Mutated.Insert(extraNucleotids, "<b>");
-                if (hgvsData.Mutated.Length > extraNucleotids)
-                {
-                    hgvsData.Mutated = hgvsData.Mutated.Insert(hgvsData.Mutated.Length - extraNucleotids, "</b>");
-                }
-            }
-        }
-        catch (Exception ex)
-        {
-            hgvsData.ErrorMessage = $"Error fetching data: {ex.Message}";
-            Console.WriteLine($"Error for {hgvsData.Hgvs}: {ex}");
-        }
-        finally
-        {
-            hgvsData.IsLoading = false;
-            await InvokeAsync(StateHasChanged);
-        }
-    }
-
-    private RenderFragment RenderHgvsData(HgvsData hgvsData) => __builder =>
-    {
-        if (hgvsData.IsLoading)
-        {
-            <div class="card shadow-sm">
-                <div class="card-body text-center py-5">
-                    <Spinner Type="SpinnerType.Dots" Color="SpinnerColor.Primary" />
-                    <p class="mt-3 text-muted">Loading data for @hgvsData.Hgvs...</p>
-                </div>
-            </div>
-        }
-        else if (hgvsData.ErrorMessage != null)
-        {
-            <div class="alert alert-danger" role="alert">
-                <strong>Error loading data for @hgvsData.Hgvs:</strong><br/>
-                @hgvsData.ErrorMessage
-            </div>
-        }
-        else if (hgvsData.Original != null && hgvsData.Mutated != null)
-        {
-            <div class="row mb-4">
-                <div class="col">
-                    <div class="card shadow-sm mb-3">
-                        <div class="card-body">
-                            <h5 class="card-title mb-3">Original Sequence</h5>
-                            <p class="font-monospace bg-light p-3 rounded" style="word-break: break-all; line-height: 1.8;">@((MarkupString)hgvsData.Original)</p>
-                        </div>
-                    </div>
-                    <div class="card shadow-sm">
-                        <div class="card-body">
-                            <h5 class="card-title mb-3">Mutated Sequence</h5>
-                            <p class="font-monospace bg-light p-3 rounded" style="word-break: break-all; line-height: 1.8;">@((MarkupString)hgvsData.Mutated)</p>
-                        </div>
-                    </div>
-                </div>
-            </div>
-
-            @if (hgvsData.GRNAs != null && hgvsData.GRNAs.Any())
-            {
-                <div class="row mb-4">
-                    <div class="col">
-                        <div class="card shadow-sm">
-                            <div class="card-body">
-                                <h5 class="card-title mb-3">gRNA Results</h5>
-                                <p class="text-muted small mb-2">Tip: Click any column header to sort ascending/descending. If more than 5 rows are present, the table becomes scrollable.</p>
-                                <div class="table-responsive" style="@((hgvsData.GRNAs.Count > 5) ? "max-height: 300px; overflow-y: auto;" : null)">
-                                    <table class="table table-hover table-striped align-middle">
-                                        <thead class="table-light">
-                                        <tr>
-                                            <th style="width: 80px;">Action</th>
-                                            <th style="cursor: pointer;" @onclick="() => SortBy(hgvsData, GrnaSortColumn.Sequence)">
-                                                gRNA Spacer
-                                                <span>@(hgvsData.SortColumn == GrnaSortColumn.Sequence ? (hgvsData.SortAscending ? " ▲" : " ▼") : string.Empty)</span>
-                                            </th>
-                                            <th style="cursor: pointer;" @onclick="() => SortBy(hgvsData, GrnaSortColumn.GCScore)">
-                                                GC Score
-                                                <span>@(hgvsData.SortColumn == GrnaSortColumn.GCScore ? (hgvsData.SortAscending ? " ▲" : " ▼") : string.Empty)</span>
-                                            </th>
-                                            <th style="cursor: pointer;" @onclick="() => SortBy(hgvsData, GrnaSortColumn.HomopolymerCount)">
-                                                Homopolymer Count
-                                                <span>@(hgvsData.SortColumn == GrnaSortColumn.HomopolymerCount ? (hgvsData.SortAscending ? " ▲" : " ▼") : string.Empty)</span>
-                                            </th>
-                                            <th style="cursor: pointer;" @onclick="() => SortBy(hgvsData, GrnaSortColumn.SeedRegion)">
-                                                Seed Region
-                                                <span>@(hgvsData.SortColumn == GrnaSortColumn.SeedRegion ? (hgvsData.SortAscending ? " ▲" : " ▼") : string.Empty)</span>
-                                            </th>
-                                            <th style="cursor: pointer;" @onclick="() => SortBy(hgvsData, GrnaSortColumn.Alignments)">
-                                                Alignments
-                                                <span>@(hgvsData.SortColumn == GrnaSortColumn.Alignments ? (hgvsData.SortAscending ? " ▲" : " ▼") : string.Empty)</span>
-                                            </th>
-                                        </tr>
-                                        </thead>
-                                        <tbody>
-                                        @foreach (var gRNA in GetSortedGRNAs(hgvsData))
-                                        {
-                                            <tr>
-                                                <td>
-                                                    <button class="btn btn-sm btn-secondary" @onclick="() => HandlegRNACreationButton(gRNA.Sequence, hgvsData)" title="Create gRNA">
-                                                        🔨
-                                                    </button>
-                                                </td>
-                                                <td class="font-monospace">@gRNA.Sequence</td>
-                                                <td>@gRNA.GCScore</td>
-                                                <td>@gRNA.HomopolymerCount</td>
-                                                <td>@gRNA.SeedRegion</td>
-                                                <td>@gRNA.Allignments</td>
-                                            </tr>
-                                        }
-                                        </tbody>
-                                    </table>
-                                </div>
-                            </div>
-                        </div>
-                    </div>
-                </div>
-            }
-
-            <div class="row">
-                <div class="col">
-                    <div class="card shadow-sm">
-                        <div class="card-body">
-                            <div class="d-flex justify-content-between align-items-center mb-3">
-                                <h5 class="card-title mb-0">Complete gRNA</h5>
-                                @if (hgvsData.SelectedSpacer != null)
-                                {
-                                    <div>
-                                        <button class="btn btn-sm btn-success me-2" @onclick="() => CopyCompleteGRNA(hgvsData)" title="Copy complete gRNA">
-                                            @if (hgvsData.CopiedToClipboard)
-                                            {
-                                                <span>✓ Copied!</span>
-                                            }
-                                            else
-                                            {
-                                                <span>📋 Copy</span>
-                                            }
-                                        </button>
-                                        <button class="btn btn-sm btn-primary" @onclick="() => GetRnaFolding(hgvsData)" disabled="@hgvsData.IsLoadingRnaFold" title="Get RNA secondary structure">
-                                            @if (hgvsData.IsLoadingRnaFold)
-                                            {
-                                                <span>⏳ Loading...</span>
-                                            }
-                                            else
-                                            {
-                                                <span>🧬 Get Structure</span>
-                                            }
-                                        </button>
-                                    </div>
-                                }
-                            </div>
-                            <p class="font-monospace fs-5 mb-0" style="word-break: break-all; line-height: 1.8;">
-                                <span style="color: #d15b5b; font-weight: 500;">GATTTAGACTACCCCAAAAACGAAGGGGACTAAAAC</span>@if (hgvsData.SelectedSpacer != null)
-                                {<span style="color: #4b4bba; font-weight: 500;">@hgvsData.SelectedSpacer</span>}
-                            </p>
-                            @if (hgvsData.SelectedSpacer == null)
-                            {
-                                <p class="text-muted mt-2 mb-0"><small>Click the 🔨 button on a gRNA spacer to add it here</small></p>
-                            }
-                            
-                            @if (hgvsData.RnaFoldResult != null)
-                            {
-                                <div class="mt-4 pt-3 border-top">
-                                    <h6 class="mb-3">RNA Secondary Structure</h6>
-                                    
-                                    @if (!string.IsNullOrEmpty(hgvsData.FornaUrl))
-                                    {
-                                        
-                                        <iframe src=@hgvsData.FornaUrl
-                                                style="width: 100%; height: 600px; border: 1px solid #dee2e6; border-radius: 0.375rem;"
-                                                title="RNA Secondary Structure Visualization">
-                                        </iframe>
-                                    }
-                                    
-                                    <div class="mb-2">
-                                        <strong>Dot-Bracket Notation:</strong>
-                                        <p class="font-monospace bg-light p-3 rounded mb-0 mt-2" style="word-break: break-all; line-height: 1.8; font-size: 0.9rem;">
-                                            @hgvsData.RnaFoldResult.Structure
-                                        </p>
-                                    </div>
-                                    
-                                    <p class="mb-0 mt-2"><strong>Minimum Free Energy:</strong> @hgvsData.RnaFoldResult.Energy.ToString("F2") kcal/mol</p>
-                                </div>
-                            }
-                            
-                            @if (hgvsData.RnaFoldError != null)
-                            {
-                                <div class="alert alert-danger mt-3 mb-0" role="alert">
-                                    <strong>Error getting RNA structure:</strong><br/>
-                                    @hgvsData.RnaFoldError
-                                </div>
-                            }
-                        </div>
-                    </div>
-                </div>
-            </div>
-        }
-    };
-
-    private void HandlegRNACreationButton(string spacer, HgvsData hgvsData)
-    {
-        if (hgvsData == null) return;
-        
-        hgvsData.SelectedSpacer = spacer;
-        hgvsData.CopiedToClipboard = false;
-    }
-
-    private async Task CopyCompleteGRNA(HgvsData hgvsData)
-    {
-        if (hgvsData?.SelectedSpacer != null)
-        {
-            hgvsData.CopiedToClipboard = true;
-            StateHasChanged();
-            var completeGRNA = "GATTTAGACTACCCCAAAAACGAAGGGGACTAAAAC" + hgvsData.SelectedSpacer;
-            
-            await JSRuntime.InvokeVoidAsync("navigator.clipboard.writeText", completeGRNA);
-        }
-    }
-    
-    private async Task GetRnaFolding(HgvsData hgvsData)
-    {
-        if (hgvsData?.SelectedSpacer == null) return;
-        
-        try
-        {
-            hgvsData.IsLoadingRnaFold = true;
-            hgvsData.RnaFoldError = null;
-            hgvsData.RnaFoldResult = null;
-            hgvsData.FornaUrl = null;
-            StateHasChanged();
-            
-            var completeGRNA = "GATTTAGACTACCCCAAAAACGAAGGGGACTAAAAC" + hgvsData.SelectedSpacer;
-            var result = await Api.GetRnaFold(completeGRNA);
-            
-            hgvsData.RnaFoldResult = result;
-            
-            // Get the Forna URL
-            try
-            {
-                hgvsData.FornaUrl = await Api.GetFornaUrl(completeGRNA, result.Structure);
-                hgvsData.FornaUrl = hgvsData.FornaUrl.Trim('"');
-                
-            }
-            catch (Exception urlEx)
-            {
-                Console.WriteLine($"Error getting Forna URL: {urlEx}");
-                // Continue even if URL fails - we still have the text structure
-            }
-        }
-        catch (Exception ex)
-        {
-            hgvsData.RnaFoldError = ex.Message;
-            Console.WriteLine($"Error getting RNA folding: {ex}");
-        }
-        finally
-        {
-            hgvsData.IsLoadingRnaFold = false;
-            await InvokeAsync(StateHasChanged);
-        }
-    }
-
-    protected override async Task OnInitializedAsync()
-    {
-        // Check for rs query parameter and auto-populate
-        try
-        {
-            var uri = new Uri(Nav.Uri);
-            var query = System.Web.HttpUtility.ParseQueryString(uri.Query);
-            var rsParam = query["rs"];
-            if (!string.IsNullOrWhiteSpace(rsParam))
-            {
-                _hgvs = rsParam.Trim();
-                await FetchData();
-            }
-        }
-        catch
-        {
-            // ignore parsing errors
-        }
-    }
-
+    // Logic moved to Index.razor.cs
 }
