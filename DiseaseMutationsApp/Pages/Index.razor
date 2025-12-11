@@ -74,7 +74,7 @@
                     }
                 </ul>
 
-                <div class="tab-content mt-4">
+                <div class="tab-content-container">
                     @for (var i = 0; i < _inputTabs.Count; i++)
                     {
                         var index = i;
@@ -83,11 +83,9 @@
                         <div class="@(index == _activeTabIndex ? "d-block fade-in-up" : "d-none")">
                             @if (tab.IsLoading)
                             {
-                                <div class="card shadow-sm">
-                                    <div class="card-body text-center py-5">
-                                        <Spinner Type="SpinnerType.Dots" Color="SpinnerColor.Primary" />
-                                        <p class="mt-4 text-muted" style="font-size: 1.0625rem;">Loading data for @tab.DisplayLabel...</p>
-                                    </div>
+                                <div class="text-center py-5">
+                                    <Spinner Type="SpinnerType.Dots" Color="SpinnerColor.Primary" />
+                                    <p class="mt-4 text-muted" style="font-size: 1.0625rem;">Loading data for @tab.DisplayLabel...</p>
                                 </div>
                             }
                             else if (tab.ErrorMessage != null)
@@ -112,7 +110,7 @@
                                 @if (tab.ChildHgvsList.Any())
                                 {
                                     <!-- Second level tabs for RS child HGVS -->
-                                    <ul class="nav nav-tabs nav-tabs-sm" role="tablist" style="background: var(--surface); border-top: 2px solid var(--divider-color); padding-top: 0.75rem; margin-top: 0.5rem; border-radius: var(--radius-md);">
+                                    <ul class="nav nav-tabs nav-tabs-sm" role="tablist">
                                         @for (int j = 0; j < tab.ChildHgvsList.Count; j++)
                                         {
                                             var childIndex = j;
@@ -121,8 +119,7 @@
                                             
                                             <li class="nav-item" role="presentation">
                                                 <button class="nav-link @(isActiveChild ? "active" : "")" 
-                                                        type="button" 
-                                                        style="font-size: 0.875rem;"
+                                                        type="button"
                                                         @onclick="() => _activeChildTabIndices[index] = childIndex">
                                                     @if (childHgvs.IsLoading)
                                                     {
@@ -141,7 +138,7 @@
                                         }
                                     </ul>
                                     
-                                    <div class="mt-4">
+                                    <div class="tab-content-container tab-content-container-nested">
                                         @for (int j = 0; j < tab.ChildHgvsList.Count; j++)
                                         {
                                             var childIndex = j;
