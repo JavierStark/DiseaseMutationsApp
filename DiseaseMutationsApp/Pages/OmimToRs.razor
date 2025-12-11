@@ -2,6 +2,8 @@
 @using DiseaseMutationsApp.Services
 @inject IDiseaseMutationsApi Api
 @inject NavigationManager Nav
+@inject AppStateService StateService
+@implements IDisposable
 
 <PageTitle>Omim to RS</PageTitle>
 
@@ -110,11 +112,40 @@
 </div>
 
 @code {
-    private int? _omim;
+    // Use properties that bind to state service
+    private int? _omim
+    {
+        get => StateService.OmimCode;
+        set => StateService.OmimCode = value;
+    }
+
+    private List<string>? _rsList
+    {
+        get => StateService.OmimRsList;
+        set => StateService.OmimRsList = value;
+    }
+
+    private HashSet<string> _selectedRs => StateService.OmimSelectedRs;
+
+    private string? _errorMessage
+    {
+        get => StateService.OmimErrorMessage;
+        set => StateService.OmimErrorMessage = value;
+    }
+
     private bool _isLoading;
-    private string? _errorMessage;
-    private List<string>? _rsList;
-    private HashSet<string> _selectedRs = new(StringComparer.OrdinalIgnoreCase);
+
+    protected override void OnInitialized()
+    {
+        // Subscribe to state changes
+        StateService.OnStateChanged += StateHasChanged;
+    }
+
+    public void Dispose()
+    {
+        // Unsubscribe from state changes to prevent memory leaks
+        StateService.OnStateChanged -= StateHasChanged;
+    }
 
     private async Task FetchRs()
     {
