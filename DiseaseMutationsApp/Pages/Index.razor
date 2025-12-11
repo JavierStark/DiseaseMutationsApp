@@ -5,27 +5,34 @@
 
 <PageTitle>gRNA Builder</PageTitle>
 
-<div class="container-fluid px-4 py-4" style="max-width: 1400px;">
-    <div class="row mb-4">
+<div class="container-fluid px-4 py-4 fade-in-up" style="max-width: 1500px;">
+    <div class="row mb-5">
         <div class="col">
-            <h1 class="mb-4">gRNA Builder</h1>
+            <h1 class="mb-2" style="background: linear-gradient(135deg, #06B6D4 0%, #A855F7 100%); -webkit-background-clip: text; -webkit-text-fill-color: transparent; background-clip: text;">
+                🧬 gRNA Builder
+            </h1>
+            <p class="text-muted mb-0">Design and analyze guide RNA sequences for CRISPR applications</p>
         </div>
     </div>
 
-    <div class="row mb-4">
-        <div class="col-lg-8 col-xl-6">
+    <div class="row mb-5">
+        <div class="col-lg-9 col-xl-7">
             <div class="card shadow-sm">
                 <div class="card-body">
-                    <h5 class="card-title mb-3">Input Parameters</h5>
-                    <div class="mb-3">
-                        <label for="hgvs" class="form-label">HGVS or RS codes (comma-separated for multiple):</label>
+                    <h5 class="card-title mb-4" style="color: var(--color-teal-light);">
+                        <span class="oi oi-cog me-2"></span>Input Parameters
+                    </h5>
+                    <div class="mb-4">
+                        <label for="hgvs" class="form-label">HGVS or RS codes (comma-separated for multiple)</label>
                         <textarea id="hgvs" class="form-control" @bind="_hgvs" rows="5" placeholder="e.g., NG_016465.4:g.98765C>T, rs12345, NG_056131.3:g.755G>A&#10;You can enter multiple HGVS or RS codes separated by commas"></textarea>
+                        <small class="text-muted mt-2 d-block">Enter one or more genetic variants to analyze</small>
                     </div>
-                    <div class="mb-3">
-                        <label for="before" class="form-label">gRNA size:</label>
-                        <input id="before" type="number" class="form-control" @bind="_gRnaSize" min="1" style="max-width: 200px;"/>
+                    <div class="mb-4">
+                        <label for="before" class="form-label">gRNA size</label>
+                        <input id="before" type="number" class="form-control" @bind="_gRnaSize" min="1" style="max-width: 220px;"/>
                     </div>
                     <button class="btn btn-primary btn-lg mt-2" @onclick="FetchData">
+                        <span class="oi oi-data-transfer-download me-2"></span>
                         <span>Fetch Data</span>
                     </button>
                 </div>
@@ -35,7 +42,7 @@
 
     @if (_inputTabs.Any())
     {
-        <div class="row mb-4">
+        <div class="row mb-5 fade-in-up">
             <div class="col">
                 <ul class="nav nav-tabs" role="tablist">
                     @for (var i = 0; i < _inputTabs.Count; i++)
@@ -56,38 +63,38 @@
                                 }
                                 else if (hasError)
                                 {
-                                    <span style="color: #dc3545;">⚠️ @tab.DisplayLabel</span>
+                                    <span style="color: var(--color-red-light);">⚠️ @tab.DisplayLabel</span>
                                 }
                                 else
                                 {
-                                    <span>✓ @tab.DisplayLabel</span>
+                                    <span style="color: var(--color-green-light);">✓ @tab.DisplayLabel</span>
                                 }
                             </button>
                         </li>
                     }
                 </ul>
 
-                <div class="tab-content mt-3">
+                <div class="tab-content mt-4">
                     @for (var i = 0; i < _inputTabs.Count; i++)
                     {
                         var index = i;
                         var tab = _inputTabs[i];
                         
-                        <div class="@(index == _activeTabIndex ? "d-block" : "d-none")">
+                        <div class="@(index == _activeTabIndex ? "d-block fade-in-up" : "d-none")">
                             @if (tab.IsLoading)
                             {
                                 <div class="card shadow-sm">
                                     <div class="card-body text-center py-5">
                                         <Spinner Type="SpinnerType.Dots" Color="SpinnerColor.Primary" />
-                                        <p class="mt-3 text-muted">Loading data for @tab.DisplayLabel...</p>
+                                        <p class="mt-4 text-muted" style="font-size: 1.0625rem;">Loading data for @tab.DisplayLabel...</p>
                                     </div>
                                 </div>
                             }
                             else if (tab.ErrorMessage != null)
                             {
                                 <div class="alert alert-danger" role="alert">
-                                    <strong>Error loading data for @tab.DisplayLabel:</strong><br/>
-                                    @tab.ErrorMessage
+                                    <strong style="color: var(--text-primary);">⚠️ Error loading data for @tab.DisplayLabel:</strong><br/>
+                                    <span style="margin-top: 0.5rem; display: block;">@tab.ErrorMessage</span>
                                 </div>
                             }
                             else if (tab.Type == InputType.HGVS && tab.DirectHgvs != null)
@@ -105,7 +112,7 @@
                                 @if (tab.ChildHgvsList.Any())
                                 {
                                     <!-- Second level tabs for RS child HGVS -->
-                                    <ul class="nav nav-tabs nav-tabs-sm bg-light" role="tablist" style="border-top: 2px solid #dee2e6; padding-top: 0.5rem;">
+                                    <ul class="nav nav-tabs nav-tabs-sm" role="tablist" style="background: var(--surface); border-top: 2px solid var(--divider-color); padding-top: 0.75rem; margin-top: 0.5rem; border-radius: var(--radius-md);">
                                         @for (int j = 0; j < tab.ChildHgvsList.Count; j++)
                                         {
                                             var childIndex = j;
@@ -115,7 +122,7 @@
                                             <li class="nav-item" role="presentation">
                                                 <button class="nav-link @(isActiveChild ? "active" : "")" 
                                                         type="button" 
-                                                        style="font-size: 0.9rem;"
+                                                        style="font-size: 0.875rem;"
                                                         @onclick="() => _activeChildTabIndices[index] = childIndex">
                                                     @if (childHgvs.IsLoading)
                                                     {
@@ -123,25 +130,25 @@
                                                     }
                                                     else if (childHgvs.ErrorMessage != null)
                                                     {
-                                                        <span style="color: #dc3545;">⚠️ @childHgvs.Hgvs[..Math.Min(20, childHgvs.Hgvs.Length)]@(childHgvs.Hgvs.Length > 20 ? "..." : "")</span>
+                                                        <span style="color: var(--color-red-light);">⚠️ @childHgvs.Hgvs[..Math.Min(20, childHgvs.Hgvs.Length)]@(childHgvs.Hgvs.Length > 20 ? "..." : "")</span>
                                                     }
                                                     else
                                                     {
-                                                        <span>✓ @childHgvs.Hgvs[..Math.Min(20, childHgvs.Hgvs.Length)]@(childHgvs.Hgvs.Length > 20 ? "..." : "")</span>
+                                                        <span style="color: var(--color-green-light);">✓ @childHgvs.Hgvs[..Math.Min(20, childHgvs.Hgvs.Length)]@(childHgvs.Hgvs.Length > 20 ? "..." : "")</span>
                                                     }
                                                 </button>
                                             </li>
                                         }
                                     </ul>
                                     
-                                    <div class="mt-3">
+                                    <div class="mt-4">
                                         @for (int j = 0; j < tab.ChildHgvsList.Count; j++)
                                         {
                                             var childIndex = j;
                                             var childHgvs = tab.ChildHgvsList[j];
                                             var isActiveChild = _activeChildTabIndices.TryGetValue(index, out var activeChild) && activeChild == childIndex;
                                             
-                                            <div class="@(isActiveChild ? "d-block" : "d-none")">
+                                            <div class="@(isActiveChild ? "d-block fade-in-up" : "d-none")">
                                                 <HgvsDetailPanel 
                                                     Data="childHgvs" 
                                                     OnSort="SortBy" 
@@ -156,7 +163,7 @@
                                 else
                                 {
                                     <div class="alert alert-info" role="alert">
-                                        <strong>No HGVS variants found for @tab.DisplayLabel</strong>
+                                        <strong style="color: var(--text-primary);">ℹ️ No HGVS variants found for @tab.DisplayLabel</strong>
                                     </div>
                                 }
                             }
