@@ -8,18 +8,35 @@ using Microsoft.JSInterop;
 
 namespace DiseaseMutationsApp.Pages
 {
-    public partial class Index : ComponentBase
+    public partial class Index : ComponentBase, IDisposable
     {
         [Inject] private IJSRuntime JSRuntime { get; set; } = default!;
         [Inject] private IDiseaseMutationsApi Api { get; set; } = default!;
         [Inject] private NavigationManager Nav { get; set; } = default!;
+        [Inject] private AppStateService StateService { get; set; } = default!;
 
-        private string? _hgvs;
-        private int _gRnaSize = 28;
+        // Use properties that bind to the state service
+        private string? _hgvs
+        {
+            get => StateService.IndexHgvsInput;
+            set => StateService.IndexHgvsInput = value;
+        }
 
-        private List<InputTabData> _inputTabs = new();
-        private int _activeTabIndex;
-        private Dictionary<int, int> _activeChildTabIndices = new();
+        private int _gRnaSize
+        {
+            get => StateService.IndexGRnaSize;
+            set => StateService.IndexGRnaSize = value;
+        }
+
+        private List<InputTabData> _inputTabs => StateService.IndexInputTabs;
+        
+        private int _activeTabIndex
+        {
+            get => StateService.IndexActiveTabIndex;
+            set => StateService.IndexActiveTabIndex = value;
+        }
+        
+        private Dictionary<int, int> _activeChildTabIndices => StateService.IndexActiveChildTabIndices;
 
         // Helper to get sorted gRNA list for display
         private IEnumerable<GRNAResult> GetSortedGRNAs(HgvsData hgvsData)
@@ -292,13 +309,16 @@ namespace DiseaseMutationsApp.Pages
 
         protected override async Task OnInitializedAsync()
         {
-            // Check for rs query parameter and auto-populate
+            // Subscribe to state changes
+            StateService.OnStateChanged += StateHasChanged;
+
+            // Check for rs query parameter and auto-populate (only if no existing state)
             try
             {
                 var uri = new Uri(Nav.Uri);
                 var query = System.Web.HttpUtility.ParseQueryString(uri.Query);
                 var rsParam = query["rs"];
-                if (!string.IsNullOrWhiteSpace(rsParam))
+                if (!string.IsNullOrWhiteSpace(rsParam) && !_inputTabs.Any())
                 {
                     _hgvs = rsParam.Trim();
                     await FetchData();
@@ -308,6 +328,12 @@ namespace DiseaseMutationsApp.Pages
             {
                 // ignore parsing errors
             }
+        }
+
+        public void Dispose()
+        {
+            // Unsubscribe from state changes to prevent memory leaks
+            StateService.OnStateChanged -= StateHasChanged;
         }
     }
 }
