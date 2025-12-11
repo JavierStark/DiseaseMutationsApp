@@ -2,6 +2,7 @@
 
 open FSharp.Data
 open gRNA.LevenshteinDistance
+open System.Threading.Tasks
 
 type Phenotype = HtmlProvider<"https://omim.org/entry/261600">
 type AllelicVariant = HtmlProvider<"https://omim.org/allelicVariants/612349">
@@ -11,9 +12,9 @@ let similarityThreshold = 75.0
  
  
 let rsFromOmim (omim: int) =
-    async{
+    task{
         use client = new System.Net.Http.HttpClient()
-        let! phenotypeResponse = client.GetStringAsync($"https://omim.org/entry/%d{omim}") |> Async.AwaitTask  
+        let! phenotypeResponse = client.GetStringAsync($"https://omim.org/entry/%d{omim}")
         
         
         let phenotypeHtml = Phenotype.Parse(phenotypeResponse);
@@ -33,16 +34,14 @@ let rsFromOmim (omim: int) =
             |> Seq.toList
             |> List.map levenshteinSimilarityPercentage
 
-        let allelicVariantsHtml =
+        let! allelicVariantsHtml =
             genes
             |> List.map (fun mimNumber -> 
-                async {
-                    let! avResponse = client.GetStringAsync($"https://omim.org/allelicVariants/%d{mimNumber}") |> Async.AwaitTask
+                task {
+                    let! avResponse = client.GetStringAsync($"https://omim.org/allelicVariants/%d{mimNumber}")
                     return AllelicVariant.Parse(avResponse)
                 })
-            |> Async.Parallel
-            |> Async.RunSynchronously
-            |> List.ofArray
+            |> Task.WhenAll
             
         let isRelevantPhenotype (phenotype: string) =
             phenotypesDistances
@@ -51,6 +50,7 @@ let rsFromOmim (omim: int) =
             
         let allelicVariants =
             allelicVariantsHtml
+            |> Array.toList
             |> List.collect (fun avHtml -> avHtml.Tables.Table1.Rows |> Seq.toList)
             |> List.filter (fun row -> isRelevantPhenotype row.Phenotype)
             |> List.map _.SNP

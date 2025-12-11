@@ -1,5 +1,5 @@
 using gRNA;
-using static Microsoft.FSharp.Control.FSharpAsync;
+using Microsoft.FSharp.Collections;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -45,38 +45,20 @@ app.MapGet("/getallignments", async (string sequence, int mismatches, int thread
     Results.Ok(await BowtieWrapper.runBowtie(mismatches, threads, sequence))).WithName("GetAllAlignments");
 
 app.MapGet("/getbestgrnafromhgvs", async (string hgvs, int window) => 
-{
-    var fsharpAsync = Main.getBestgRNAFromHGVS(hgvs, window);
-    var task = StartAsTask(fsharpAsync, null, null);
-    var result = await task;
-    return Results.Ok(result);
-}).WithName("GetBestgRNAFromHgvs");
+    Results.Ok(await Main.getBestgRNAFromHGVS(hgvs, window))).WithName("GetBestgRNAFromHgvs");
 
 app.MapGet("/gethgvsfromsnp", async (string rsid) => 
-{
-    var fsharpAsync = SNP.getHgvsNotationsAsync(rsid);
-    var task = StartAsTask(fsharpAsync, null, null);
-    var result = await task;
-    Console.WriteLine($"HGVS notations for rsid {rsid}: {string.Join(", ", result)}");
-    return Results.Ok(result.ToList());
-}).WithName("GetHGVSFromSNP");
+    Results.Ok((await SNP.getHgvsNotationsAsync(rsid)).ToList())).WithName("GetHGVSFromSNP");
 
-app.MapGet("/getrsfromomim", async (int omim) =>
-{
-    var fsharpAsync = Omim.rsFromOmim(omim);
-    var task = StartAsTask(fsharpAsync, null, null);
-    var result = await task;
-    return Results.Ok(result);
-}).WithName("GetRsFromOmim");
+app.MapGet("/getrsfromomim", async (int omim) => 
+    Results.Ok(await Omim.rsFromOmim(omim))).WithName("GetRsFromOmim");
 
 app.MapGet("/getrnafold", async (string sequence) => 
     Results.Ok(await RNAFoldWrapper.fold(sequence))).WithName("GetRNAFold");
 
 app.MapGet("/getfornaurl", (string sequence, string structure) => 
-{
-    var url = $"http://nibiru.tbi.univie.ac.at/forna/forna.html?id=url/name&sequence={sequence}&structure={structure}";
-    return Results.Ok(url);
-}).WithName("GetFornaUrl");
+    Results.Ok($"http://nibiru.tbi.univie.ac.at/forna/forna.html?id=url/name&sequence={sequence}&structure={structure}"))
+    .WithName("GetFornaUrl");
 
 
 

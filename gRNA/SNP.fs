@@ -1,21 +1,22 @@
 ﻿module gRNA.SNP
 
 open FSharp.Data.JsonProvider
-
 open System.Net.Http
+open System.Threading.Tasks
+
 type SnpData = JsonProvider<"snp_sample.json">
 
 
 let private httpClient = new HttpClient()
 
-let loadJsonFromUrlAsync (url: string) : Async<string> =
-    async {
-        let! response = httpClient.GetStringAsync(url) |> Async.AwaitTask
+let loadJsonFromUrlAsync (url: string) : Task<string> =
+    task {
+        let! response = httpClient.GetStringAsync(url)
         return response
     }
 
-let getHgvsNotationsAsync (rsNumber: string) : Async<string list> =
-    async {
+let getHgvsNotationsAsync (rsNumber: string) : Task<string list> =
+    task {
         let url = $"https://api.ncbi.nlm.nih.gov/variation/v0/refsnp/{rsNumber}"
         
         try

@@ -77,12 +77,11 @@ let runBowtie(mismatches: int) (threads: int)  (sequence: string) : Task<string 
            
 }
 
-let runBowtieForMultipleSequences (sequences: string list) (mismatches: int) (threads: int) : Async<int list> = async {
+let runBowtieForMultipleSequences (sequences: string list) (mismatches: int) (threads: int) : Task<int list> = task {
     let! results =
         sequences
         |> String.concat ","
         |> runBowtie mismatches threads
-        |> Async.AwaitTask
         
     
     let nOfAllignments =
