@@ -1,6 +1,7 @@
 ﻿module Main
 
 open gRNA
+open System.Threading.Tasks
 
 type ResultFromHGVS = {
     gRNA: SpacerFinder.gRNAResult list
@@ -10,7 +11,7 @@ type ResultFromHGVS = {
 }
     
 
-let getBestgRNAFromHGVS (hgvsString: string) (grnaSize: int) = async {
+let getBestgRNAFromHGVS (hgvsString: string) (grnaSize: int) = task {
     let hgvsObj = HGVS.HGVS(hgvsString)
     let! sequence = SequenceRepository.SequenceRepository.GetSequence(hgvsObj.Accession)
     let extraNucleotids = grnaSize - hgvsObj.GetMutationLength()
