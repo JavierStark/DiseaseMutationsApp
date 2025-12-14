@@ -14,10 +14,5 @@ let addSome a b =
         let! y = b
         return x + y
     }
-
-let r1 = addSome (Some 2) (Some 3)    // Some 5
-let r2 = addSome None (Some 3)       // None
-
-// Print results (for script execution)
-printfn "r1 = %A" r1
-printfn "r2 = %A" r2
+    
+   

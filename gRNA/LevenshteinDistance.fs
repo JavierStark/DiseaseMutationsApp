@@ -3,7 +3,7 @@
 let rec levenshteinDistance (s1: string) (s2: string) =
         let lenS1 = s1.Length
         let lenS2 = s2.Length
-        let d = Array2D.init (lenS1 + 1) (lenS2 + 1) (fun i j -> 0)
+        let d = Array2D.init (lenS1 + 1) (lenS2 + 1) (fun _ _ -> 0)
 
         for i in 0 .. lenS1 do
             d.[i, 0] <- i

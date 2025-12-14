@@ -20,6 +20,16 @@ public interface IDiseaseMutationsApi
     Task<string> GetFornaUrl([Query] string sequence, [Query] string structure);
 }
 
+/*
+ *     { Sequence = sequence
+      GCScore = gcScore
+      HomopolymerCount = homopolymerCount
+      SeedRegion = seedRegion
+      Allignments = 0
+      RnaFoldResult = { Structure = ""; Energy = 0.0 }
+      Rank = 0
+      Score = 0.0}
+ */
 public record GRNAResult
 {
     public string Sequence { get; init; }
@@ -27,6 +37,10 @@ public record GRNAResult
     public int HomopolymerCount { get; init; }
     public string SeedRegion { get; init; }
     public int Allignments { get; init; }
+    public RNAFoldResult RnaFoldResult { get; init; }
+    public int Rank { get; init; }
+    public double Score { get; init; }
+    
 }
 
 public record ResultFromHGVS
