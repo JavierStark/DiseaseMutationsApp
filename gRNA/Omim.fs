@@ -54,6 +54,7 @@ let rsFromOmim (omim: int) =
             |> List.collect (fun avHtml -> avHtml.Tables.Table1.Rows |> Seq.toList)
             |> List.filter (fun row -> isRelevantPhenotype row.Phenotype)
             |> List.map _.SNP
+            |> List.collect (Array.toList << _.Split([| ", " |], System.StringSplitOptions.RemoveEmptyEntries))
             |> List.distinct
             |> List.filter _.StartsWith("rs")
 
