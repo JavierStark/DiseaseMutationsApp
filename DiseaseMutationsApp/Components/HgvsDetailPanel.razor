@@ -1,4 +1,4 @@
-﻿@using BlazorBootstrap
+﻿﻿@using BlazorBootstrap
 @using DiseaseMutationsApp.Services
 @using DiseaseMutationsApp.Pages
 
@@ -58,34 +58,42 @@
                                 Click any column header to sort. Tables with more than 5 rows are scrollable.
                             </p>
                             <div class="table-responsive" style="@((Data.GRNAs.Count > 5) ? "max-height: 350px; overflow-y: auto; border: 1px solid var(--border-color); border-radius: var(--radius-md);" : null)">
-                                <table class="table table-hover table-striped align-middle mb-0">
-                                    <thead class="table-light" style="position: sticky; top: 0; z-index: 5;">
+                                <table class="table table-hover align-middle mb-0">
+                                    <thead class="table-light" style="position: sticky; top: 0; z-index: 10; background: linear-gradient(135deg, #132F4C 0%, #1A3A5A 100%); box-shadow: 0 2px 8px rgba(0, 0, 0, 0.3);">
                                     <tr>
                                         <th style="width: 90px;">Action</th>
-                                        <th style="cursor: pointer; user-select: none;" @onclick="() => OnSort?.Invoke(Data, global::DiseaseMutationsApp.Pages.GrnaSortColumn.Sequence)">
+                                        <th style="cursor: pointer; user-select: none;" @onclick="() => OnSort?.Invoke(Data, GrnaSortColumn.Sequence)">
                                             gRNA Spacer
-                                            <span style="font-size: 0.875rem;">@(Data.SortColumn == global::DiseaseMutationsApp.Pages.GrnaSortColumn.Sequence ? (Data.SortAscending ? " ▲" : " ▼") : " ⇅")</span>
+                                            <span style="font-size: 0.875rem;">@(Data.SortColumn == GrnaSortColumn.Sequence ? (Data.SortAscending ? " ▲" : " ▼") : " ⇅")</span>
                                         </th>
-                                        <th style="cursor: pointer; user-select: none;" @onclick="() => OnSort?.Invoke(Data, global::DiseaseMutationsApp.Pages.GrnaSortColumn.GCScore)">
+                                        <th style="cursor: pointer; user-select: none;" @onclick="() => OnSort?.Invoke(Data, GrnaSortColumn.GCScore)">
                                             GC Score
-                                            <span style="font-size: 0.875rem;">@(Data.SortColumn == global::DiseaseMutationsApp.Pages.GrnaSortColumn.GCScore ? (Data.SortAscending ? " ▲" : " ▼") : " ⇅")</span>
+                                            <span style="font-size: 0.875rem;">@(Data.SortColumn == GrnaSortColumn.GCScore ? (Data.SortAscending ? " ▲" : " ▼") : " ⇅")</span>
                                         </th>
-                                        <th style="cursor: pointer; user-select: none;" @onclick="() => OnSort?.Invoke(Data, global::DiseaseMutationsApp.Pages.GrnaSortColumn.HomopolymerCount)">
+                                        <th style="cursor: pointer; user-select: none;" @onclick="() => OnSort?.Invoke(Data, GrnaSortColumn.HomopolymerCount)">
                                             Homopolymer
-                                            <span style="font-size: 0.875rem;">@(Data.SortColumn == global::DiseaseMutationsApp.Pages.GrnaSortColumn.HomopolymerCount ? (Data.SortAscending ? " ▲" : " ▼") : " ⇅")</span>
+                                            <span style="font-size: 0.875rem;">@(Data.SortColumn == GrnaSortColumn.HomopolymerCount ? (Data.SortAscending ? " ▲" : " ▼") : " ⇅")</span>
                                         </th>
-                                        <th style="cursor: pointer; user-select: none;" @onclick="() => OnSort?.Invoke(Data, global::DiseaseMutationsApp.Pages.GrnaSortColumn.SeedRegion)">
+                                        <th style="cursor: pointer; user-select: none;" @onclick="() => OnSort?.Invoke(Data, GrnaSortColumn.SeedRegion)">
                                             Seed Region
-                                            <span style="font-size: 0.875rem;">@(Data.SortColumn == global::DiseaseMutationsApp.Pages.GrnaSortColumn.SeedRegion ? (Data.SortAscending ? " ▲" : " ▼") : " ⇅")</span>
+                                            <span style="font-size: 0.875rem;">@(Data.SortColumn == GrnaSortColumn.SeedRegion ? (Data.SortAscending ? " ▲" : " ▼") : " ⇅")</span>
                                         </th>
-                                        <th style="cursor: pointer; user-select: none;" @onclick="() => OnSort?.Invoke(Data, global::DiseaseMutationsApp.Pages.GrnaSortColumn.Alignments)">
+                                        <th style="cursor: pointer; user-select: none;" @onclick="() => OnSort?.Invoke(Data, GrnaSortColumn.Alignments)">
                                             Alignments
-                                            <span style="font-size: 0.875rem;">@(Data.SortColumn == global::DiseaseMutationsApp.Pages.GrnaSortColumn.Alignments ? (Data.SortAscending ? " ▲" : " ▼") : " ⇅")</span>
+                                            <span style="font-size: 0.875rem;">@(Data.SortColumn == GrnaSortColumn.Alignments ? (Data.SortAscending ? " ▲" : " ▼") : " ⇅")</span>
+                                        </th>
+                                        <th style="cursor: pointer; user-select: none;" @onclick="() => OnSort?.Invoke(Data, GrnaSortColumn.Energy)">
+                                            Energy
+                                            <span style="font-size: 0.875rem;">@(Data.SortColumn == GrnaSortColumn.Energy ? (Data.SortAscending ? " ▲" : " ▼") : " ⇅")</span>
+                                        </th>
+                                        <th style="cursor: pointer; user-select: none;" @onclick="() => OnSort?.Invoke(Data, GrnaSortColumn.Score)">
+                                            Score
+                                            <span style="font-size: 0.875rem;">@(Data.SortColumn == GrnaSortColumn.Score ? (Data.SortAscending ? " ▲" : " ▼") : " ⇅")</span>
                                         </th>
                                     </tr>
                                     </thead>
                                     <tbody>
-                                    @foreach (var gRNA in GetSorted?.Invoke(Data) ?? Enumerable.Empty<GRNAResult>())
+                                    @foreach (var gRNA in GetSorted?.Invoke(Data) ?? [])
                                     {
                                         <tr>
                                             <td>
@@ -93,11 +101,13 @@
                                                     🔨
                                                 </button>
                                             </td>
-                                            <td class="font-monospace" style="font-size: 0.875rem; letter-spacing: 0.5px;">@gRNA.Sequence</td>
-                                            <td><span style="color: var(--color-teal-light); font-weight: 500;">@gRNA.GCScore</span></td>
-                                            <td>@gRNA.HomopolymerCount</td>
-                                            <td class="font-monospace" style="font-size: 0.875rem;">@gRNA.SeedRegion</td>
+                                            <td class="font-monospace" style="font-size: 0.875rem; letter-spacing: 0.5px;"><span style="color: var(--bs-white);">@gRNA.Sequence</span></td>
+                                            <td><span style="color: var(--bs-white); font-weight: 500;">@gRNA.GCScore</span></td>
+                                            <td><span style="color: var(--bs-white); font-weight: 500;">@gRNA.HomopolymerCount</span></td>
+                                            <td class="font-monospace" style="font-size: 0.875rem;"><span style="color: var(--bs-white);">@gRNA.SeedRegion</span></td>
                                             <td><span style="color: var(--color-purple-light); font-weight: 500;">@gRNA.Allignments</span></td>
+                                            <td><span style="color: var(--color-green-light); font-weight: 500;">@gRNA.RnaFoldResult.Energy.ToString("F2")</span></td>
+                                            <td><span style="color: var(--color-teal-light); font-weight: 500;">@gRNA.Score.ToString("P1")</span></td>
                                         </tr>
                                     }
                                     </tbody>

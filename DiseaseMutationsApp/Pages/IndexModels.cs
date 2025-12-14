@@ -9,7 +9,7 @@ namespace DiseaseMutationsApp.Pages
         RS
     }
 
-    public enum GrnaSortColumn { Sequence, GCScore, HomopolymerCount, SeedRegion, Alignments }
+    public enum GrnaSortColumn { Sequence, GCScore, HomopolymerCount, SeedRegion, Alignments, Energy, Score }
 
     public class InputTabData
     {
@@ -41,8 +41,8 @@ namespace DiseaseMutationsApp.Pages
         public string? RnaFoldError { get; set; }
         public string? FornaUrl { get; set; }
         // Sorting state for gRNA table
-        public GrnaSortColumn SortColumn { get; set; } = GrnaSortColumn.Sequence;
-        public bool SortAscending { get; set; } = true;
+        public GrnaSortColumn SortColumn { get; set; } = GrnaSortColumn.Score;
+        public bool SortAscending { get; set; }
     }
 }
 

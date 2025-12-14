@@ -394,6 +394,11 @@ input[type="number"] {
     background-color: rgba(6, 182, 212, 0.08);
 }
 
+/* Preserve colored text on hover - prevent color inheritance */
+.table-hover tbody tr:hover td span[style*="color"] {
+    opacity: 1 !important;
+}
+
 .table-light {
     --bs-table-bg: transparent;
 }
