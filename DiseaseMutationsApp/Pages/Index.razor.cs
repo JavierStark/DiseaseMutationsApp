@@ -52,6 +52,8 @@ namespace DiseaseMutationsApp.Pages
                 GrnaSortColumn.HomopolymerCount => asc ? hgvsData.GRNAs.OrderBy(g => g.HomopolymerCount) : hgvsData.GRNAs.OrderByDescending(g => g.HomopolymerCount),
                 GrnaSortColumn.SeedRegion => asc ? hgvsData.GRNAs.OrderBy(g => g.SeedRegion) : hgvsData.GRNAs.OrderByDescending(g => g.SeedRegion),
                 GrnaSortColumn.Alignments => asc ? hgvsData.GRNAs.OrderBy(g => g.Allignments) : hgvsData.GRNAs.OrderByDescending(g => g.Allignments),
+                GrnaSortColumn.Energy => asc ? hgvsData.GRNAs.OrderBy(g => g.RnaFoldResult.Energy) : hgvsData.GRNAs.OrderByDescending(g => g.RnaFoldResult.Energy),
+                GrnaSortColumn.Score => asc ? hgvsData.GRNAs.OrderBy(g => g.Score) : hgvsData.GRNAs.OrderByDescending(g => g.Score),
                 _ => hgvsData.GRNAs
             };
         }
@@ -312,16 +314,47 @@ namespace DiseaseMutationsApp.Pages
             // Subscribe to state changes
             StateService.OnStateChanged += StateHasChanged;
 
-            // Check for rs query parameter and auto-populate (only if no existing state)
+            // Subscribe to navigation changes
+            Nav.LocationChanged += OnLocationChanged;
+
+            // Check for rs query parameter and auto-populate
+            await ProcessUrlParameters();
+        }
+
+        protected override async Task OnParametersSetAsync()
+        {
+            // Handle URL parameter changes
+            await ProcessUrlParameters();
+        }
+
+        private void OnLocationChanged(object? sender, Microsoft.AspNetCore.Components.Routing.LocationChangedEventArgs e)
+        {
+            // Handle navigation changes
+            InvokeAsync(async () =>
+            {
+                await ProcessUrlParameters();
+                StateHasChanged();
+            });
+        }
+
+        private async Task ProcessUrlParameters()
+        {
             try
             {
                 var uri = new Uri(Nav.Uri);
                 var query = System.Web.HttpUtility.ParseQueryString(uri.Query);
                 var rsParam = query["rs"];
-                if (!string.IsNullOrWhiteSpace(rsParam) && !_inputTabs.Any())
+                
+                if (!string.IsNullOrWhiteSpace(rsParam))
                 {
-                    _hgvs = rsParam.Trim();
-                    await FetchData();
+                    var trimmedParam = rsParam.Trim();
+                    // Update input field if parameter is different from current value
+                    if (_hgvs != trimmedParam)
+                    {
+                        _hgvs = trimmedParam;
+                        // Auto-fetch data when coming from navigation
+                        await FetchData();
+                    }
                 }
             }
             catch
@@ -334,6 +367,7 @@ namespace DiseaseMutationsApp.Pages
         {
             // Unsubscribe from state changes to prevent memory leaks
             StateService.OnStateChanged -= StateHasChanged;
+            Nav.LocationChanged -= OnLocationChanged;
         }
     }
 }
