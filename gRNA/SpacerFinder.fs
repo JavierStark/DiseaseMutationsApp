@@ -66,9 +66,10 @@ let getOrderedgRna (window: int) (sequence: string) : Task<gRNAResult list> =
     task {
         let subsequences = slidingWindow sequence window
         let results = subsequences |> List.map getgRNAResult
+        let gRNASequences = subsequences |> List.map (fun s -> s + "GATTTAGACTACCCCAAAAACGAAGGGGACTAAAAC")
 
         let! allignments = BowtieWrapper.runBowtieForMultipleSequences subsequences 2 2
-        let! folds = foldMany subsequences
+        let! folds = foldMany gRNASequences
         
         let results =
             List.zip3 results folds allignments
