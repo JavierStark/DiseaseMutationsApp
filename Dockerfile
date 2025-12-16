@@ -1,5 +1,5 @@
 ﻿# Build stage
-FROM mcr.microsoft.com/dotnet/sdk:9.0 AS build
+FROM mcr.microsoft.com/dotnet/sdk:9.0-bookworm-slim AS build
 WORKDIR /src
 
 COPY ["Backend/Backend.csproj", "Backend/"]
@@ -27,6 +27,8 @@ RUN apt-get update && \
 
 # Copy published application
 COPY --from=publish /app/publish .
+
+RUN chmod +x /app/bowtie/bowtie-align-s
 
 EXPOSE 80
 ENTRYPOINT ["dotnet", "Backend.dll"]

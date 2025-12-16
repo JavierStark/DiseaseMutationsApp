@@ -63,14 +63,11 @@ let runBowtie(mismatches: int) (threads: int)  (sequence: string) : Task<string 
 
         return allignments
     finally
-        // Ensure process is properly cleaned up
-        if not proc.HasExited then
-            try
-                proc.Kill()
-                printfn "Killed Bowtie process"
-            with
-            | ex -> printfn "Failed to kill Bowtie process: %s" ex.Message
-        
+        try
+            proc.Kill(entireProcessTree = true)
+        with
+        | :? System.InvalidOperationException -> ()  // Process already exited - normal on Linux
+        | ex -> printfn "Cleanup error: %s" ex.Message
         // Force garbage collection to clean up resources
         GC.Collect()
         GC.WaitForPendingFinalizers()
