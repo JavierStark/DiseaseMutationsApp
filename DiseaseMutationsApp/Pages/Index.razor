@@ -47,12 +47,11 @@
                 <ul class="nav nav-tabs" role="tablist">
                     @for (var i = 0; i < _inputTabs.Count; i++)
                     {
-                        var index = i;
                         var tab = _inputTabs[i];
                         <li class="nav-item" role="presentation">
-                            <button class="nav-link @(index == _activeTabIndex ? "active" : "")" 
+                            <button class="nav-link @(i == _activeTabIndex ? "active" : "")" 
                                     type="button" 
-                                    @onclick="() => _activeTabIndex = index">
+                                    @onclick="() => _activeTabIndex = i">
                                 @{
                                     var isLoading = tab.IsLoading || tab is { Type: InputType.HGVS, DirectHgvs.IsLoading: true };
                                     var hasError = tab.ErrorMessage != null || tab is { Type: InputType.HGVS, DirectHgvs.ErrorMessage: not null };
@@ -77,10 +76,9 @@
                 <div class="tab-content-container">
                     @for (var i = 0; i < _inputTabs.Count; i++)
                     {
-                        var index = i;
                         var tab = _inputTabs[i];
                         
-                        <div class="@(index == _activeTabIndex ? "d-block fade-in-up" : "d-none")">
+                        <div class="@(i == _activeTabIndex ? "d-block fade-in-up" : "d-none")">
                             @if (tab.IsLoading)
                             {
                                 <div class="text-center py-5">
@@ -115,12 +113,12 @@
                                         {
                                             var childIndex = j;
                                             var childHgvs = tab.ChildHgvsList[j];
-                                            var isActiveChild = _activeChildTabIndices.TryGetValue(index, out var activeChild) && activeChild == childIndex;
+                                            var isActiveChild = _activeChildTabIndices.TryGetValue(i, out var activeChild) && activeChild == childIndex;
                                             
                                             <li class="nav-item" role="presentation">
                                                 <button class="nav-link @(isActiveChild ? "active" : "")" 
                                                         type="button"
-                                                        @onclick="() => _activeChildTabIndices[index] = childIndex">
+                                                        @onclick="() => _activeChildTabIndices[i] = childIndex">
                                                     @if (childHgvs.IsLoading)
                                                     {
                                                         <span>⏳ @childHgvs.Hgvs[..Math.Min(20, childHgvs.Hgvs.Length)]@(childHgvs.Hgvs.Length > 20 ? "..." : "")</span>
@@ -143,7 +141,7 @@
                                         {
                                             var childIndex = j;
                                             var childHgvs = tab.ChildHgvsList[j];
-                                            var isActiveChild = _activeChildTabIndices.TryGetValue(index, out var activeChild) && activeChild == childIndex;
+                                            var isActiveChild = _activeChildTabIndices.TryGetValue(i, out var activeChild) && activeChild == childIndex;
                                             
                                             <div class="@(isActiveChild ? "d-block fade-in-up" : "d-none")">
                                                 <HgvsDetailPanel 

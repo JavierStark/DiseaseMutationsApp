@@ -34,6 +34,7 @@ let getHgvsNotationsAsync (rsNumber: string) : Task<string list> =
                 |> Array.filter (fun h -> not (h.Contains("=")))  // exclude no-change notations
                 |> Array.toList
                 
+                
             printfn $"HGVS Notations: %A{hgvsNotations}"
             
             return hgvsNotations
