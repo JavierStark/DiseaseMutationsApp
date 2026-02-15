@@ -1,4 +1,4 @@
-﻿using System;
+﻿﻿using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
@@ -11,7 +11,7 @@ namespace DiseaseMutationsApp.Pages
     public partial class Index : ComponentBase, IDisposable
     {
         [Inject] private IJSRuntime JSRuntime { get; set; } = default!;
-        [Inject] private IDiseaseMutationsApi Api { get; set; } = default!;
+        [Inject] private GrnaService GrnaService { get; set; } = default!;
         [Inject] private NavigationManager Nav { get; set; } = default!;
         [Inject] private AppStateService StateService { get; set; } = default!;
 
@@ -151,7 +151,7 @@ namespace DiseaseMutationsApp.Pages
                     case InputType.RS when tabData.RsId != null:
                     {
                         // Fetch HGVS list from RS
-                        var hgvsList = await Api.GetHgvsFromSnp(tabData.RsId);
+                        var hgvsList = await GrnaService.GetHgvsFromSnp(tabData.RsId);
                         Console.WriteLine($"RS{tabData.RsId} returned {hgvsList.Count} HGVS variants.");
 
                         // Create child HGVS tabs with loading state
@@ -210,7 +210,7 @@ namespace DiseaseMutationsApp.Pages
         {
             try
             {
-                var result = await Api.GetBestgRNAFromHgvs(hgvsData.Hgvs, _gRnaSize);
+                var result = await GrnaService.GetBestgRNAFromHgvs(hgvsData.Hgvs, _gRnaSize);
 
                 hgvsData.Original = result.OriginalSequence;
                 hgvsData.Mutated = result.MutatedSequence;
@@ -280,15 +280,14 @@ namespace DiseaseMutationsApp.Pages
                 StateHasChanged();
 
                 var completeGRNA = "GATTTAGACTACCCCAAAAACGAAGGGGACTAAAAC" + hgvsData.SelectedSpacer;
-                var result = await Api.GetRnaFold(completeGRNA);
+                var result = await GrnaService.GetRnaFold(completeGRNA);
 
                 hgvsData.RnaFoldResult = result;
 
                 // Get the Forna URL
                 try
                 {
-                    hgvsData.FornaUrl = await Api.GetFornaUrl(completeGRNA, result.Structure);
-                    hgvsData.FornaUrl = hgvsData.FornaUrl.Trim('"');
+                    hgvsData.FornaUrl = GrnaService.GetFornaUrl(completeGRNA, result.Structure);
 
                 }
                 catch (Exception urlEx)

@@ -1,7 +1,6 @@
 ﻿@page "/"
-@using DiseaseMutationsApp.Services
-@using DiseaseMutationsApp.Pages
 @using BlazorBootstrap
+@rendermode @(new InteractiveServerRenderMode())
 
 <PageTitle>gRNA Builder</PageTitle>
 
@@ -47,11 +46,12 @@
                 <ul class="nav nav-tabs" role="tablist">
                     @for (var i = 0; i < _inputTabs.Count; i++)
                     {
+                        var tabIndex = i; // Capture loop variable for closure
                         var tab = _inputTabs[i];
                         <li class="nav-item" role="presentation">
-                            <button class="nav-link @(i == _activeTabIndex ? "active" : "")" 
+                            <button class="nav-link @(tabIndex == _activeTabIndex ? "active" : "")" 
                                     type="button" 
-                                    @onclick="() => _activeTabIndex = i">
+                                    @onclick="() => _activeTabIndex = tabIndex">
                                 @{
                                     var isLoading = tab.IsLoading || tab is { Type: InputType.HGVS, DirectHgvs.IsLoading: true };
                                     var hasError = tab.ErrorMessage != null || tab is { Type: InputType.HGVS, DirectHgvs.ErrorMessage: not null };
@@ -76,9 +76,10 @@
                 <div class="tab-content-container">
                     @for (var i = 0; i < _inputTabs.Count; i++)
                     {
-                        var tab = _inputTabs[i];
+                        var tabIndex = i; // Capture loop variable for closure
+                        var tab = _inputTabs[tabIndex];
                         
-                        <div class="@(i == _activeTabIndex ? "d-block fade-in-up" : "d-none")">
+                        <div class="@(tabIndex == _activeTabIndex ? "d-block fade-in-up" : "d-none")">
                             @if (tab.IsLoading)
                             {
                                 <div class="text-center py-5">
@@ -113,12 +114,12 @@
                                         {
                                             var childIndex = j;
                                             var childHgvs = tab.ChildHgvsList[j];
-                                            var isActiveChild = _activeChildTabIndices.TryGetValue(i, out var activeChild) && activeChild == childIndex;
+                                            var isActiveChild = _activeChildTabIndices.TryGetValue(tabIndex, out var activeChild) && activeChild == childIndex;
                                             
                                             <li class="nav-item" role="presentation">
                                                 <button class="nav-link @(isActiveChild ? "active" : "")" 
                                                         type="button"
-                                                        @onclick="() => _activeChildTabIndices[i] = childIndex">
+                                                        @onclick="() => _activeChildTabIndices[tabIndex] = childIndex">
                                                     @if (childHgvs.IsLoading)
                                                     {
                                                         <span>⏳ @childHgvs.Hgvs[..Math.Min(20, childHgvs.Hgvs.Length)]@(childHgvs.Hgvs.Length > 20 ? "..." : "")</span>
@@ -141,7 +142,7 @@
                                         {
                                             var childIndex = j;
                                             var childHgvs = tab.ChildHgvsList[j];
-                                            var isActiveChild = _activeChildTabIndices.TryGetValue(i, out var activeChild) && activeChild == childIndex;
+                                            var isActiveChild = _activeChildTabIndices.TryGetValue(tabIndex, out var activeChild) && activeChild == childIndex;
                                             
                                             <div class="@(isActiveChild ? "d-block fade-in-up" : "d-none")">
                                                 <HgvsDetailPanel 

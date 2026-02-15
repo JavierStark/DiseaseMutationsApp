@@ -1,6 +1,6 @@
 ﻿@page "/omim-to-rs"
 @using DiseaseMutationsApp.Services
-@inject IDiseaseMutationsApi Api
+@inject GrnaService GrnaService
 @inject NavigationManager Nav
 @inject AppStateService StateService
 @implements IDisposable
@@ -94,10 +94,10 @@
                                         </td>
                                         <td class="font-monospace" style="color: var(--color-teal-light); font-weight: 500;">@rsValue</td>
                                         <td>
-                                            <a class="btn btn-sm btn-secondary" href="/@(UrlEncodeQueryParam("rs", rsValue))" title="Open in gRNA Builder">
+                                            <button class="btn btn-sm btn-secondary" @onclick="() => NavigateToBuilder(rsValue)" title="Open in gRNA Builder">
                                                 <span class="oi oi-external-link me-1"></span>
                                                 Open gRNA Builder
-                                            </a>
+                                            </button>
                                         </td>
                                     </tr>
                                 }
@@ -163,7 +163,7 @@
         {
             _isLoading = true;
             StateHasChanged();
-            var unfilteredRS = await Api.GetRsFromOmim(_omim.Value);
+            var unfilteredRS = await GrnaService.GetRsFromOmim(_omim.Value);
             
             _rsList = await FilterAvailableRS(unfilteredRS);
         }
@@ -183,7 +183,7 @@
         var filtered = new List<string>();
         foreach (var rs in unfilteredRs)
         {
-            var hgvs = await Api.GetHgvsFromSnp(rs[2..]);
+            var hgvs = await GrnaService.GetHgvsFromSnp(rs[2..]);
             
             if (hgvs.Count != 0)
                 filtered.Add(rs);
@@ -205,20 +205,26 @@
         }
     }
 
+    private void NavigateToBuilder(string rsValue)
+    {
+        if (string.IsNullOrWhiteSpace(rsValue)) return;
+        var url = BuildUrlWithRsParam(rsValue);
+        Nav.NavigateTo(url, forceLoad: false);
+    }
+
     private void OpenSelectedInBuilder()
     {
         if (!_selectedRs.Any()) return;
         // Join selected RS with commas; Index.razor supports comma-separated inputs
         var joined = string.Join(",", _selectedRs.Select(r => r.Trim()).Where(r => !string.IsNullOrWhiteSpace(r)));
-        var url = "/" + UrlEncodeQueryParam("rs", joined);
-        Nav.NavigateTo(url);
+        var url = BuildUrlWithRsParam(joined);
+        Nav.NavigateTo(url, forceLoad: false);
     }
 
-    private static string UrlEncodeQueryParam(string key, string value)
+    private static string BuildUrlWithRsParam(string value)
     {
         // Build a URL like "/?rs=rs123,rs456" safely
-        var encodedKey = Uri.EscapeDataString(key);
         var encodedValue = Uri.EscapeDataString(value);
-        return $"?{encodedKey}={encodedValue}";
+        return $"/?rs={encodedValue}";
     }
 }
