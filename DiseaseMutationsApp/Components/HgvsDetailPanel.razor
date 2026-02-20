@@ -156,7 +156,7 @@
                             }
                         </div>
                         <div class="font-monospace p-3 rounded" style="background: var(--surface); border: 1px solid var(--border-color); word-break: break-all; line-height: 2.2; font-size: 1.125rem; letter-spacing: 1px;">
-                            <span style="color: #F87171; font-weight: 600; text-shadow: 0 0 10px rgba(248, 113, 113, 0.3);">GAUUUAGACUACCCCAAAAACGAAGGGGACUAAAAC</span>
+                            <span style="color: #F87171; font-weight: 600; text-shadow: 0 0 10px rgba(248, 113, 113, 0.3);">GATTTAGACTACCCCAAAAACGAAGGGGACTAAAAC</span>
                             @if (Data.SelectedSpacer != null)
                             {<span style="color: #34D399; font-weight: 600; text-shadow: 0 0 10px rgba(52, 211, 153, 0.3);">@Data.SelectedSpacer</span>}
                         </div>
@@ -166,6 +166,21 @@
                                 <span class="oi oi-info me-2" style="font-size: 0.875rem;"></span>
                                 <span>Click the 🔨 button on a gRNA spacer to add it here</span>
                             </p>
+                        }
+                        @if (Data.SelectedSpacer != null)
+                        {
+                            <div class="mt-4">
+                                <h6 class="mb-2" style="color: var(--color-teal-light); font-size: 1rem;">
+                                    <span class="oi oi-transfer me-2"></span>RNA
+                                </h6>
+                                <div class="font-monospace p-3 rounded" style="background: var(--surface); border: 1px solid var(--border-color); word-break: break-all; line-height: 2.2; font-size: 1.125rem; letter-spacing: 1px;">
+                                    @{
+                                        var completeGrna = "GATTTAGACTACCCCAAAAACGAAGGGGACTAAAAC" + Data.SelectedSpacer;
+                                        var rnaVersion = new string(completeGrna.Replace('T', 'U').Reverse().ToArray());
+                                    }
+                                    <span style="color: #A78BFA; font-weight: 600; text-shadow: 0 0 10px rgba(167, 139, 250, 0.3);">@rnaVersion</span>
+                                </div>
+                            </div>
                         }
                         
                         @if (Data.RnaFoldResult != null)

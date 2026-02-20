@@ -61,6 +61,5 @@ type Sequence(id: string, data: string) =
             | _ ->
                 raise (System.NotImplementedException($"Mutation type {hgvs.Mutation} not implemented"))
         
-        let mutatedRNA = mutated.Replace('T', 'U')
         
-        (mutatedRNA, original)
+        (mutated, original)

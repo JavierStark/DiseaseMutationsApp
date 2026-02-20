@@ -15,9 +15,8 @@ type SequenceRepository() =
             | true, sequence -> 
                 return sequence
             | false, _ ->
-                let! data : string = SequenceRepository.GetSequenceData(id)
-                let rna = data.Replace('T', 'U')
-                let sequence = Sequence(id, rna)
+                let! (data: string) = SequenceRepository.GetSequenceData(id)
+                let sequence = Sequence(id, data)
                 sequences.[id] <- sequence
                 return sequence
         }
