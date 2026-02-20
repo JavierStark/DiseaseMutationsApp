@@ -16,7 +16,8 @@ type SequenceRepository() =
                 return sequence
             | false, _ ->
                 let! data = SequenceRepository.GetSequenceData(id)
-                let sequence = Sequence(id, data)
+                let rna = data |> String.map (fun c -> if c = 'T' then 'U' else c)
+                let sequence = Sequence(id, rna)
                 sequences.[id] <- sequence
                 return sequence
         }

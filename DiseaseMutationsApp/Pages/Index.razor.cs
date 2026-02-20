@@ -261,7 +261,7 @@ namespace DiseaseMutationsApp.Pages
             {
                 hgvsData.CopiedToClipboard = true;
                 StateHasChanged();
-                var completeGRNA = "GATTTAGACTACCCCAAAAACGAAGGGGACTAAAAC" + hgvsData.SelectedSpacer;
+                var completeGRNA = "GAUUUAGACUACCCCAAAAACGAAGGGGACUAAAAC" + hgvsData.SelectedSpacer;
 
                 await JSRuntime.InvokeVoidAsync("navigator.clipboard.writeText", completeGRNA);
             }
@@ -279,7 +279,7 @@ namespace DiseaseMutationsApp.Pages
                 hgvsData.FornaUrl = null;
                 StateHasChanged();
 
-                var completeGRNA = "GATTTAGACTACCCCAAAAACGAAGGGGACTAAAAC" + hgvsData.SelectedSpacer;
+                var completeGRNA = "GAUUUAGACUACCCCAAAAACGAAGGGGACUAAAAC" + hgvsData.SelectedSpacer;
                 var result = await GrnaService.GetRnaFold(completeGRNA);
 
                 hgvsData.RnaFoldResult = result;

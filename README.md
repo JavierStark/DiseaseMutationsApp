@@ -386,7 +386,7 @@ The application generates complete gRNA sequences consisting of two parts:
 [Scaffold Sequence (37nt)] + [Spacer Sequence (20-28nt)]
 ```
 
-**Scaffold (constant)**: `GATTTAGACTACCCCAAAAACGAAGGGGACTAAAAC`
+**Scaffold (constant)**: `GAUUUAGACUACCCCAAAAACGAAGGGGACUAAAAC`
 - Provides structural framework for Cas9 binding
 - Universal sequence used in most CRISPR applications
 - Displayed in red in the UI
@@ -398,8 +398,8 @@ The application generates complete gRNA sequences consisting of two parts:
 
 **Example Complete gRNA**:
 ```
-GATTTAGACTACCCCAAAAACGAAGGGGACTAAAACATCGATCGATCGATCGATCGATCG
-└──────────────────────────────┘└────────────────────────────┘
+GAUUUAGACUACCCCAAAAACGAAGGGGACUAAAACAUCGAUCGAUCGAUCGAUCGAUCG
+└──────────────────────────────┘└───────────────────────────────────────┘
          Scaffold (37nt)              Spacer (28nt example)
 ```
 
