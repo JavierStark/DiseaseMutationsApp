@@ -15,8 +15,8 @@ type SequenceRepository() =
             | true, sequence -> 
                 return sequence
             | false, _ ->
-                let! data = SequenceRepository.GetSequenceData(id)
-                let rna = data |> String.map (fun c -> if c = 'T' then 'U' else c)
+                let! data : string = SequenceRepository.GetSequenceData(id)
+                let rna = data.Replace('T', 'U')
                 let sequence = Sequence(id, rna)
                 sequences.[id] <- sequence
                 return sequence
@@ -29,7 +29,7 @@ type SequenceRepository() =
             response.EnsureSuccessStatusCode() |> ignore
             let! content = response.Content.ReadAsStringAsync()
             let lines = content.Split('\n')
-            let data = 
+            let data =
                 lines 
                 |> Array.skip 1 
                 |> String.concat ""
