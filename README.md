@@ -28,6 +28,7 @@ The Disease Mutations App is designed to streamline the process of designing CRI
 The application uses a modern **Blazor Server** architecture with a monolithic design optimized for local deployment:
 
 ### 1. Blazor Server Application
+
 - **Technology**: ASP.NET Core 9.0 with Blazor Server
 - **Language**: C# 9.0
 - **Render Mode**: Interactive Server (SignalR-based real-time communication)
@@ -35,6 +36,7 @@ The application uses a modern **Blazor Server** architecture with a monolithic d
 - **Port**: 5000 (HTTP), 5001 (HTTPS in development)
 
 ### 2. gRNA Library (F# Module)
+
 - **Language**: F# 8.0
 - **Purpose**: Core bioinformatics logic and external tool integration
 - **Key Modules**:
@@ -50,6 +52,7 @@ The application uses a modern **Blazor Server** architecture with a monolithic d
   - `LevenshteinDistance.fs`: Sequence similarity calculations
 
 ### 3. Services Layer
+
 - **GrnaService**: Direct C# wrapper for F# library functions
 - **AppStateService**: Scoped state management for cross-page navigation and data persistence
 
@@ -58,28 +61,40 @@ The application uses a modern **Blazor Server** architecture with a monolithic d
 The application uses a multi-stage Docker build strategy for efficient deployment:
 
 ### Stage 1: Base Image (`Dockerfile.bowtie-base`)
+
 Creates a reusable base image containing:
+
 - .NET 9.0 ASP.NET runtime
 - Bowtie alignment tool executable
 - Pre-indexed GRCh38 reference genome (~4GB)
 
+**Recommended creation method (low memory)**:
+
+- Import Bowtie data directly as an image tar stream:
+  - `tar -C bowtie -c . | docker import - disease-mutations-bowtie:latest`
+- This avoids Docker build context analysis for the full repository and reduces RAM pressure on constrained machines.
+
 **Benefits**:
+
 - **One-time build**: Large genome indexes only copied once
 - **Faster rebuilds**: Application changes don't require re-copying genome data
 - **Layer caching**: Docker efficiently caches the base image
 - **Smaller incremental builds**: Only application code is rebuilt during development
 
 ### Stage 2: Application Image (`Dockerfile`)
+
 Multi-stage build process:
+
 1. **Build stage**: Compiles C# and F# code using .NET SDK 9.0
 2. **Publish stage**: Creates optimized production artifacts
-3. **Final stage**: 
+3. **Final stage**:
    - Uses pre-built bowtie base image
    - Installs Python 3 and ViennaRNA for RNA folding
    - Copies compiled Blazor Server application
    - Configures runtime environment
 
 **Build Flow**:
+
 ```
 Dockerfile.bowtie-base → disease-mutations-bowtie:latest
                                     ↓
@@ -127,6 +142,7 @@ The application runs as a **single container** with integrated server and client
 ## 📋 Prerequisites
 
 ### Required Software
+
 - **.NET 9.0 SDK** or later
 - **Docker** and **Docker Compose** (for containerized deployment)
 - **Bowtie** alignment tool (included in the repository)
@@ -134,10 +150,12 @@ The application runs as a **single container** with integrated server and client
   - Install: `pip install viennarna` or `pip3 install viennarna`
 
 ### Required Data
+
 - **GRCh38 Reference Genome** Bowtie indexes (included in `bowtie/indexes/`)
   - `GCA_000001405.15_GRCh38_no_alt_analysis_set.*.ebwt`
 
 ### System Requirements
+
 - **CPU**: 2+ cores (recommended for optimal performance)
 - **RAM**: 2GB minimum (4GB recommended)
 - **Storage**: ~5GB for reference genome indexes
@@ -148,23 +166,34 @@ The application runs as a **single container** with integrated server and client
 ### Option 1: Docker Deployment (Recommended)
 
 1. **Clone the repository**:
+
    ```bash
    git clone https://github.com/yourusername/DiseaseMutationsApp.git
    cd DiseaseMutationsApp
    ```
 
 2. **Ensure Bowtie indexes are in place**:
+
    ```bash
    # Indexes should be located in:
    # ./bowtie/indexes/GCA_000001405.15_GRCh38_no_alt_analysis_set.*.ebwt
    ```
 
 3. **Build the base image (one-time setup)**:
+
    ```bash
-   docker build -f Dockerfile.bowtie-base -t disease-mutations-bowtie:latest .
+   tar -C bowtie -c . | docker import - disease-mutations-bowtie:latest
+   ```
+
+   **Alternative (if you want to use Dockerfile with reduced context):**
+
+   ```bash
+   mkdir -p .docker-empty
+   docker build -f Dockerfile.bowtie-base --build-context indexes=./bowtie -t disease-mutations-bowtie:latest .docker-empty
    ```
 
 4. **Build and run with Docker Compose**:
+
    ```bash
    docker compose up -d
    ```
@@ -189,12 +218,14 @@ The bowtie base image remains cached, making subsequent builds much faster (seco
 ### Option 2: Local Development
 
 1. **Clone the repository**:
+
    ```bash
    git clone https://github.com/yourusername/DiseaseMutationsApp.git
    cd DiseaseMutationsApp
    ```
 
 2. **Install ViennaRNA** (required for RNA folding):
+
    ```bash
    pip install viennarna
    # or
@@ -202,11 +233,13 @@ The bowtie base image remains cached, making subsequent builds much faster (seco
    ```
 
 3. **Restore dependencies**:
+
    ```bash
    dotnet restore
    ```
 
 4. **Run the application**:
+
    ```bash
    cd DiseaseMutationsApp
    dotnet run
@@ -286,6 +319,7 @@ The application uses a sophisticated tabbed interface:
 ### State Persistence
 
 The application maintains your state as you navigate between pages:
+
 - Switch between "gRNA Builder" and "OMIM → RS" pages without losing data
 - All tabs, selections, and inputs are preserved
 - Use the navigation menu to move between workflows
@@ -293,21 +327,25 @@ The application maintains your state as you navigate between pages:
 #### Understanding gRNA Metrics
 
 ##### GC Score (0.0 - 1.0)
+
 - **Optimal**: 1.0 (GC content between 40-60%)
 - **Suboptimal**: <1.0 (GC content outside ideal range)
 - Higher is better for stability and efficiency
 
 ##### Homopolymer Count
+
 - Number of homopolymer runs (4+ consecutive identical bases)
 - **Optimal**: 0
 - Homopolymers can cause synthesis errors and reduced efficiency
 
 ##### Alignments
+
 - Number of near-perfect matches in the genome
 - **Optimal**: Low numbers (1-2)
 - High numbers indicate potential off-target effects
 
 ##### RNA Structure Score
+
 - Minimum free energy (MFE) of the gRNA secondary structure
 - More negative values indicate more stable structures
 - Displayed with FORNA visualization link
@@ -345,9 +383,11 @@ The application uses Blazor Server's SignalR-based architecture for real-time co
 ### Service Architecture
 
 #### GrnaService
+
 Direct C# wrapper providing access to F# library functionality:
 
 **Key Methods**:
+
 - `GetBestgRNAFromHgvs(hgvs, window)`: Complete workflow from HGVS to gRNA candidates
 - `GetHgvsFromSnp(rsid)`: Resolve rsID to HGVS notations
 - `GetRsFromOmim(omim)`: Retrieve rsIDs associated with OMIM code
@@ -358,9 +398,11 @@ Direct C# wrapper providing access to F# library functionality:
 **Return Types**: All methods return C# records converted from F# types for seamless interop
 
 #### AppStateService
+
 Scoped service that maintains state across page navigations:
 
 **Index Page State**:
+
 - `IndexHgvsInput`: Current input text
 - `IndexGRnaSize`: Selected gRNA size (default: 28)
 - `IndexInputTabs`: List of all tabs and their data
@@ -368,12 +410,14 @@ Scoped service that maintains state across page navigations:
 - `IndexActiveChildTabIndices`: Active subtab for each rsID tab
 
 **OmimToRs Page State**:
+
 - `OmimCode`: Entered OMIM identifier
 - `OmimRsList`: Retrieved rsIDs
 - `OmimSelectedRs`: User-selected rsIDs for batch processing
 - `OmimErrorMessage`: Error information if fetch fails
 
 **Benefits**:
+
 - Seamless navigation between pages without data loss
 - Preserved tab selections and user inputs
 - Event-based notification for state changes
@@ -387,16 +431,19 @@ The application generates complete gRNA sequences consisting of two parts:
 ```
 
 **Scaffold (constant)**: `GAUUUAGACUACCCCAAAAACGAAGGGGACUAAAAC`
+
 - Provides structural framework for Cas9 binding
 - Universal sequence used in most CRISPR applications
 - Displayed in red in the UI
 
 **Spacer (variable)**: Selected from candidates
+
 - Target-specific sequence (20-28 nucleotides depending on configuration)
 - Displayed in blue in the UI
 - Guides Cas9 to the desired genomic location
 
 **Example Complete gRNA**:
+
 ```
 GAUUUAGACUACCCCAAAAACGAAGGGGACUAAAACAUCGAUCGAUCGAUCGAUCGAUCG
 └──────────────────────────────┘└───────────────────────────────────────┘
@@ -413,8 +460,9 @@ GAUUUAGACUACCCCAAAAACGAAGGGGACUAAAACAUCGAUCGAUCGAUCGAUCGAUCG
    - Each subsequence becomes a potential spacer
 
 2. **Quality Metrics Calculation**:
-   
+
    **GC Content Score** (0.0 - 1.0):
+
    ```
    If 40% ≤ GC% ≤ 60%: GC_Score = 1.0
    If GC% < 40%:        GC_Score = GC% / 40%
@@ -437,10 +485,11 @@ GAUUUAGACUACCCCAAAAACGAAGGGGACUAAAACAUCGAUCGAUCGAUCGAUCGAUCG
    - More negative energy = more stable structure
 
 3. **Ranking Algorithm**:
+
    ```
    Sort by: (Alignments ASC, -RNA_Energy DESC, -GC_Score DESC, Homopolymers ASC)
    ```
-   
+
    **Priority order**:
    1. **Fewest off-target alignments** (most specific)
    2. **Most stable RNA structure** (lowest/most negative energy)
@@ -587,10 +636,10 @@ Configure in `docker-compose.yml`:
 deploy:
   resources:
     limits:
-      cpus: '3.0'
+      cpus: "3.0"
       memory: 2G
     reservations:
-      cpus: '1.0'
+      cpus: "1.0"
       memory: 1G
 ```
 
@@ -601,42 +650,55 @@ Adjust these limits based on your system capabilities and workload requirements.
 ### Common Issues
 
 #### "Bowtie indexes not found"
+
 **Solution**: Ensure Bowtie index files are in `bowtie/indexes/` directory with the correct naming convention.
 
 #### "SignalR circuit disconnected"
-**Solution**: 
+
+**Solution**:
+
 - Check that the server is running and accessible
 - Verify network connectivity
 - Check browser console for connection errors
 - Ensure Kestrel timeout settings are sufficient for your workload
 
 #### "HGVS parsing failed"
-**Solution**: 
+
+**Solution**:
+
 - Verify HGVS format is correct
 - Check that accession version exists in NCBI database
 - Review supported mutation types in HGVS.fs
 
 #### "No gRNA candidates found"
+
 **Solution**:
+
 - Increase gRNA size parameter
 - Check that sequence length is sufficient
 - Verify mutation region is valid
 
 #### "RNA folding failed"
+
 **Solution**:
+
 - Ensure ViennaRNA is installed: `pip install viennarna`
 - Check that Python 3 is accessible from the application
 - Verify sequence is valid RNA format
 
 #### Docker build fails
+
 **Solution**:
+
 - Ensure Docker has sufficient memory allocated (4GB+)
 - Check that all required files are in the build context
 - Verify Bowtie indexes are accessible
 - Build the base image first: `docker build -f Dockerfile.bowtie-base -t disease-mutations-bowtie:latest .`
 
 #### Navigation state lost
+
 **Solution**:
+
 - This is expected if you refresh the page (SignalR circuit resets)
 - Use the navigation menu instead of browser back/forward buttons
 - AppStateService maintains state only within an active session
@@ -655,11 +717,13 @@ Adjust these limits based on your system capabilities and workload requirements.
 ### Local Deployment Considerations
 
 This application is designed for **local deployment** and includes features suitable for a trusted environment:
+
 - CORS is configured to allow any origin (for development convenience)
 - No authentication is required by default
 - SignalR circuits are not encrypted by default (use HTTPS in production)
 
 For public or multi-user deployments, implement:
+
 - User authentication and authorization
 - HTTPS with valid certificates
 - SignalR connection authentication
@@ -729,6 +793,7 @@ This project is licensed under the MIT License - see the LICENSE file for detail
 The application was migrated from a client-side Blazor WebAssembly architecture to Blazor Server for the following reasons:
 
 **Why the migration?**
+
 - **Simplified Deployment**: Single container instead of separate frontend/backend services
 - **Better Performance**: No need to download .NET runtime to the browser
 - **Direct Library Access**: F# library can be called directly without HTTP overhead
@@ -736,6 +801,7 @@ The application was migrated from a client-side Blazor WebAssembly architecture 
 - **Local Deployment Focus**: Designed for local/institutional deployment rather than public hosting
 
 **What Changed:**
+
 - ❌ Removed: Separate backend API service (Minimal API)
 - ❌ Removed: Refit HTTP client library
 - ❌ Removed: CORS configuration for cross-origin requests
@@ -745,6 +811,7 @@ The application was migrated from a client-side Blazor WebAssembly architecture 
 - ✅ Improved: Real-time updates via SignalR (no polling needed)
 
 **Benefits:**
+
 - Faster initial load times
 - Reduced complexity (one process instead of two)
 - Better resource utilization
@@ -752,6 +819,7 @@ The application was migrated from a client-side Blazor WebAssembly architecture 
 - Direct access to F# library without serialization overhead
 
 **Trade-offs:**
+
 - Requires persistent server connection (SignalR circuit)
 - Not suitable for static hosting (GitHub Pages, CDN)
 - State resets on page refresh (can be mitigated with browser storage if needed)
@@ -759,6 +827,7 @@ The application was migrated from a client-side Blazor WebAssembly architecture 
 ## 📞 Support
 
 For issues, questions, or suggestions:
+
 - Open an issue on GitHub
 - Contact: javiertorralbocortes@gmail.com
 
