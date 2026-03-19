@@ -51,7 +51,7 @@
                     <div class="card shadow-sm">
                         <div class="card-body">
                             <h5 class="card-title mb-3" style="color: var(--color-green-light);">
-                                <span class="oi oi-list me-2"></span>gRNA Results
+                                <span class="oi oi-list me-2"></span>gRNA Spacer Results
                             </h5>
                             <p class="text-muted small mb-3" style="font-size: 0.875rem;">
                                 <span class="oi oi-info" style="font-size: 0.75rem;"></span> 
@@ -156,7 +156,7 @@
                             }
                         </div>
                         <div class="font-monospace p-3 rounded" style="background: var(--surface); border: 1px solid var(--border-color); word-break: break-all; line-height: 2.2; font-size: 1.125rem; letter-spacing: 1px;">
-                            <span style="color: #F87171; font-weight: 600; text-shadow: 0 0 10px rgba(248, 113, 113, 0.3);">GATTTAGACTACCCCAAAAACGAAGGGGACTAAAAC</span>
+                            <span style="color: #F87171; font-weight: 600; text-shadow: 0 0 10px rgba(248, 113, 113, 0.3);">GAUUUAGACUACCCCAAAAACGAAGGGGACUAAAAC</span>
                             @if (Data.SelectedSpacer != null)
                             {<span style="color: #34D399; font-weight: 600; text-shadow: 0 0 10px rgba(52, 211, 153, 0.3);">@Data.SelectedSpacer</span>}
                         </div>
@@ -167,22 +167,7 @@
                                 <span>Click the 🔨 button on a gRNA spacer to add it here</span>
                             </p>
                         }
-                        @if (Data.SelectedSpacer != null)
-                        {
-                            <div class="mt-4">
-                                <h6 class="mb-2" style="color: var(--color-teal-light); font-size: 1rem;">
-                                    <span class="oi oi-transfer me-2"></span>RNA
-                                </h6>
-                                <div class="font-monospace p-3 rounded" style="background: var(--surface); border: 1px solid var(--border-color); word-break: break-all; line-height: 2.2; font-size: 1.125rem; letter-spacing: 1px;">
-                                    @{
-                                        var completeGrna = "GATTTAGACTACCCCAAAAACGAAGGGGACTAAAAC" + Data.SelectedSpacer;
-                                        var rnaVersion = new string(completeGrna.Replace('T', 'U').Reverse().ToArray());
-                                    }
-                                    <span style="color: #A78BFA; font-weight: 600; text-shadow: 0 0 10px rgba(167, 139, 250, 0.3);">@rnaVersion</span>
-                                </div>
-                            </div>
-                        }
-                        
+                                               
                         @if (Data.RnaFoldResult != null)
                         {
                             <div class="mt-4 pt-4" style="border-top: 2px solid var(--divider-color);">

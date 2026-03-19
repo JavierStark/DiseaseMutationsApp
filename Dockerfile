@@ -21,8 +21,12 @@ RUN dotnet build "DiseaseMutationsApp.csproj" -c Release -o /app/build
 FROM build AS publish
 RUN dotnet publish "DiseaseMutationsApp.csproj" -c Release -o /app/publish /p:UseAppHost=false
 
-# Use pre-built base with bowtie
-FROM disease-mutations-bowtie:latest AS final
+# Imported bowtie indices image
+FROM disease-mutations-bowtie:latest AS indices
+
+# Final runtime image
+FROM mcr.microsoft.com/dotnet/aspnet:9.0-bookworm-slim AS final
+WORKDIR /app
 
 # Install Python dependencies for RNA folding
 RUN apt-get update && \
@@ -32,6 +36,7 @@ RUN apt-get update && \
 
 # Copy published application
 COPY --from=publish /app/publish .
+COPY --from=indices / /app/bowtie/
 
 # Ensure bowtie is executable
 RUN chmod +x /app/bowtie/bowtie-align-s

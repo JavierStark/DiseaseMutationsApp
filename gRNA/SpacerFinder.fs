@@ -62,10 +62,24 @@ let getgRNAResult sequence : gRNAResult =
 let sortByResult (result: gRNAResult) =
     (result.Allignments, -result.RnaFoldResult.Energy, -result.GCScore, result.HomopolymerCount)
 
+let complementary (sequence: string) =
+    sequence
+    |> Seq.map (function
+        | 'A' -> 'T'
+        | 'T' -> 'A'
+        | 'C' -> 'G'
+        | 'G' -> 'C'
+        | c -> c)
+    |> Seq.toArray
+    |> System.String
+
 let getOrderedgRna (window: int) (sequence: string) : Task<gRNAResult list> =
     task {
         let subsequences = slidingWindow sequence window
-        let results = subsequences |> List.map getgRNAResult
+        let results = subsequences
+                      |> List.map complementary
+                      |> List.map _.Replace('T', 'U')
+                      |> List.map getgRNAResult
         let gRNASequences = subsequences |> List.map (fun s -> s + "GAUUUAGACUACCCCAAAAACGAAGGGGACUAAAAC")
 
         let! allignments = BowtieWrapper.runBowtieForMultipleSequences subsequences 2 2
