@@ -163,9 +163,7 @@
         {
             _isLoading = true;
             StateHasChanged();
-            var unfilteredRS = await GrnaService.GetRsFromOmim(_omim.Value);
-            
-            _rsList = await FilterAvailableRS(unfilteredRS);
+            await GrnaService.GetRsFromOmim(_omim.Value); 
         }
         catch (Exception ex)
         {
@@ -176,20 +174,6 @@
             _isLoading = false;
             await InvokeAsync(StateHasChanged);
         }
-    }
-
-    private async Task<List<string>?> FilterAvailableRS(List<string> unfilteredRs)
-    {
-        var filtered = new List<string>();
-        foreach (var rs in unfilteredRs)
-        {
-            var hgvs = await GrnaService.GetHgvsFromSnp(rs[2..]);
-            
-            if (hgvs.Count != 0)
-                filtered.Add(rs);
-        }
-
-        return filtered;
     }
 
     private void ToggleSelection(string rsValue, bool selected)
