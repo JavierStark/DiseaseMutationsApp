@@ -108,6 +108,28 @@
                             {
                                 @if (tab.ChildHgvsList.Any())
                                 {
+                                    <div class="d-flex justify-content-end mb-2 fade-in-up">
+                                        @{
+                                            var isReady = tab.ChildHgvsList.All(h => !h.IsLoading);
+                                            var hasResults = tab.ChildHgvsList.Any(h => h.GRNAs != null && h.GRNAs.Any());
+                                        }
+                                        <button class="btn btn-outline-primary shadow-sm"
+                                                disabled="@(!isReady || !hasResults)"
+                                                @onclick="() => DownloadReport(tab)"
+                                                title="@(isReady ? "Download CSV Report" : "Waiting for analysis...")">
+                                            @if (!isReady)
+                                            {
+                                                <span class="spinner-border spinner-border-sm me-2" role="status" aria-hidden="true"></span>
+                                                <span>Analyzing...</span>
+                                            }
+                                            else
+                                            {
+                                                <span class="oi oi-data-transfer-download me-2"></span>
+                                                <span>Download Report</span>
+                                            }
+                                        </button>
+                                    </div>
+
                                     <!-- Second level tabs for RS child HGVS -->
                                     <ul class="nav nav-tabs nav-tabs-sm" role="tablist">
                                         @for (int j = 0; j < tab.ChildHgvsList.Count; j++)
