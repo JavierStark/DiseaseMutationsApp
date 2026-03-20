@@ -4,3 +4,15 @@ obj/
 riderModule.iml
 /_ReSharper.Caches/
 .idea/
+
+**/bin/
+**/obj/
+**/.vs/
+**/.git/
+**/.gitignore
+**/node_modules/
+**/.dockerignore
+**/.env
+**/docker-compose.yml
+**/Dockerfile
+**/*.md

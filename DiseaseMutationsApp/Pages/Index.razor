@@ -1,32 +1,37 @@
 ﻿@page "/"
-@using DiseaseMutationsApp.Services
 @using BlazorBootstrap
-@inject IJSRuntime JSRuntime
-@inject Services.IDiseaseMutationsApi Api
+@rendermode @(new InteractiveServerRenderMode())
 
-<PageTitle>Disease Mutations</PageTitle>
+<PageTitle>gRNA Builder</PageTitle>
 
-<div class="container-fluid px-4 py-4" style="max-width: 1400px;">
-    <div class="row mb-4">
+<div class="container-fluid px-4 py-4 fade-in-up" style="max-width: 1500px;">
+    <div class="row mb-5">
         <div class="col">
-            <h1 class="mb-4">Disease Mutations App</h1>
+            <h1 class="mb-2" style="background: linear-gradient(135deg, #06B6D4 0%, #A855F7 100%); -webkit-background-clip: text; -webkit-text-fill-color: transparent; background-clip: text;">
+                🧬 gRNA Builder
+            </h1>
+            <p class="text-muted mb-0">Design and analyze guide RNA sequences for CRISPR applications</p>
         </div>
     </div>
 
-    <div class="row mb-4">
-        <div class="col-lg-8 col-xl-6">
+    <div class="row mb-5">
+        <div class="col-lg-9 col-xl-7">
             <div class="card shadow-sm">
                 <div class="card-body">
-                    <h5 class="card-title mb-3">Input Parameters</h5>
-                    <div class="mb-3">
-                        <label for="hgvs" class="form-label">HGVS:</label>
-                        <input id="hgvs" class="form-control" @bind="_hgvs" placeholder="e.g., NC_000001.11:g.12345A>G"/>
+                    <h5 class="card-title mb-4" style="color: var(--color-teal-light);">
+                        <span class="oi oi-cog me-2"></span>Input Parameters
+                    </h5>
+                    <div class="mb-4">
+                        <label for="hgvs" class="form-label">HGVS or RS codes (comma-separated for multiple)</label>
+                        <textarea id="hgvs" class="form-control" @bind="_hgvs" rows="5" placeholder="e.g., NG_016465.4:g.98765C>T, rs12345, NG_056131.3:g.755G>A&#10;You can enter multiple HGVS or RS codes separated by commas"></textarea>
+                        <small class="text-muted mt-2 d-block">Enter one or more genetic variants to analyze</small>
                     </div>
-                    <div class="mb-3">
-                        <label for="before" class="form-label">gRNA size:</label>
-                        <input id="before" type="number" class="form-control" @bind="_gRnaSize" min="1" style="max-width: 200px;"/>
+                    <div class="mb-4">
+                        <label for="before" class="form-label">gRNA size</label>
+                        <input id="before" type="number" class="form-control" @bind="_gRnaSize" min="1" style="max-width: 220px;"/>
                     </div>
                     <button class="btn btn-primary btn-lg mt-2" @onclick="FetchData">
+                        <span class="oi oi-data-transfer-download me-2"></span>
                         <span>Fetch Data</span>
                     </button>
                 </div>
@@ -34,112 +39,132 @@
         </div>
     </div>
 
-    @if (_isLoading)
+    @if (_inputTabs.Any())
     {
-        <div class="row mb-4">
+        <div class="row mb-5 fade-in-up">
             <div class="col">
-                <div class="card shadow-sm">
-                    <div class="card-body text-center py-5">
-                        <Spinner Type="SpinnerType.Dots" Color="SpinnerColor.Primary" />
-                        <p class="mt-3 text-muted">Loading sequences and gRNA results...</p>
-                    </div>
-                </div>
-            </div>
-        </div>
-    }
+                <ul class="nav nav-tabs" role="tablist">
+                    @for (var i = 0; i < _inputTabs.Count; i++)
+                    {
+                        var tabIndex = i; // Capture loop variable for closure
+                        var tab = _inputTabs[i];
+                        <li class="nav-item" role="presentation">
+                            <button class="nav-link @(tabIndex == _activeTabIndex ? "active" : "")" 
+                                    type="button" 
+                                    @onclick="() => _activeTabIndex = tabIndex">
+                                @{
+                                    var isLoading = tab.IsLoading || tab is { Type: InputType.HGVS, DirectHgvs.IsLoading: true };
+                                    var hasError = tab.ErrorMessage != null || tab is { Type: InputType.HGVS, DirectHgvs.ErrorMessage: not null };
+                                }
+                                @if (isLoading)
+                                {
+                                    <span>⏳ @tab.DisplayLabel</span>
+                                }
+                                else if (hasError)
+                                {
+                                    <span style="color: var(--color-red-light);">⚠️ @tab.DisplayLabel</span>
+                                }
+                                else
+                                {
+                                    <span style="color: var(--color-green-light);">✓ @tab.DisplayLabel</span>
+                                }
+                            </button>
+                        </li>
+                    }
+                </ul>
 
-    @if (_original != null && _mutated != null)
-    {
-        <div class="row mb-4">
-            <div class="col">
-                <div class="card shadow-sm mb-3">
-                    <div class="card-body">
-                        <h5 class="card-title mb-3">Original Sequence</h5>
-                        <p class="font-monospace bg-light p-3 rounded" style="word-break: break-all; line-height: 1.8;">@((MarkupString)_original)</p>
-                    </div>
-                </div>
-                <div class="card shadow-sm">
-                    <div class="card-body">
-                        <h5 class="card-title mb-3">Mutated Sequence</h5>
-                        <p class="font-monospace bg-light p-3 rounded" style="word-break: break-all; line-height: 1.8;">@((MarkupString)_mutated)</p>
-                    </div>
-                </div>
-            </div>
-        </div>
-
-        <div class="row mb-4">
-            <div class="col">
-                @if (_gRNAs != null && _gRNAs.Any())
-                {
-                    <div class="card shadow-sm">
-                        <div class="card-body">
-                            <h5 class="card-title mb-3">gRNA Results</h5>
-                            <div class="table-responsive">
-                                <table class="table table-hover table-striped align-middle">
-                                    <thead class="table-light">
-                                    <tr>
-                                        <th style="width: 80px;">Action</th>
-                                        <th>gRNA Spacer</th>
-                                        <th>GC Score</th>
-                                        <th>Homopolymer Count</th>
-                                        <th>Seed Region</th>
-                                        <th>Alignments</th>
-                                    </tr>
-                                    </thead>
-                                    <tbody>
-                                    @foreach (var gRNA in _gRNAs)
-                                    {
-                                        <tr>
-                                            <td>
-                                                <button class="btn btn-sm btn-secondary" @onclick="() => HandlegRNACreationButton(gRNA.Sequence)" title="Create gRNA">
-                                                    🔨
-                                                </button>
-                                            </td>
-                                            <td class="font-monospace">@gRNA.Sequence</td>
-                                            <td>@gRNA.GCScore</td>
-                                            <td>@gRNA.HomopolymerCount</td>
-                                            <td>@gRNA.SeedRegion</td>
-                                            <td>@gRNA.Allignments</td>
-                                        </tr>
-                                    }
-                                    </tbody>
-                                </table>
-                            </div>
-                        </div>
-                    </div>
-                }
-            </div>
-        </div>
-
-        <div class="row">
-            <div class="col">
-                <div class="card shadow-sm">
-                    <div class="card-body">
-                        <div class="d-flex justify-content-between align-items-center mb-3">
-                            <h5 class="card-title mb-0">Complete gRNA</h5>
-                            @if (_selectedSpacer != null)
+                <div class="tab-content-container">
+                    @for (var i = 0; i < _inputTabs.Count; i++)
+                    {
+                        var tabIndex = i; // Capture loop variable for closure
+                        var tab = _inputTabs[tabIndex];
+                        
+                        <div class="@(tabIndex == _activeTabIndex ? "d-block fade-in-up" : "d-none")">
+                            @if (tab.IsLoading)
                             {
-                                <button class="btn btn-sm btn-success" @onclick="CopyCompleteGRNA" title="Copy complete gRNA">
-                                    @if (_copiedToClipboard)
-                                    {
-                                        <span>✓ Copied!</span>
-                                    }
-                                    else
-                                    {
-                                        <span>📋 Copy</span>
-                                    }
-                                </button>
+                                <div class="text-center py-5">
+                                    <Spinner Type="SpinnerType.Dots" Color="SpinnerColor.Primary" />
+                                    <p class="mt-4 text-muted" style="font-size: 1.0625rem;">Loading data for @tab.DisplayLabel...</p>
+                                </div>
+                            }
+                            else if (tab.ErrorMessage != null)
+                            {
+                                <div class="alert alert-danger" role="alert">
+                                    <strong style="color: var(--text-primary);">⚠️ Error loading data for @tab.DisplayLabel:</strong><br/>
+                                    <span style="margin-top: 0.5rem; display: block;">@tab.ErrorMessage</span>
+                                </div>
+                            }
+                            else if (tab.Type == InputType.HGVS && tab.DirectHgvs != null)
+                            {
+                                <HgvsDetailPanel 
+                                    Data="tab.DirectHgvs" 
+                                    OnSort="SortBy" 
+                                    GetSorted="GetSortedGRNAs" 
+                                    OnCreateGrna="HandlegRNACreationButton"
+                                    OnCopyComplete="CopyCompleteGRNA"
+                                    OnGetRnaFold="GetRnaFolding" />
+                            }
+                            else if (tab.Type == InputType.RS && tab.ChildHgvsList != null)
+                            {
+                                @if (tab.ChildHgvsList.Any())
+                                {
+                                    <!-- Second level tabs for RS child HGVS -->
+                                    <ul class="nav nav-tabs nav-tabs-sm" role="tablist">
+                                        @for (int j = 0; j < tab.ChildHgvsList.Count; j++)
+                                        {
+                                            var childIndex = j;
+                                            var childHgvs = tab.ChildHgvsList[j];
+                                            var isActiveChild = _activeChildTabIndices.TryGetValue(tabIndex, out var activeChild) && activeChild == childIndex;
+                                            
+                                            <li class="nav-item" role="presentation">
+                                                <button class="nav-link @(isActiveChild ? "active" : "")" 
+                                                        type="button"
+                                                        @onclick="() => _activeChildTabIndices[tabIndex] = childIndex">
+                                                    @if (childHgvs.IsLoading)
+                                                    {
+                                                        <span>⏳ @childHgvs.Hgvs[..Math.Min(20, childHgvs.Hgvs.Length)]@(childHgvs.Hgvs.Length > 20 ? "..." : "")</span>
+                                                    }
+                                                    else if (childHgvs.ErrorMessage != null)
+                                                    {
+                                                        <span style="color: var(--color-red-light);">⚠️ @childHgvs.Hgvs[..Math.Min(20, childHgvs.Hgvs.Length)]@(childHgvs.Hgvs.Length > 20 ? "..." : "")</span>
+                                                    }
+                                                    else
+                                                    {
+                                                        <span style="color: var(--color-green-light);">✓ @childHgvs.Hgvs[..Math.Min(20, childHgvs.Hgvs.Length)]@(childHgvs.Hgvs.Length > 20 ? "..." : "")</span>
+                                                    }
+                                                </button>
+                                            </li>
+                                        }
+                                    </ul>
+                                    
+                                    <div class="tab-content-container tab-content-container-nested">
+                                        @for (int j = 0; j < tab.ChildHgvsList.Count; j++)
+                                        {
+                                            var childIndex = j;
+                                            var childHgvs = tab.ChildHgvsList[j];
+                                            var isActiveChild = _activeChildTabIndices.TryGetValue(tabIndex, out var activeChild) && activeChild == childIndex;
+                                            
+                                            <div class="@(isActiveChild ? "d-block fade-in-up" : "d-none")">
+                                                <HgvsDetailPanel 
+                                                    Data="childHgvs" 
+                                                    OnSort="SortBy" 
+                                                    GetSorted="GetSortedGRNAs" 
+                                                    OnCreateGrna="HandlegRNACreationButton"
+                                                    OnCopyComplete="CopyCompleteGRNA"
+                                                    OnGetRnaFold="GetRnaFolding" />
+                                            </div>
+                                        }
+                                    </div>
+                                }
+                                else
+                                {
+                                    <div class="alert alert-info" role="alert">
+                                        <strong style="color: var(--text-primary);">ℹ️ No HGVS variants found for @tab.DisplayLabel</strong>
+                                    </div>
+                                }
                             }
                         </div>
-                        <p class="font-monospace fs-5 mb-0" style="word-break: break-all; line-height: 1.8;">
-                            <span style="color: #d15b5b; font-weight: 500;">GAUUUAGACUACCCCAAAAACGAAGGGGACUAAAAC</span>@if (_selectedSpacer != null)
-                            {<span style="color: #4b4bba; font-weight: 500;">@_selectedSpacer</span>}
-                        </p>
-                        @if (_selectedSpacer == null)
-                        {
-                            <p class="text-muted mt-2 mb-0"><small>Click the 🔨 button on a gRNA spacer to add it here</small></p>
-                        }
-                    </div>
+                    }
                 </div>
             </div>
         </div>
@@ -147,71 +172,5 @@
 </div>
 
 @code {
-
-    private string? _hgvs;
-    private int _gRnaSize = 28;
-    private string? _original;
-    private string? _mutated;
-    private string? _selectedSpacer;
-    private List<GRNAResult>? _gRNAs;
-    private bool _isLoading;
-    private bool _copiedToClipboard;
-
-    private async Task FetchData()
-    {
-        if (!string.IsNullOrWhiteSpace(_hgvs) && _gRnaSize > 0)
-        {
-            // Set loading state and clean previous results
-            _isLoading = true;
-            _original = null;
-            _mutated = null;
-            _gRNAs = null;
-            _selectedSpacer = null;
-            _copiedToClipboard = false;
-            
-            try
-            {
-                var result = await Api.GetBestgRNAFromHgvs(_hgvs, _gRnaSize);
-                _original = result.OriginalSequence;
-                _mutated = result.MutatedSequence;
-                _gRNAs = result.gRNA;
-                var extraNucleotids = result.ExtraNucleotids;
-
-
-                Console.WriteLine($"original size: {_original.Length}, mutated size: {_mutated.Length}, left: {extraNucleotids}, right: {extraNucleotids}");
-                _original = _original.Insert(extraNucleotids, "<b>");
-                _original = _original.Insert(_original.Length - extraNucleotids, "</b>");
-                _mutated = _mutated.Insert(extraNucleotids, "<b>");
-                _mutated = _mutated.Insert(_mutated.Length - extraNucleotids, "</b>");
-            }
-            finally
-            {
-                _isLoading = false;
-            }
-        }
-        else
-        {
-            _original = "Invalid input. Please check the values.";
-            _mutated = "";
-            _isLoading = false;
-        }
-    }
-
-    private void HandlegRNACreationButton(string spacer)
-    {
-        _selectedSpacer = spacer;
-        _copiedToClipboard = false;
-    }
-
-    private async Task CopyCompleteGRNA()
-    {
-        if (_selectedSpacer != null)
-        {
-            _copiedToClipboard = true;
-            StateHasChanged();
-            var completeGRNA = "GAUUUAGACUACCCCAAAAACGAAGGGGACUAAAAC" + _selectedSpacer;
-            await JSRuntime.InvokeVoidAsync("navigator.clipboard.writeText", completeGRNA);
-        }
-    }
-
+    // Logic moved to Index.razor.cs
 }

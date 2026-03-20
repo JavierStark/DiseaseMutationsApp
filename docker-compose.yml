@@ -1,40 +1,24 @@
 ﻿version: "3.9"
 
 services:
-  frontend:
-    build:
-      context: ./DiseaseMutationsApp
-      dockerfile: Dockerfile
-    image: disease-mutations-frontend:latest
-    container_name: disease-mutations-frontend
-    ports:
-      - "8080:80"
-    restart: unless-stopped
-    depends_on:
-      - backend
-
-  backend:
+  app:
     build:
       context: .
       dockerfile: Dockerfile
-    image: disease-mutations-backend:latest
-    container_name: disease-mutations-backend
+    image: disease-mutations-app:latest
+    container_name: disease-mutations-app
     ports:
-      - "5000:80"
+      - "5000:5000"
     environment:
       - ASPNETCORE_ENVIRONMENT=Development
-      - ASPNETCORE_URLS=http://+:80
+      - ASPNETCORE_URLS=http://+:5000
     restart: unless-stopped
     deploy:
       resources:
         limits:
-          cpus: '8.0'
-          memory: 4G
-        reservations:
-          cpus: '2.0'
+          cpus: '1.5'
           memory: 2G
 
 volumes:
   bowtie-data:
-    driver: local 
-          
+    driver: local

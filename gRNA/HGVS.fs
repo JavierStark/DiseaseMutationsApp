@@ -67,7 +67,7 @@ type HGVS(code: string) =
         
         (accession, typeValue, position, mutation, reference, alternate, count)
     
-    let (accession, typeValue, position, mutation, reference, alternate, count) = parse()
+    let accession, typeValue, position, mutation, reference, alternate, count = parse()
     
     member _.Code = code
     member _.Accession = accession

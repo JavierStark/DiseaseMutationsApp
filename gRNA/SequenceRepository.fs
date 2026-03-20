@@ -2,6 +2,7 @@
 
 open System.Collections.Generic
 open System.Net.Http
+open System.Threading.Tasks
 open gRNA.Sequence
 
 type SequenceRepository() =
@@ -9,25 +10,25 @@ type SequenceRepository() =
     static let sequences = Dictionary<string, Sequence>()
     
     static member GetSequence(id: string) =
-        async {
+        task {
             match sequences.TryGetValue(id) with
             | true, sequence -> 
                 return sequence
             | false, _ ->
-                let! data = SequenceRepository.GetSequenceData(id)
+                let! (data: string) = SequenceRepository.GetSequenceData(id)
                 let sequence = Sequence(id, data)
                 sequences.[id] <- sequence
                 return sequence
         }
     
     static member private GetSequenceData(id: string) =
-        async {
+        task {
             use httpClient = new HttpClient()
-            let! response = httpClient.GetAsync($"{BASE_URL}{id}&rettype=fasta") |> Async.AwaitTask
+            let! response = httpClient.GetAsync($"{BASE_URL}{id}&rettype=fasta")
             response.EnsureSuccessStatusCode() |> ignore
-            let! content = response.Content.ReadAsStringAsync() |> Async.AwaitTask
+            let! content = response.Content.ReadAsStringAsync()
             let lines = content.Split('\n')
-            let data = 
+            let data =
                 lines 
                 |> Array.skip 1 
                 |> String.concat ""
