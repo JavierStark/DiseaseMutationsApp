@@ -362,6 +362,31 @@ namespace DiseaseMutationsApp.Pages
             }
         }
 
+        private async Task DownloadReport(InputTabData tabData)
+        {
+            if (tabData == null || tabData.ChildHgvsList == null || !tabData.ChildHgvsList.Any()) return;
+
+            var sb = new System.Text.StringBuilder();
+            sb.AppendLine("RS ID,HGVS,Rank,Sequence,Score,GC Content,Alignments,Seed Region,Homopolymers,Fold Energy");
+
+            foreach (var hgvs in tabData.ChildHgvsList)
+            {
+                if (hgvs.GRNAs == null) continue;
+
+                foreach (var gRNA in hgvs.GRNAs)
+                {
+                    var energy = gRNA.RnaFoldResult?.Energy.ToString(System.Globalization.CultureInfo.InvariantCulture) ?? "N/A";
+                    var score = gRNA.Score.ToString(System.Globalization.CultureInfo.InvariantCulture);
+                    var gcScore = gRNA.GCScore.ToString(System.Globalization.CultureInfo.InvariantCulture);
+
+                    sb.AppendLine($"{tabData.RsId},{hgvs.Hgvs},{gRNA.Rank},{gRNA.Sequence},{score},{gcScore},{gRNA.Allignments},{gRNA.SeedRegion},{gRNA.HomopolymerCount},{energy}");
+                }
+            }
+
+            var fileName = $"Report_RS{tabData.RsId}_{DateTime.Now:yyyyMMdd_HHmmss}.csv";
+            await JSRuntime.InvokeVoidAsync("downloadFile", fileName, "text/csv;charset=utf-8", sb.ToString());
+        }
+
         public void Dispose()
         {
             // Unsubscribe from state changes to prevent memory leaks
