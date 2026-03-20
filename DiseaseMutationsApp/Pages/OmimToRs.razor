@@ -163,7 +163,7 @@
         {
             _isLoading = true;
             StateHasChanged();
-            await GrnaService.GetRsFromOmim(_omim.Value); 
+            _rsList = await GrnaService.GetRsFromOmim(_omim.Value);
         }
         catch (Exception ex)
         {
