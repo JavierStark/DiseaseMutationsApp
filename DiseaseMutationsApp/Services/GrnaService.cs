@@ -9,20 +9,22 @@ namespace DiseaseMutationsApp.Services;
 public class GrnaService
 {
     private readonly ILogger<GrnaService> _logger;
+    private readonly gRNA.Services.BowtieService _bowtieService;
 
-    public GrnaService(ILogger<GrnaService> logger)
+    public GrnaService(ILogger<GrnaService> logger, gRNA.Services.BowtieService bowtieService)
     {
         _logger = logger;
+        _bowtieService = bowtieService;
     }
 
-    public async Task<ResultFromHGVS> GetBestgRNAFromHgvs(string hgvs, int window)
+    public async Task<ResultFromHGVS> GetBestgRNAFromHgvs(string hgvs, int window, CancellationToken cancellationToken = default)
     {
         try
         {
             _logger.LogInformation("Getting best gRNA from HGVS: {Hgvs}, Window: {Window}", hgvs, window);
-            
-            var fsharpResult = await Main.getBestgRNAFromHGVS(hgvs, window);
-            
+
+            var fsharpResult = await Main.getBestgRNAFromHGVS(hgvs, window, _bowtieService, cancellationToken);
+
             // Convert F# result to C# record
             var grnaResults = fsharpResult.gRNA
                 .Select(g => new GRNAResult
@@ -62,7 +64,7 @@ public class GrnaService
         try
         {
             _logger.LogInformation("Getting HGVS notations from SNP: {RsId}", rsid);
-            
+
             var fsharpList = await SNP.getHgvsNotationsAsync(rsid);
             return new List<string>(fsharpList);
         }
@@ -78,7 +80,7 @@ public class GrnaService
         try
         {
             _logger.LogInformation("Getting RS codes from OMIM: {Omim}", omim);
-            
+
             var fsharpList = await Omim.rsFromOmim(omim);
             return new List<string>(fsharpList);
         }
@@ -94,9 +96,9 @@ public class GrnaService
         try
         {
             _logger.LogInformation("Getting RNA fold for sequence of length: {Length}", sequence.Length);
-            
+
             var fsharpResult = await RNAFoldWrapper.fold(sequence);
-            
+
             return new RNAFoldResult
             {
                 Structure = fsharpResult.Structure,
