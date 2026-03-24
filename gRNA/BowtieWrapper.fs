@@ -11,8 +11,9 @@ open System.Threading.Tasks
 // 0	+	chr9	37515365	ACTGACTGACTG	IIIIIIIIIIII	478	
 
 let private indexSuffixes =
-    [| ".rev.2.ebwt"; ".rev.1.ebwt"; ".4.ebwt"; ".3.ebwt"; ".2.ebwt"; ".1.ebwt"
-       ".rev.2.bt2"; ".rev.1.bt2"; ".4.bt2"; ".3.bt2"; ".2.bt2"; ".1.bt2" |]
+    [| ".rev.2.ebwt"; ".rev.1.ebwt"; ".4.ebwt"; ".3.ebwt"; ".2.ebwt"; ".1.ebwt";
+       ".rev.2.bt2"; ".rev.1.bt2"; ".4.bt2"; ".3.bt2"; ".2.bt2"; ".1.bt2";
+    ".rev.2.bt2l"; ".rev.1.bt2l"; ".4.bt2l"; ".3.bt2l"; ".2.bt2l"; ".1.bt2l" |]
 
 let private tryStripIndexSuffix (fileName: string) =
     indexSuffixes
@@ -24,11 +25,13 @@ let private resolveBowtieIndexBase () =
 
     let tryFindInDirectory dir =
         if Directory.Exists(dir) then
-            Directory.GetFiles(dir)
-            |> Array.map Path.GetFileName
-            |> Array.choose tryStripIndexSuffix
+            Directory.GetFiles(dir, "*", SearchOption.AllDirectories)
+            |> Array.choose (fun filePath ->
+                let fileName = Path.GetFileName(filePath)
+                tryStripIndexSuffix fileName
+                |> Option.map (fun baseName -> Path.Combine(Path.GetDirectoryName(filePath), baseName)))
+            |> Array.distinct
             |> Array.tryHead
-            |> Option.map (fun baseName -> Path.Combine(dir, baseName))
         else
             None
 
