@@ -2,6 +2,7 @@
 
 open System
 open System.Diagnostics
+open System.IO
 open System.Threading
 open System.Threading.Tasks
 
@@ -9,12 +10,41 @@ open System.Threading.Tasks
 // 0	+	chr7	147119362	ACTGACTGACTG	IIIIIIIIIIII	478	
 // 0	+	chr9	37515365	ACTGACTGACTG	IIIIIIIIIIII	478	
 
+let private indexSuffixes =
+    [| ".rev.2.ebwt"; ".rev.1.ebwt"; ".4.ebwt"; ".3.ebwt"; ".2.ebwt"; ".1.ebwt"
+       ".rev.2.bt2"; ".rev.1.bt2"; ".4.bt2"; ".3.bt2"; ".2.bt2"; ".1.bt2" |]
+
+let private tryStripIndexSuffix (fileName: string) =
+    indexSuffixes
+    |> Array.tryFind (fun suffix -> fileName.EndsWith(suffix, StringComparison.OrdinalIgnoreCase))
+    |> Option.map (fun suffix -> fileName.Substring(0, fileName.Length - suffix.Length))
+
+let private resolveBowtieIndexBase () =
+    let candidateDirectories = [| "bowtie/indexes"; "bowtie" |]
+
+    let tryFindInDirectory dir =
+        if Directory.Exists(dir) then
+            Directory.GetFiles(dir)
+            |> Array.map Path.GetFileName
+            |> Array.choose tryStripIndexSuffix
+            |> Array.tryHead
+            |> Option.map (fun baseName -> Path.Combine(dir, baseName))
+        else
+            None
+
+    candidateDirectories
+    |> Array.tryPick tryFindInDirectory
+    |> function
+        | Some indexBase -> indexBase
+        | None -> failwith "No Bowtie index base found in bowtie/indexes or bowtie. Expected .bt2 or .ebwt index files."
+
 // ./bowtie-align-s -x GCA_000001405.15_GRCh38_no_alt_analysis_set -c SEQUENCE -v MISMATCHES -k 2
 let runBowtie(mismatches: int) (threads: int) (sequence: string) (cancellationToken: CancellationToken) : Task<string array> = task {
     let startInfo = ProcessStartInfo()
     let maxAllignment = 6
+    let indexBase = resolveBowtieIndexBase ()
     startInfo.FileName <- "bowtie/bowtie-align-s"
-    startInfo.Arguments <- sprintf "-x \"GCA_000001405.15_GRCh38_no_alt_analysis_set\" -c %s -v %d -k %d --threads %d --mm" sequence mismatches maxAllignment threads
+    startInfo.Arguments <- sprintf "-x \"%s\" -c %s -v %d -k %d --threads %d --mm" indexBase sequence mismatches maxAllignment threads
     startInfo.RedirectStandardOutput <- true
     startInfo.RedirectStandardError <- true
     startInfo.UseShellExecute <- false
