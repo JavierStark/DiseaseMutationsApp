@@ -55,12 +55,12 @@ if ! docker info >/dev/null 2>&1; then
 	die "Docker daemon is not running. Start Docker and try again."
 fi
 
-if [[ ! -f "docker-compose.yml" ]]; then
+if [ ! -f "docker-compose.yml" ]; then
 	die "docker-compose.yml was not found. Run this script from the project root."
 fi
 
-if [[ "$REBUILD_BOWTIE" == true ]] || ! docker image inspect "$BOWTIE_IMAGE" >/dev/null 2>&1; then
-	[[ -f "Dockerfile.bowtie-base" ]] || die "Missing Dockerfile.bowtie-base in project root."
+if [ "$REBUILD_BOWTIE" = "true" ] || ! docker image inspect "$BOWTIE_IMAGE" >/dev/null 2>&1; then
+	[ -f "Dockerfile.bowtie-base" ] || die "Missing Dockerfile.bowtie-base in project root."
 	log "Building Bowtie base image ($BOWTIE_IMAGE) using Dockerfile.bowtie-base ..."
 	DOCKER_BUILDKIT=1 docker build -f Dockerfile.bowtie-base -t "$BOWTIE_IMAGE" .
 else
@@ -69,7 +69,7 @@ fi
 
 log "Building and creating application container(s) ..."
 APP_IMAGE="disease-mutations-app:latest"
-if [[ "$REBUILD" == true ]] || ! docker image inspect "$APP_IMAGE" >/dev/null 2>&1; then
+if [ "$REBUILD" = "true" ] || ! docker image inspect "$APP_IMAGE" >/dev/null 2>&1; then
 	log "Building app image ($APP_IMAGE)..."
 	"${COMPOSE_CMD[@]}" up -d --build
 else
