@@ -7,13 +7,13 @@
     {
         <div class="text-center py-5">
             <Spinner Type="SpinnerType.Dots" Color="SpinnerColor.Primary" />
-            <p class="mt-4 text-muted" style="font-size: 1.0625rem;">Loading data for @Data.Hgvs...</p>
+            <p class="mt-4 text-muted" style="font-size: 1.0625rem;">Loading data for <span title="@Data.Hgvs">@Data.Hgvs</span>...</p>
         </div>
     }
     else if (Data.ErrorMessage != null)
     {
         <div class="alert alert-danger" role="alert">
-            <strong style="color: var(--text-primary);">⚠️ Error loading data for @Data.Hgvs:</strong><br/>
+            <strong style="color: var(--text-primary);">⚠️ Error loading data for <span title="@Data.Hgvs">@Data.Hgvs</span>:</strong><br/>
             <span style="margin-top: 0.5rem; display: block;">@Data.ErrorMessage</span>
         </div>
     }

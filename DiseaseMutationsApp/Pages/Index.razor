@@ -51,6 +51,7 @@
                         <li class="nav-item" role="presentation">
                             <button class="nav-link @(tabIndex == _activeTabIndex ? "active" : "")" 
                                     type="button" 
+                                    title="@tab.DisplayLabel"
                                     @onclick="() => _activeTabIndex = tabIndex">
                                 @{
                                     var isLoading = tab.IsLoading || tab is { Type: InputType.HGVS, DirectHgvs.IsLoading: true };
@@ -141,6 +142,7 @@
                                             <li class="nav-item" role="presentation">
                                                 <button class="nav-link @(isActiveChild ? "active" : "")" 
                                                         type="button"
+                                                        title="@childHgvs.Hgvs"
                                                         @onclick="() => _activeChildTabIndices[tabIndex] = childIndex">
                                                     @if (childHgvs.IsLoading)
                                                     {

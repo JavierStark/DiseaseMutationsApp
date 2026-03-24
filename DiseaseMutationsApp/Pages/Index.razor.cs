@@ -29,13 +29,13 @@ namespace DiseaseMutationsApp.Pages
         }
 
         private List<InputTabData> _inputTabs => StateService.IndexInputTabs;
-        
+
         private int _activeTabIndex
         {
             get => StateService.IndexActiveTabIndex;
             set => StateService.IndexActiveTabIndex = value;
         }
-        
+
         private Dictionary<int, int> _activeChildTabIndices => StateService.IndexActiveChildTabIndices;
 
         // Helper to get sorted gRNA list for display
@@ -149,37 +149,37 @@ namespace DiseaseMutationsApp.Pages
                 switch (tabData.Type)
                 {
                     case InputType.RS when tabData.RsId != null:
-                    {
-                        // Fetch HGVS list from RS
-                        var hgvsList = await GrnaService.GetHgvsFromSnp(tabData.RsId);
-                        Console.WriteLine($"RS{tabData.RsId} returned {hgvsList.Count} HGVS variants.");
-
-                        // Create child HGVS tabs with loading state
-                        tabData.ChildHgvsList = hgvsList.Select(h => new HgvsData
                         {
-                            Hgvs = h,
-                            IsLoading = true
-                        }).ToList();
+                            // Fetch HGVS list from RS
+                            var hgvsList = await GrnaService.GetHgvsFromSnp(tabData.RsId);
+                            Console.WriteLine($"RS{tabData.RsId} returned {hgvsList.Count} HGVS variants.");
 
-                        // Initialize active child tab for this parent
-                        if (tabData.ChildHgvsList.Any())
-                        {
-                            _activeChildTabIndices[tabIndex] = 0;
+                            // Create child HGVS tabs with loading state
+                            tabData.ChildHgvsList = hgvsList.Select(h => new HgvsData
+                            {
+                                Hgvs = h,
+                                IsLoading = true
+                            }).ToList();
+
+                            // Initialize active child tab for this parent
+                            if (tabData.ChildHgvsList.Any())
+                            {
+                                _activeChildTabIndices[tabIndex] = 0;
+                            }
+
+                            // Mark parent as no longer loading so tabs appear immediately
+                            tabData.IsLoading = false;
+
+                            await InvokeAsync(StateHasChanged);
+
+                            // Fetch data for each child HGVS
+                            foreach (var childHgvs in tabData.ChildHgvsList)
+                            {
+                                await FetchHgvsDataAsync(childHgvs);
+                            }
+
+                            break;
                         }
-
-                        // Mark parent as no longer loading so tabs appear immediately
-                        tabData.IsLoading = false;
-
-                        await InvokeAsync(StateHasChanged);
-
-                        // Fetch data for each child HGVS
-                        foreach (var childHgvs in tabData.ChildHgvsList)
-                        {
-                            await FetchHgvsDataAsync(childHgvs);
-                        }
-
-                        break;
-                    }
                     case InputType.HGVS when tabData.DirectHgvs != null:
                         // Fetch data for direct HGVS
                         await FetchHgvsDataAsync(tabData.DirectHgvs);
@@ -219,19 +219,19 @@ namespace DiseaseMutationsApp.Pages
 
                 if (!string.IsNullOrEmpty(hgvsData.Original) && extraNucleotids >= 0 && extraNucleotids < hgvsData.Original.Length)
                 {
-                    hgvsData.Original = hgvsData.Original.Insert(extraNucleotids, "<b>");
+                    hgvsData.Original = hgvsData.Original.Insert(extraNucleotids, "<u>");
                     if (hgvsData.Original.Length > extraNucleotids)
                     {
-                        hgvsData.Original = hgvsData.Original.Insert(hgvsData.Original.Length - extraNucleotids, "</b>");
+                        hgvsData.Original = hgvsData.Original.Insert(hgvsData.Original.Length - extraNucleotids, "</u>");
                     }
                 }
 
                 if (!string.IsNullOrEmpty(hgvsData.Mutated) && extraNucleotids >= 0 && extraNucleotids < hgvsData.Mutated.Length)
                 {
-                    hgvsData.Mutated = hgvsData.Mutated.Insert(extraNucleotids, "<b>");
+                    hgvsData.Mutated = hgvsData.Mutated.Insert(extraNucleotids, "<u>");
                     if (hgvsData.Mutated.Length > extraNucleotids)
                     {
-                        hgvsData.Mutated = hgvsData.Mutated.Insert(hgvsData.Mutated.Length - extraNucleotids, "</b>");
+                        hgvsData.Mutated = hgvsData.Mutated.Insert(hgvsData.Mutated.Length - extraNucleotids, "</u>");
                     }
                 }
             }
@@ -343,7 +343,7 @@ namespace DiseaseMutationsApp.Pages
                 var uri = new Uri(Nav.Uri);
                 var query = System.Web.HttpUtility.ParseQueryString(uri.Query);
                 var rsParam = query["rs"];
-                
+
                 if (!string.IsNullOrWhiteSpace(rsParam))
                 {
                     var trimmedParam = rsParam.Trim();
