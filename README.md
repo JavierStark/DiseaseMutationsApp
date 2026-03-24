@@ -60,47 +60,22 @@ The application uses a modern **Blazor Server** architecture with a monolithic d
 
 The application uses a multi-stage Docker build strategy for efficient deployment:
 
-### Stage 1: Base Image (`Dockerfile.bowtie-base`)
-
-Creates a reusable base image containing:
-
-- .NET 9.0 ASP.NET runtime
-- Bowtie alignment tool executable
-- Pre-indexed GRCh38 reference genome (~4GB)
-
-**Recommended creation method (low memory)**:
-
-- Import Bowtie data directly as an image tar stream:
-  - `tar -C bowtie -c . | docker import - disease-mutations-bowtie:latest`
-- This avoids Docker build context analysis for the full repository and reduces RAM pressure on constrained machines.
-
-**Benefits**:
-
-- **One-time build**: Large genome indexes only copied once
-- **Faster rebuilds**: Application changes don't require re-copying genome data
-- **Layer caching**: Docker efficiently caches the base image
-- **Smaller incremental builds**: Only application code is rebuilt during development
-
-### Stage 2: Application Image (`Dockerfile`)
+### Single Image Build (`Dockerfile`)
 
 Multi-stage build process:
 
-1. **Build stage**: Compiles C# and F# code using .NET SDK 9.0
-2. **Publish stage**: Creates optimized production artifacts
-3. **Final stage**:
-   - Uses pre-built bowtie base image
-   - Installs Python 3 and ViennaRNA for RNA folding
-   - Copies compiled Blazor Server application
-   - Configures runtime environment
+1. **Indices stage**: Downloads and unzips GRCh38 Bowtie indexes
+2. **Build stage**: Restores/publishes C# + F# app artifacts
+3. **Final stage**: Installs Python/ViennaRNA and assembles runtime image
+
+The Dockerfile uses BuildKit cache mounts for apt, NuGet, pip, and index download cache to avoid slow rebuilds.
 
 **Build Flow**:
 
 ```
-Dockerfile.bowtie-base → disease-mutations-bowtie:latest
-                                    ↓
-                         Dockerfile (multi-stage)
-                                    ↓
-                      disease-mutations-app:latest
+Dockerfile (indices + build + runtime stages)
+                              ↓
+             disease-mutations-app:latest
 ```
 
 ### Deployment Architecture
@@ -163,7 +138,7 @@ The application runs as a **single container** with integrated server and client
 
 ## 🚀 Getting Started
 
-### Option 1: Docker Deployment (Recommended)
+### Option 1: Docker Deployment with Installer Script (Recommended)
 
 1. **Clone the repository**:
 
@@ -172,48 +147,71 @@ The application runs as a **single container** with integrated server and client
    cd DiseaseMutationsApp
    ```
 
-2. **Ensure Bowtie indexes are in place**:
+2. **Run the installer script**:
 
    ```bash
-   # Indexes should be located in:
-   # ./bowtie/indexes/GCA_000001405.15_GRCh38_no_alt_analysis_set.*.ebwt
+   chmod +x DiseaseMutationApp.sh
+   ./DiseaseMutationApp.sh
    ```
 
-3. **Build the base image (one-time setup)**:
+   This script validates Docker/Docker Compose, builds the app image when needed, and starts the container.
+
+3. **Force rebuild when needed**:
 
    ```bash
-   tar -C bowtie -c . | docker import - disease-mutations-bowtie:latest
+   ./DiseaseMutationApp.sh --rebuild
    ```
 
-   **Alternative (if you want to use Dockerfile with reduced context):**
+4. **Access the application**:
+   - Application: http://localhost:5000
+
+#### Useful script-driven operations
+
+```bash
+# Start (without rebuilding when image already exists)
+./DiseaseMutationApp.sh
+
+# Rebuild image and start
+./DiseaseMutationApp.sh --rebuild
+
+# Show script usage
+./DiseaseMutationApp.sh --help
+```
+
+### Option 2: Manual Docker Compose
+
+1. **Clone the repository**:
 
    ```bash
-   mkdir -p .docker-empty
-   docker build -f Dockerfile.bowtie-base --build-context indexes=./bowtie -t disease-mutations-bowtie:latest .docker-empty
+   git clone https://github.com/yourusername/DiseaseMutationsApp.git
+   cd DiseaseMutationsApp
    ```
 
-4. **Build and run with Docker Compose**:
+2. **Build and run with Docker Compose**:
 
    ```bash
    docker compose up -d
    ```
 
-5. **Access the application**:
+3. **Access the application**:
    - Application: http://localhost:5000
 
 #### Quick Rebuild During Development
 
-After the initial setup, you can rebuild just the application (without re-copying Bowtie indexes):
+You can rebuild quickly using cached Docker layers and BuildKit cache mounts:
 
 ```bash
 # Rebuild and restart the application
+./DiseaseMutationApp.sh --rebuild
+
+# Manual alternative
 docker compose up -d --build
 
 # View logs
 docker compose logs -f app
 ```
 
-The bowtie base image remains cached, making subsequent builds much faster (seconds instead of minutes).
+The single Dockerfile keeps build speed high by caching dependency and data download layers.
 
 ### Option 2: Local Development
 
@@ -560,7 +558,7 @@ DiseaseMutationsApp/
 │
 ├── docker-compose.yml           # Docker orchestration
 ├── Dockerfile                   # Application container image
-├── Dockerfile.bowtie-base       # Base image with Bowtie and indexes
+├── DiseaseMutationApp.sh        # Install/run helper for Docker workflow
 ├── DiseaseMutationsApp.sln      # Visual Studio solution
 └── README.md                    # This file
 ```
@@ -692,8 +690,9 @@ Adjust these limits based on your system capabilities and workload requirements.
 
 - Ensure Docker has sufficient memory allocated (4GB+)
 - Check that all required files are in the build context
-- Verify Bowtie indexes are accessible
-- Build the base image first: `docker build -f Dockerfile.bowtie-base -t disease-mutations-bowtie:latest .`
+- Ensure outbound network access to download Bowtie indexes during build
+- Rebuild from scratch if cache was corrupted: `docker compose build --no-cache app`
+- Use installer rebuild path if needed: `./DiseaseMutationApp.sh --rebuild`
 
 #### Navigation state lost
 
