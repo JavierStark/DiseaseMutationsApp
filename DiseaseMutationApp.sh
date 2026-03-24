@@ -5,18 +5,7 @@ set -euo pipefail
 BOWTIE_IMAGE="disease-mutations-bowtie:latest"
 APP_IMAGE="disease-mutations-app:latest"
 REBUILD=false
-
-# Parse command-line arguments
-for arg in "$@"; do
-	case "$arg" in
-		--rebuild)
-			REBUILD=true
-			;;
-		*)
-			die "Unknown argument: $arg. Use --rebuild to force rebuild."
-			;;
-	esac
-done
+REBUILD_BOWTIE=false
 
 log() {
 	printf '[install] %s\n' "$1"
@@ -26,6 +15,29 @@ die() {
 	printf '[install] ERROR: %s\n' "$1" >&2
 	exit 1
 }
+
+# Parse command-line arguments
+for arg in "$@"; do
+	case "$arg" in
+		--rebuild)
+			REBUILD=true
+			;;
+		--rebuild-bowtie)
+			REBUILD_BOWTIE=true
+			;;
+		-h|--help)
+			echo "Usage:"
+			echo "  ./DiseaseMutationApp.sh                  # Install (skip rebuild if images exist)"
+			echo "  ./DiseaseMutationApp.sh --rebuild        # Force rebuild app image only"
+			echo "  ./DiseaseMutationApp.sh --rebuild-bowtie # Force rebuild bowtie base image"
+			echo "  ./DiseaseMutationApp.sh --rebuild --rebuild-bowtie"
+			exit 0
+			;;
+		*)
+			die "Unknown argument: $arg. Use --help for available options."
+			;;
+	esac
+done
 
 if ! command -v docker >/dev/null 2>&1; then
 	die "Docker is not installed or not available in PATH."
@@ -47,7 +59,7 @@ if [[ ! -f "docker-compose.yml" ]]; then
 	die "docker-compose.yml was not found. Run this script from the project root."
 fi
 
-if ! docker image inspect "$BOWTIE_IMAGE" >/dev/null 2>&1; then
+if [[ "$REBUILD_BOWTIE" == true ]] || ! docker image inspect "$BOWTIE_IMAGE" >/dev/null 2>&1; then
 	[[ -f "Dockerfile.bowtie-base" ]] || die "Missing Dockerfile.bowtie-base in project root."
 	log "Building Bowtie base image ($BOWTIE_IMAGE) using Dockerfile.bowtie-base ..."
 	DOCKER_BUILDKIT=1 docker build -f Dockerfile.bowtie-base -t "$BOWTIE_IMAGE" .
@@ -68,8 +80,10 @@ fi
 log "Install completed successfully."
 echo
 echo "Usage:"
-echo "  ./install.sh                 # Install (skip rebuild if image exists)"
-echo "  ./install.sh --rebuild       # Force rebuild of app image"
+echo "  ./DiseaseMutationApp.sh                  # Install (skip rebuild if images exist)"
+echo "  ./DiseaseMutationApp.sh --rebuild        # Force rebuild app image only"
+echo "  ./DiseaseMutationApp.sh --rebuild-bowtie # Force rebuild bowtie base image"
+echo "  ./DiseaseMutationApp.sh --rebuild --rebuild-bowtie"
 echo
 echo "How to start the app:"
 echo "  ${COMPOSE_CMD[*]} up -d"
