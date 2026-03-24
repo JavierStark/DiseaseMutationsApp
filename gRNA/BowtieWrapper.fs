@@ -2,6 +2,7 @@
 
 open System
 open System.Diagnostics
+open System.Threading
 open System.Threading.Tasks
 
 //example output:
@@ -9,11 +10,11 @@ open System.Threading.Tasks
 // 0	+	chr9	37515365	ACTGACTGACTG	IIIIIIIIIIII	478	
 
 // ./bowtie-align-s -x GCA_000001405.15_GRCh38_no_alt_analysis_set -c SEQUENCE -v MISMATCHES -k 2
-let runBowtie(mismatches: int) (threads: int)  (sequence: string) : Task<string array> = task {
+let runBowtie(mismatches: int) (threads: int) (sequence: string) (cancellationToken: CancellationToken) : Task<string array> = task {
     let startInfo = ProcessStartInfo()
     let maxAllignment = 6
     startInfo.FileName <- "bowtie/bowtie-align-s"
-    startInfo.Arguments <- sprintf "-x \"GCA_000001405.15_GRCh38_no_alt_analysis_set\" -c %s -v %d -k %d --threads %d" sequence mismatches maxAllignment threads
+    startInfo.Arguments <- sprintf "-x \"GCA_000001405.15_GRCh38_no_alt_analysis_set\" -c %s -v %d -k %d --threads %d --mm" sequence mismatches maxAllignment threads
     startInfo.RedirectStandardOutput <- true
     startInfo.RedirectStandardError <- true
     startInfo.UseShellExecute <- false
@@ -28,10 +29,17 @@ let runBowtie(mismatches: int) (threads: int)  (sequence: string) : Task<string 
     try
         proc.Start() |> ignore
 
-        let! stdout = proc.StandardOutput.ReadToEndAsync()
-        let! stderr = proc.StandardError.ReadToEndAsync()
+        use _ = cancellationToken.Register(fun () ->
+            try if not proc.HasExited then proc.Kill(entireProcessTree = true) with | _ -> ()
+        )
 
-        do! proc.WaitForExitAsync()
+        let stdoutTask = proc.StandardOutput.ReadToEndAsync(cancellationToken)
+        let stderrTask = proc.StandardError.ReadToEndAsync(cancellationToken)
+
+        do! proc.WaitForExitAsync(cancellationToken)
+
+        let! stdout = stdoutTask
+        let! stderr = stderrTask
 
         let combinedOutput =
             if String.IsNullOrWhiteSpace(stdout) && String.IsNullOrWhiteSpace(stderr) then
@@ -74,11 +82,11 @@ let runBowtie(mismatches: int) (threads: int)  (sequence: string) : Task<string 
            
 }
 
-let runBowtieForMultipleSequences (sequences: string list) (mismatches: int) (threads: int) : Task<int list> = task {
+let runBowtieForMultipleSequences (sequences: string list) (mismatches: int) (threads: int) (cancellationToken: CancellationToken) : Task<int list> = task {
     let! results =
         sequences
         |> String.concat ","
-        |> runBowtie mismatches threads
+        |> fun seq -> runBowtie mismatches threads seq cancellationToken
         
     
     let nOfAllignments =

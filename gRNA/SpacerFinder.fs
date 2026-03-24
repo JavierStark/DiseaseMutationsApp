@@ -73,7 +73,7 @@ let complementary (sequence: string) =
     |> Seq.toArray
     |> System.String
 
-let getOrderedgRna (window: int) (sequence: string) : Task<gRNAResult list> =
+let getOrderedgRna (window: int) (sequence: string) (bowtieService: gRNA.Services.BowtieService) (cancellationToken: System.Threading.CancellationToken) : Task<gRNAResult list> =
     task {
         let subsequences = slidingWindow sequence window
         let results = subsequences
@@ -82,7 +82,7 @@ let getOrderedgRna (window: int) (sequence: string) : Task<gRNAResult list> =
                       |> List.map getgRNAResult
         let gRNASequences = subsequences |> List.map (fun s -> s + "GAUUUAGACUACCCCAAAAACGAAGGGGACUAAAAC")
 
-        let! allignments = BowtieWrapper.runBowtieForMultipleSequences subsequences 2 2
+        let! allignments = bowtieService.ProcessMultipleSequencesAsync(subsequences, 2, 2, cancellationToken)
         let! folds = foldMany gRNASequences
         
         let results =

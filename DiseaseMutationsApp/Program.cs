@@ -10,6 +10,9 @@ builder.Services.AddRazorComponents()
 // Register state management service (scoped per SignalR circuit)
 builder.Services.AddScoped<AppStateService>();
 
+// Register the F# service wrapper for Bowtie operations as a Singleton
+builder.Services.AddSingleton<gRNA.Services.BowtieService>();
+
 // Register the gRNA service that provides direct access to F# library
 builder.Services.AddScoped<GrnaService>();
 

@@ -23,7 +23,9 @@ let getHgvsNotationsAsync (rsNumber: string) : Task<string list> =
                 matches
                 |> Seq.cast<System.Text.RegularExpressions.Match>
                 |> Seq.map _.Value
+                |> Seq.filter (fun x -> not (x.EndsWith("=")))
                 |> Seq.distinct
+                
                 |> Seq.toList
             
             printfn $"HGVS Notations: %A{hgvsNotations}"
