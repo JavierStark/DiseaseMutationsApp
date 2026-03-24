@@ -138,6 +138,25 @@ The application runs as a **single container** with integrated server and client
 
 ## 🚀 Getting Started
 
+### ⚠️ Very Important for WSL Users
+
+If you run Docker through WSL2 and do **not** set a memory limit, WSL can consume nearly **100% of system RAM**, which can slow down your computer and make downloads/builds significantly slower.
+
+Recommended limit: **2GB**
+
+Create or edit `~/.wslconfig` (Windows path: `C:\Users\<your-user>\.wslconfig`) with:
+
+```ini
+[wsl2]
+memory=2GB
+```
+
+Then restart WSL:
+
+```bash
+wsl --shutdown
+```
+
 ### Option 1: Docker Deployment with Installer Script (Recommended)
 
 1. **Clone the repository**:

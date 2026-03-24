@@ -6,6 +6,7 @@ BOWTIE_IMAGE="disease-mutations-bowtie:latest"
 APP_IMAGE="disease-mutations-app:latest"
 REBUILD=false
 REBUILD_BOWTIE=false
+BUILD_ENV=(DOCKER_BUILDKIT=1 COMPOSE_DOCKER_CLI_BUILD=1)
 
 log() {
 	printf '[install] %s\n' "$1"
@@ -62,16 +63,15 @@ fi
 if [ "$REBUILD_BOWTIE" = "true" ] || ! docker image inspect "$BOWTIE_IMAGE" >/dev/null 2>&1; then
 	[ -f "Dockerfile.bowtie-base" ] || die "Missing Dockerfile.bowtie-base in project root."
 	log "Building Bowtie base image ($BOWTIE_IMAGE) using Dockerfile.bowtie-base ..."
-	DOCKER_BUILDKIT=1 docker build -f Dockerfile.bowtie-base -t "$BOWTIE_IMAGE" .
+	env "${BUILD_ENV[@]}" docker build -f Dockerfile.bowtie-base -t "$BOWTIE_IMAGE" .
 else
 	log "Bowtie base image already exists ($BOWTIE_IMAGE)."
 fi
 
 log "Building and creating application container(s) ..."
-APP_IMAGE="disease-mutations-app:latest"
 if [ "$REBUILD" = "true" ] || ! docker image inspect "$APP_IMAGE" >/dev/null 2>&1; then
 	log "Building app image ($APP_IMAGE)..."
-	"${COMPOSE_CMD[@]}" up -d --build
+	env "${BUILD_ENV[@]}" "${COMPOSE_CMD[@]}" up -d --build
 else
 	log "App image already exists ($APP_IMAGE). Starting container..."
 	"${COMPOSE_CMD[@]}" up -d
@@ -93,3 +93,4 @@ echo "  ${COMPOSE_CMD[*]} down          # Stop containers"
 echo "  ${COMPOSE_CMD[*]} logs -f app   # Follow application logs"
 echo
 echo "Application URL: http://localhost:5000"
+d

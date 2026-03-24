@@ -1,15 +1,13 @@
-﻿FROM debian:bookworm-slim AS downloader
-WORKDIR /tmp
-
-RUN apt-get update && apt-get install -y curl unzip && \
-    curl -L https://github.com/peak/s5cmd/releases/download/v2.2.2/s5cmd_2.2.2_Linux-64bit.tar.gz | tar -xz && \
-    mv s5cmd /usr/local/bin/
-
-RUN --mount=type=cache,target=/tmp/s5cmd_cache \
-    s5cmd --no-sign-request cp s3://genome-idx/bt/GRCh38_noalt_as.zip /tmp/s5cmd_cache/ && \
-    unzip /tmp/s5cmd_cache/GRCh38_noalt_as.zip -d bowtie_indices
-
-FROM mcr.microsoft.com/dotnet/aspnet:9.0-bookworm-slim
+﻿FROM mcr.microsoft.com/dotnet/aspnet:9.0-bookworm-slim
 WORKDIR /app
 
-COPY --from=downloader /tmp/bowtie_indices ./bowtie
+RUN apt-get update && \
+    apt-get install -y --no-install-recommends curl unzip ca-certificates && \
+    curl -L https://github.com/peak/s5cmd/releases/download/v2.2.2/s5cmd_2.2.2_Linux-64bit.tar.gz | tar -xz && \
+    ./s5cmd --no-sign-request cp s3://genome-idx/bt/GRCh38_noalt_as.zip /tmp/archive.zip && \
+    mkdir -p /app/bowtie/indexes && \
+    unzip /tmp/archive.zip -d /app/bowtie/indexes && \
+    rm /tmp/archive.zip ./s5cmd && \
+    apt-get purge -y curl unzip ca-certificates && \
+    apt-get autoremove -y && \
+    rm -rf /var/lib/apt/lists/*
