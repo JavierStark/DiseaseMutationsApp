@@ -29,16 +29,20 @@ FROM mcr.microsoft.com/dotnet/aspnet:9.0-bookworm-slim AS final
 WORKDIR /app
 
 # Install Python dependencies for RNA folding
-RUN apt-get update && \
+RUN --mount=type=cache,target=/root/.cache/pip \
+    apt-get update -o Acquire::Check::Date=false && \
     apt-get install -y python3 python3-pip python3-venv && \
-    pip3 install --break-system-packages --no-cache-dir viennarna && \
+    pip3 install --break-system-packages viennarna && \
     rm -rf /var/lib/apt/lists/*
 
 # Copy published application
 COPY --from=publish /app/publish .
-COPY --from=indices / /app/bowtie/
 
-# Ensure bowtie is executable
+# Copy bowtie indices from base image (changes rarely)
+COPY --from=indices /app/bowtie/ ./bowtie/indexes/
+
+# Copy bowtie binary and make executable
+COPY bowtie/bowtie-align-s /app/bowtie/
 RUN chmod +x /app/bowtie/bowtie-align-s
 
 EXPOSE 80

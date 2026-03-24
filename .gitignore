@@ -4,6 +4,9 @@ obj/
 riderModule.iml
 /_ReSharper.Caches/
 .idea/
+bowtie/indexes/*
+
+**/ELIMINAR
 
 **/bin/
 **/obj/

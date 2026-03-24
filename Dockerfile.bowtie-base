@@ -1,3 +1,15 @@
-﻿FROM mcr.microsoft.com/dotnet/aspnet:9.0-bookworm-slim
+﻿FROM debian:bookworm-slim AS downloader
+WORKDIR /tmp
+
+RUN apt-get update && apt-get install -y curl unzip && \
+    curl -L https://github.com/peak/s5cmd/releases/download/v2.2.2/s5cmd_2.2.2_Linux-64bit.tar.gz | tar -xz && \
+    mv s5cmd /usr/local/bin/
+
+RUN --mount=type=cache,target=/tmp/s5cmd_cache \
+    s5cmd --no-sign-request cp s3://genome-idx/bt/grch38_1kgmaj.zip /tmp/s5cmd_cache/ && \
+    unzip /tmp/s5cmd_cache/grch38_1kgmaj.zip -d bowtie_indices
+
+FROM mcr.microsoft.com/dotnet/aspnet:9.0-bookworm-slim
 WORKDIR /app
-COPY bowtie/ ./bowtie/
+
+COPY --from=downloader /tmp/bowtie_indices ./bowtie
