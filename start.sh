@@ -87,10 +87,9 @@ echo "  ./DiseaseMutationApp.sh --rebuild --rebuild-bowtie"
 echo
 echo "How to start the app:"
 echo "  ${COMPOSE_CMD[*]} up -d"
-echo
+echo "-----------------------------------"
 echo "Useful commands:"
 echo "  ${COMPOSE_CMD[*]} down          # Stop containers"
 echo "  ${COMPOSE_CMD[*]} logs -f app   # Follow application logs"
 echo
 echo "Application URL: http://localhost:5000"
-d
