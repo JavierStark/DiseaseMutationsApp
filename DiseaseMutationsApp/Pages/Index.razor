@@ -43,6 +43,31 @@
     {
         <div class="row mb-5 fade-in-up">
             <div class="col">
+                @{
+                    var allRsTabs = _inputTabs.Where(t => t.Type == InputType.RS && t.ChildHgvsList != null).ToList();
+                    var allRsReady = allRsTabs.Any() && allRsTabs.All(t => !t.IsLoading && t.ChildHgvsList!.All(h => !h.IsLoading));
+                    var anyRsHasResults = allRsTabs.Any(t => t.ChildHgvsList!.Any(h => h.GRNAs != null && h.GRNAs.Any()));
+                }
+                @if (allRsTabs.Count > 0)
+                {
+                    <div class="d-flex justify-content-end mb-2">
+                        <button class="btn btn-outline-primary shadow-sm"
+                                disabled="@(!allRsReady || !anyRsHasResults)"
+                                @onclick="DownloadAllRsReports"
+                                title="@(allRsReady ? "Download Combined CSV Report for All RS Codes" : "Waiting for analysis...")">
+                            @if (!allRsReady)
+                            {
+                                <span class="spinner-border spinner-border-sm me-2" role="status" aria-hidden="true"></span>
+                                <span>Analyzing...</span>
+                            }
+                            else
+                            {
+                                <span class="oi oi-data-transfer-download me-2"></span>
+                                <span>Download All Reports</span>
+                            }
+                        </button>
+                    </div>
+                }
                 <ul class="nav nav-tabs" role="tablist">
                     @for (var i = 0; i < _inputTabs.Count; i++)
                     {
