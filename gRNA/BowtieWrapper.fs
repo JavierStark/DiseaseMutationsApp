@@ -11,9 +11,8 @@ open System.Threading.Tasks
 // 0	+	chr9	37515365	ACTGACTGACTG	IIIIIIIIIIII	478	
 
 let private indexSuffixes =
-    [| ".rev.2.ebwt"; ".rev.1.ebwt"; ".4.ebwt"; ".3.ebwt"; ".2.ebwt"; ".1.ebwt";
-       ".rev.2.bt2"; ".rev.1.bt2"; ".4.bt2"; ".3.bt2"; ".2.bt2"; ".1.bt2";
-    ".rev.2.bt2l"; ".rev.1.bt2l"; ".4.bt2l"; ".3.bt2l"; ".2.bt2l"; ".1.bt2l" |]
+    [| ".rev.2.bt2"; ".rev.1.bt2"; ".4.bt2"; ".3.bt2"; ".2.bt2"; ".1.bt2";
+       ".rev.2.bt2l"; ".rev.1.bt2l"; ".4.bt2l"; ".3.bt2l"; ".2.bt2l"; ".1.bt2l" |]
 
 let private tryStripIndexSuffix (fileName: string) =
     indexSuffixes
@@ -21,31 +20,30 @@ let private tryStripIndexSuffix (fileName: string) =
     |> Option.map (fun suffix -> fileName.Substring(0, fileName.Length - suffix.Length))
 
 let private resolveBowtieIndexBase () =
-    let candidateDirectories = [| "bowtie/indexes"; "bowtie" |]
+    let indexDirectory = "bowtie/indexes"
 
-    let tryFindInDirectory dir =
-        if Directory.Exists(dir) then
-            Directory.GetFiles(dir, "*", SearchOption.AllDirectories)
-            |> Array.choose (fun filePath ->
-                let fileName = Path.GetFileName(filePath)
-                tryStripIndexSuffix fileName
-                |> Option.map (fun baseName -> Path.Combine(Path.GetDirectoryName(filePath), baseName)))
-            |> Array.distinct
-            |> Array.tryHead
-        else
-            None
+    if not (Directory.Exists(indexDirectory)) then
+        failwith "No Bowtie index base found in bowtie/indexes. Expected .bt2 or .bt2l index files."
 
-    candidateDirectories
-    |> Array.tryPick tryFindInDirectory
-    |> function
+    let firstIndexFile =
+        Directory.GetFiles(indexDirectory, "*.bt2*", SearchOption.AllDirectories)
+        |> Array.tryHead
+
+    match firstIndexFile with
+    | Some filePath ->
+        match tryStripIndexSuffix filePath with
         | Some indexBase -> indexBase
-        | None -> failwith "No Bowtie index base found in bowtie/indexes or bowtie. Expected .bt2 or .ebwt index files."
+        | None -> failwith "Invalid Bowtie index file name in bowtie/indexes. Expected .bt2 or .bt2l index files."
+    | None ->
+        failwith "No Bowtie index base found in bowtie/indexes. Expected .bt2 or .bt2l index files."
+
+let private cachedBowtieIndexBase = lazy (resolveBowtieIndexBase())
 
 // ./bowtie-align-s -x GCA_000001405.15_GRCh38_no_alt_analysis_set -c SEQUENCE -v MISMATCHES -k 2
 let runBowtie(mismatches: int) (threads: int) (sequence: string) (cancellationToken: CancellationToken) : Task<string array> = task {
     let startInfo = ProcessStartInfo()
     let maxAllignment = 6
-    let indexBase = resolveBowtieIndexBase ()
+    let indexBase = cachedBowtieIndexBase.Value
     startInfo.FileName <- "bowtie/bowtie-align-s"
     startInfo.Arguments <- sprintf "-x \"%s\" -c %s -v %d -k %d --threads %d --mm" indexBase sequence mismatches maxAllignment threads
     startInfo.RedirectStandardOutput <- true
