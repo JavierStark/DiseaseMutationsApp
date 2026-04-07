@@ -21,7 +21,6 @@ The Disease Mutations App is designed to streamline the process of designing CRI
 - **Visual Comparison**: Side-by-side display of original and mutated sequences with highlighted mutations
 - **Interactive Tabbed Interface**: Analyze multiple variants simultaneously with dynamic tab management
 - **State Persistence**: Navigate between pages without losing your work
-- **Real-time Analysis**: Server-side processing with real-time SignalR updates
 
 ## 🏗️ Architecture
 
