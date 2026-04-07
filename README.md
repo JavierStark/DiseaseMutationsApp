@@ -751,18 +751,15 @@ For public or multi-user deployments, implement:
 
 Potential improvements and features:
 
-- [ ] Support for PAM site analysis and filtering
-- [ ] Export results to CSV/JSON
+- [ ] gRNA assembly system support
 - [ ] Batch processing of multiple mutations from file upload
-- [ ] Additional genome assemblies (GRCh37, T2T-CHM13)
-- [ ] Prime editing gRNA design
+- [ ] Additional genome assemblies
 - [ ] Integration with ClinVar database for pathogenicity information
 - [ ] Visualization of gRNA binding sites in genomic context
-- [ ] Machine learning-based efficiency prediction
 - [ ] Authentication and user accounts for saved designs
 - [ ] Save and share gRNA designs with persistent storage
 - [ ] Advanced filtering and sorting options for gRNA candidates
-- [ ] Integration with other variant databases (ClinGen, gnomAD)
+- [ ] Integration with other variant databases
 
 ## 🤝 Contributing
 
