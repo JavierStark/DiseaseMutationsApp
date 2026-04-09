@@ -4,10 +4,10 @@
 
 <PageTitle>gRNA Builder</PageTitle>
 
-<div class="container-fluid px-4 py-4 fade-in-up" style="max-width: 1500px;">
+<div class="container-fluid px-4 py-4 fade-in-up container-max-xl">
     <div class="row mb-5">
         <div class="col">
-            <h1 class="mb-2" style="background: linear-gradient(135deg, #06B6D4 0%, #A855F7 100%); -webkit-background-clip: text; -webkit-text-fill-color: transparent; background-clip: text;">
+            <h1 class="mb-2 page-title">
                 🧬 gRNA Builder
             </h1>
             <p class="text-muted mb-0">Design and analyze guide RNA sequences for CRISPR applications</p>
@@ -18,7 +18,7 @@
         <div class="col-lg-9 col-xl-7">
             <div class="card shadow-sm">
                 <div class="card-body">
-                    <h5 class="card-title mb-4" style="color: var(--color-teal-light);">
+                    <h5 class="card-title mb-4 section-title-accent">
                         <span class="oi oi-cog me-2"></span>Input Parameters
                     </h5>
                     <div class="mb-4">
@@ -28,7 +28,7 @@
                     </div>
                     <div class="mb-4">
                         <label for="before" class="form-label">gRNA size</label>
-                        <input id="before" type="number" class="form-control" @bind="_gRnaSize" min="1" style="max-width: 220px;"/>
+                        <input id="before" type="number" class="form-control input-max-sm" @bind="_gRnaSize" min="1"/>
                     </div>
                     <button class="btn btn-primary btn-lg mt-2" @onclick="FetchData">
                         <span class="oi oi-data-transfer-download me-2"></span>
@@ -88,11 +88,11 @@
                                 }
                                 else if (hasError)
                                 {
-                                    <span style="color: var(--color-red-light);">⚠️ @tab.DisplayLabel</span>
+                                    <span class="tab-state-error">⚠️ @tab.DisplayLabel</span>
                                 }
                                 else
                                 {
-                                    <span style="color: var(--color-green-light);">✓ @tab.DisplayLabel</span>
+                                    <span class="tab-state-success">✓ @tab.DisplayLabel</span>
                                 }
                             </button>
                         </li>
@@ -110,14 +110,14 @@
                             {
                                 <div class="text-center py-5">
                                     <Spinner Type="SpinnerType.Dots" Color="SpinnerColor.Primary" />
-                                    <p class="mt-4 text-muted" style="font-size: 1.0625rem;">Loading data for @tab.DisplayLabel...</p>
+                                    <p class="mt-4 text-muted loading-description">Loading data for @tab.DisplayLabel...</p>
                                 </div>
                             }
                             else if (tab.ErrorMessage != null)
                             {
                                 <div class="alert alert-danger" role="alert">
-                                    <strong style="color: var(--text-primary);">⚠️ Error loading data for @tab.DisplayLabel:</strong><br/>
-                                    <span style="margin-top: 0.5rem; display: block;">@tab.ErrorMessage</span>
+                                    <strong class="alert-heading">⚠️ Error loading data for @tab.DisplayLabel:</strong><br/>
+                                    <span class="alert-detail">@tab.ErrorMessage</span>
                                 </div>
                             }
                             else if (tab.Type == InputType.HGVS && tab.DirectHgvs != null)
@@ -175,11 +175,11 @@
                                                     }
                                                     else if (childHgvs.ErrorMessage != null)
                                                     {
-                                                        <span style="color: var(--color-red-light);">⚠️ @childHgvs.Hgvs[..Math.Min(20, childHgvs.Hgvs.Length)]@(childHgvs.Hgvs.Length > 20 ? "..." : "")</span>
+                                                        <span class="tab-state-error">⚠️ @childHgvs.Hgvs[..Math.Min(20, childHgvs.Hgvs.Length)]@(childHgvs.Hgvs.Length > 20 ? "..." : "")</span>
                                                     }
                                                     else
                                                     {
-                                                        <span style="color: var(--color-green-light);">✓ @childHgvs.Hgvs[..Math.Min(20, childHgvs.Hgvs.Length)]@(childHgvs.Hgvs.Length > 20 ? "..." : "")</span>
+                                                        <span class="tab-state-success">✓ @childHgvs.Hgvs[..Math.Min(20, childHgvs.Hgvs.Length)]@(childHgvs.Hgvs.Length > 20 ? "..." : "")</span>
                                                     }
                                                 </button>
                                             </li>
@@ -208,7 +208,7 @@
                                 else
                                 {
                                     <div class="alert alert-info" role="alert">
-                                        <strong style="color: var(--text-primary);">ℹ️ No HGVS variants found for @tab.DisplayLabel</strong>
+                                        <strong class="alert-heading">ℹ️ No HGVS variants found for @tab.DisplayLabel</strong>
                                     </div>
                                 }
                             }

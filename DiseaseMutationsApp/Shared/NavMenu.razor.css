@@ -1,28 +1,28 @@
 .navbar-toggler {
-    background-color: rgba(6, 182, 212, 0.15);
-    border: 1px solid rgba(6, 182, 212, 0.3);
+    background-color: rgba(230, 141, 216, 0.22);
+    border: 1px solid rgba(197, 92, 180, 0.34);
     transition: all 0.25s cubic-bezier(0.4, 0, 0.2, 1);
 }
 
 .navbar-toggler:hover {
-    background-color: rgba(6, 182, 212, 0.25);
-    border-color: rgba(6, 182, 212, 0.5);
+    background-color: rgba(230, 141, 216, 0.3);
+    border-color: rgba(179, 18, 55, 0.42);
     transform: scale(1.05);
 }
 
 .navbar-toggler:focus {
-    box-shadow: 0 0 0 3px rgba(6, 182, 212, 0.3);
+    box-shadow: 0 0 0 3px rgba(230, 141, 216, 0.34);
 }
 
 .navbar-toggler-icon {
-    filter: brightness(1.5);
+    filter: brightness(0.65);
 }
 
 .top-row {
     height: 3.75rem;
-    background: linear-gradient(135deg, rgba(6, 182, 212, 0.2) 0%, rgba(168, 85, 247, 0.15) 100%);
+    background: linear-gradient(135deg, rgba(230, 141, 216, 0.24) 0%, rgba(161, 238, 198, 0.24) 100%);
     backdrop-filter: blur(10px);
-    border-bottom: 1px solid rgba(6, 182, 212, 0.2);
+    border-bottom: 1px solid rgba(197, 92, 180, 0.24);
     display: flex;
     align-items: center;
 }
@@ -30,9 +30,9 @@
 .navbar-brand {
     font-size: 1.25rem;
     font-weight: 600;
-    color: #E7EBF0 !important;
+    color: #2A1A26 !important;
     letter-spacing: -0.025em;
-    background: linear-gradient(135deg, #06B6D4 0%, #A855F7 100%);
+    background: linear-gradient(135deg, #C55CB4 0%, #5FBE8E 100%);
     -webkit-background-clip: text;
     -webkit-text-fill-color: transparent;
     background-clip: text;
@@ -66,7 +66,7 @@
 }
 
 .nav-item ::deep a {
-    color: #B2BAC2;
+    color: #614A5B;
     border-radius: 0.625rem;
     height: 3rem;
     display: flex;
@@ -86,15 +86,15 @@
     top: 0;
     bottom: 0;
     width: 3px;
-    background: linear-gradient(180deg, #06B6D4 0%, #A855F7 100%);
+    background: linear-gradient(180deg, #C55CB4 0%, #5FBE8E 100%);
     transform: scaleY(0);
     transition: transform 0.25s cubic-bezier(0.4, 0, 0.2, 1);
 }
 
 .nav-item ::deep a.active {
-    background: linear-gradient(135deg, rgba(6, 182, 212, 0.2) 0%, rgba(168, 85, 247, 0.15) 100%);
-    color: #06B6D4;
-    box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.3), 0 2px 4px -1px rgba(0, 0, 0, 0.2);
+    background: linear-gradient(135deg, rgba(230, 141, 216, 0.26) 0%, rgba(161, 238, 198, 0.24) 100%);
+    color: #600B1E;
+    box-shadow: 0 4px 6px -1px rgba(96, 11, 30, 0.14), 0 2px 4px -1px rgba(96, 11, 30, 0.1);
 }
 
 .nav-item ::deep a.active::before {
@@ -102,19 +102,19 @@
 }
 
 .nav-item ::deep a.active .oi {
-    color: #06B6D4;
+    color: #600B1E;
     transform: scale(1.15);
 }
 
 .nav-item ::deep a:hover {
-    background: linear-gradient(135deg, rgba(6, 182, 212, 0.12) 0%, rgba(168, 85, 247, 0.08) 100%);
-    color: #22D3EE;
+    background: linear-gradient(135deg, rgba(230, 141, 216, 0.22) 0%, rgba(161, 238, 198, 0.2) 100%);
+    color: #B31237;
     transform: translateX(4px);
 }
 
 .nav-item ::deep a:hover .oi {
     transform: scale(1.1);
-    color: #22D3EE;
+    color: #B31237;
 }
 
 .nav-item ::deep a:active {
@@ -141,17 +141,17 @@
     }
     
     .nav-scrollable::-webkit-scrollbar-track {
-        background: rgba(6, 182, 212, 0.05);
+        background: rgba(230, 141, 216, 0.12);
         border-radius: 3px;
     }
     
     .nav-scrollable::-webkit-scrollbar-thumb {
-        background: linear-gradient(180deg, #06B6D4 0%, #A855F7 100%);
+        background: linear-gradient(180deg, #C55CB4 0%, #5FBE8E 100%);
         border-radius: 3px;
     }
     
     .nav-scrollable::-webkit-scrollbar-thumb:hover {
-        background: linear-gradient(180deg, #22D3EE 0%, #C084FC 100%);
+        background: linear-gradient(180deg, #B31237 0%, #5FBE8E 100%);
     }
 }
 

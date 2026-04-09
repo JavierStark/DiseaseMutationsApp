@@ -7,10 +7,10 @@
 
 <PageTitle>Omim to RS</PageTitle>
 
-<div class="container-fluid px-4 py-4 fade-in-up" style="max-width: 1200px;">
+<div class="container-fluid px-4 py-4 fade-in-up container-max-lg">
     <div class="row mb-5">
         <div class="col">
-            <h1 class="mb-2" style="background: linear-gradient(135deg, #06B6D4 0%, #A855F7 100%); -webkit-background-clip: text; -webkit-text-fill-color: transparent; background-clip: text;">
+            <h1 class="mb-2 page-title">
                 🔍 OMIM to RS Converter
             </h1>
             <p class="text-muted mb-0">Enter an OMIM code to fetch associated RS IDs for genetic variant analysis</p>
@@ -21,12 +21,12 @@
         <div class="col-lg-8 col-xl-7">
             <div class="card shadow-sm">
                 <div class="card-body">
-                    <h5 class="card-title mb-4" style="color: var(--color-teal-light);">
+                    <h5 class="card-title mb-4 section-title-accent">
                         <span class="oi oi-magnifying-glass me-2"></span>Search Parameters
                     </h5>
                     <div class="mb-4">
                         <label for="omim" class="form-label">OMIM code</label>
-                        <input id="omim" type="number" class="form-control" @bind="_omim" min="1" placeholder="e.g., 605543" style="max-width: 300px;" />
+                        <input id="omim" type="number" class="form-control input-max-md" @bind="_omim" min="1" placeholder="e.g., 605543" />
                         <small class="text-muted mt-2 d-block">Enter a valid Online Mendelian Inheritance in Man (OMIM) identifier</small>
                     </div>
                     <button class="btn btn-primary btn-lg" @onclick="FetchRs" disabled="@_isLoading">
@@ -48,8 +48,8 @@
     @if (_errorMessage != null)
     {
         <div class="alert alert-danger fade-in-up" role="alert">
-            <strong style="color: var(--text-primary);">⚠️ Error:</strong><br />
-            <span style="margin-top: 0.5rem; display: block;">@_errorMessage</span>
+            <strong class="alert-heading">⚠️ Error:</strong><br />
+            <span class="alert-detail">@_errorMessage</span>
         </div>
     }
 
@@ -57,7 +57,7 @@
     {
         <div class="row mb-4 fade-in-up">
             <div class="col d-flex justify-content-between align-items-center flex-wrap gap-3">
-                <h5 class="mb-0" style="color: var(--color-green-light);">
+                <h5 class="mb-0 section-title-success">
                     <span class="oi oi-check me-2"></span>Found @_rsList.Count RS ID@(_rsList.Count != 1 ? "s" : "")
                 </h5>
                 <div>
@@ -76,10 +76,10 @@
                             <table class="table table-hover table-striped align-middle mb-0">
                                 <thead class="table-light">
                                 <tr>
-                                    <th style="width: 60px; text-align: center;">
-                                        <input type="checkbox" class="form-check-input" checked="@AreAllRsSelected" @onchange="(e) => ToggleSelectAll(e.Value as bool? == true)" title="Select all RS IDs" style="cursor: pointer;" />
+                                    <th class="table-col-checkbox table-cell-center">
+                                        <input type="checkbox" class="form-check-input table-checkbox" checked="@AreAllRsSelected" @onchange="(e) => ToggleSelectAll(e.Value as bool? == true)" title="Select all RS IDs" />
                                     </th>
-                                    <th style="width: 160px;">RS ID</th>
+                                    <th class="table-col-rs">RS ID</th>
                                     <th>Action</th>
                                 </tr>
                                 </thead>
@@ -89,10 +89,10 @@
                                     var rsValue = NormalizeRsValue(rs);
                                     var isChecked = _selectedRs.Contains(rsValue);
                                     <tr>
-                                        <td style="text-align: center;">
-                                            <input type="checkbox" class="form-check-input" checked="@isChecked" @onchange="(e) => ToggleSelection(rsValue, e.Value as bool? == true)" style="cursor: pointer;" />
+                                        <td class="table-cell-center">
+                                            <input type="checkbox" class="form-check-input table-checkbox" checked="@isChecked" @onchange="(e) => ToggleSelection(rsValue, e.Value as bool? == true)" />
                                         </td>
-                                        <td class="font-monospace" style="color: var(--color-teal-light); font-weight: 500;">@rsValue</td>
+                                        <td class="font-monospace table-cell-rs">@rsValue</td>
                                         <td>
                                             <button class="btn btn-sm btn-secondary" @onclick="() => NavigateToBuilder(rsValue)" title="Open in gRNA Builder">
                                                 <span class="oi oi-external-link me-1"></span>

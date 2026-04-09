@@ -7,14 +7,14 @@
     {
         <div class="text-center py-5">
             <Spinner Type="SpinnerType.Dots" Color="SpinnerColor.Primary" />
-            <p class="mt-4 text-muted" style="font-size: 1.0625rem;">Loading data for <span title="@Data.Hgvs">@Data.Hgvs</span>...</p>
+            <p class="mt-4 text-muted loading-description">Loading data for <span title="@Data.Hgvs">@Data.Hgvs</span>...</p>
         </div>
     }
     else if (Data.ErrorMessage != null)
     {
         <div class="alert alert-danger" role="alert">
-            <strong style="color: var(--text-primary);">⚠️ Error loading data for <span title="@Data.Hgvs">@Data.Hgvs</span>:</strong><br/>
-            <span style="margin-top: 0.5rem; display: block;">@Data.ErrorMessage</span>
+            <strong class="alert-heading">⚠️ Error loading data for <span title="@Data.Hgvs">@Data.Hgvs</span>:</strong><br/>
+            <span class="alert-detail">@Data.ErrorMessage</span>
         </div>
     }
     else if (Data is { Original: not null, Mutated: not null })
@@ -23,20 +23,20 @@
             <div class="col">
                 <div class="card shadow-sm mb-4">
                     <div class="card-body">
-                        <h5 class="card-title mb-3" style="color: var(--color-teal-light);">
+                        <h5 class="card-title mb-3 sequence-title-original">
                             <span class="oi oi-document me-2"></span>Original Sequence
                         </h5>
-                        <div class="font-monospace p-3 rounded" style="background: var(--surface); border: 1px solid var(--border-color); word-break: break-all; line-height: 2; letter-spacing: 0.5px;">
+                        <div class="font-monospace p-3 rounded sequence-block">
                             @((MarkupString)Data.Original)
                         </div>
                     </div>
                 </div>
                 <div class="card shadow-sm">
                     <div class="card-body">
-                        <h5 class="card-title mb-3" style="color: var(--color-purple-light);">
+                        <h5 class="card-title mb-3 sequence-title-mutated">
                             <span class="oi oi-target me-2"></span>Mutated Sequence
                         </h5>
-                        <div class="font-monospace p-3 rounded" style="background: var(--surface); border: 1px solid var(--border-color); word-break: break-all; line-height: 2; letter-spacing: 0.5px;">
+                        <div class="font-monospace p-3 rounded sequence-block">
                             @((MarkupString)Data.Mutated)
                         </div>
                     </div>
@@ -50,45 +50,45 @@
                 <div class="col">
                     <div class="card shadow-sm">
                         <div class="card-body">
-                            <h5 class="card-title mb-3" style="color: var(--color-green-light);">
+                            <h5 class="card-title mb-3 section-title-secondary">
                                 <span class="oi oi-list me-2"></span>gRNA Spacer Results
                             </h5>
-                            <p class="text-muted small mb-3" style="font-size: 0.875rem;">
-                                <span class="oi oi-info" style="font-size: 0.75rem;"></span> 
+                            <p class="text-muted small mb-3 helper-hint">
+                                <span class="oi oi-info helper-hint-icon"></span> 
                                 Click any column header to sort. Tables with more than 5 rows are scrollable.
                             </p>
-                            <div class="table-responsive" style="@((Data.GRNAs.Count > 5) ? "max-height: 350px; overflow-y: auto; border: 1px solid var(--border-color); border-radius: var(--radius-md);" : null)">
+                            <div class="table-responsive grna-table-wrapper @(Data.GRNAs.Count > 5 ? "grna-table-wrapper-scrollable" : string.Empty)">
                                 <table class="table table-hover align-middle mb-0">
-                                    <thead class="table-light" style="position: sticky; top: 0; z-index: 10; background: linear-gradient(135deg, #132F4C 0%, #1A3A5A 100%); box-shadow: 0 2px 8px rgba(0, 0, 0, 0.3);">
+                                    <thead class="table-light grna-table-head">
                                     <tr>
-                                        <th style="width: 90px;">Action</th>
-                                        <th style="cursor: pointer; user-select: none;" @onclick="() => OnSort?.Invoke(Data, GrnaSortColumn.Sequence)">
+                                        <th class="grna-action-col">Action</th>
+                                        <th class="sortable-col" @onclick="() => OnSort?.Invoke(Data, GrnaSortColumn.Sequence)">
                                             gRNA Spacer
-                                            <span style="font-size: 0.875rem;">@(Data.SortColumn == GrnaSortColumn.Sequence ? (Data.SortAscending ? " ▲" : " ▼") : " ⇅")</span>
+                                            <span class="sort-icon">@(Data.SortColumn == GrnaSortColumn.Sequence ? (Data.SortAscending ? " ▲" : " ▼") : " ⇅")</span>
                                         </th>
-                                        <th style="cursor: pointer; user-select: none;" @onclick="() => OnSort?.Invoke(Data, GrnaSortColumn.GCScore)">
+                                        <th class="sortable-col" @onclick="() => OnSort?.Invoke(Data, GrnaSortColumn.GCScore)">
                                             GC Score
-                                            <span style="font-size: 0.875rem;">@(Data.SortColumn == GrnaSortColumn.GCScore ? (Data.SortAscending ? " ▲" : " ▼") : " ⇅")</span>
+                                            <span class="sort-icon">@(Data.SortColumn == GrnaSortColumn.GCScore ? (Data.SortAscending ? " ▲" : " ▼") : " ⇅")</span>
                                         </th>
-                                        <th style="cursor: pointer; user-select: none;" @onclick="() => OnSort?.Invoke(Data, GrnaSortColumn.HomopolymerCount)">
+                                        <th class="sortable-col" @onclick="() => OnSort?.Invoke(Data, GrnaSortColumn.HomopolymerCount)">
                                             Homopolymer
-                                            <span style="font-size: 0.875rem;">@(Data.SortColumn == GrnaSortColumn.HomopolymerCount ? (Data.SortAscending ? " ▲" : " ▼") : " ⇅")</span>
+                                            <span class="sort-icon">@(Data.SortColumn == GrnaSortColumn.HomopolymerCount ? (Data.SortAscending ? " ▲" : " ▼") : " ⇅")</span>
                                         </th>
-                                        <th style="cursor: pointer; user-select: none;" @onclick="() => OnSort?.Invoke(Data, GrnaSortColumn.SeedRegion)">
+                                        <th class="sortable-col" @onclick="() => OnSort?.Invoke(Data, GrnaSortColumn.SeedRegion)">
                                             Seed Region
-                                            <span style="font-size: 0.875rem;">@(Data.SortColumn == GrnaSortColumn.SeedRegion ? (Data.SortAscending ? " ▲" : " ▼") : " ⇅")</span>
+                                            <span class="sort-icon">@(Data.SortColumn == GrnaSortColumn.SeedRegion ? (Data.SortAscending ? " ▲" : " ▼") : " ⇅")</span>
                                         </th>
-                                        <th style="cursor: pointer; user-select: none;" @onclick="() => OnSort?.Invoke(Data, GrnaSortColumn.Alignments)">
+                                        <th class="sortable-col" @onclick="() => OnSort?.Invoke(Data, GrnaSortColumn.Alignments)">
                                             Alignments
-                                            <span style="font-size: 0.875rem;">@(Data.SortColumn == GrnaSortColumn.Alignments ? (Data.SortAscending ? " ▲" : " ▼") : " ⇅")</span>
+                                            <span class="sort-icon">@(Data.SortColumn == GrnaSortColumn.Alignments ? (Data.SortAscending ? " ▲" : " ▼") : " ⇅")</span>
                                         </th>
-                                        <th style="cursor: pointer; user-select: none;" @onclick="() => OnSort?.Invoke(Data, GrnaSortColumn.Energy)">
+                                        <th class="sortable-col" @onclick="() => OnSort?.Invoke(Data, GrnaSortColumn.Energy)">
                                             Energy
-                                            <span style="font-size: 0.875rem;">@(Data.SortColumn == GrnaSortColumn.Energy ? (Data.SortAscending ? " ▲" : " ▼") : " ⇅")</span>
+                                            <span class="sort-icon">@(Data.SortColumn == GrnaSortColumn.Energy ? (Data.SortAscending ? " ▲" : " ▼") : " ⇅")</span>
                                         </th>
-                                        <th style="cursor: pointer; user-select: none;" @onclick="() => OnSort?.Invoke(Data, GrnaSortColumn.Score)">
+                                        <th class="sortable-col" @onclick="() => OnSort?.Invoke(Data, GrnaSortColumn.Score)">
                                             Score
-                                            <span style="font-size: 0.875rem;">@(Data.SortColumn == GrnaSortColumn.Score ? (Data.SortAscending ? " ▲" : " ▼") : " ⇅")</span>
+                                            <span class="sort-icon">@(Data.SortColumn == GrnaSortColumn.Score ? (Data.SortAscending ? " ▲" : " ▼") : " ⇅")</span>
                                         </th>
                                     </tr>
                                     </thead>
@@ -97,17 +97,17 @@
                                     {
                                         <tr>
                                             <td>
-                                                <button class="btn btn-sm btn-secondary" @onclick="() => OnCreateGrna?.Invoke(gRNA.Sequence, Data)" title="Create gRNA" style="font-size: 1.125rem;">
+                                                <button class="btn btn-sm btn-secondary action-btn-icon" @onclick="() => OnCreateGrna?.Invoke(gRNA.Sequence, Data)" title="Create gRNA">
                                                     🔨
                                                 </button>
                                             </td>
-                                            <td class="font-monospace" style="font-size: 0.875rem; letter-spacing: 0.5px;"><span style="color: var(--bs-white);">@gRNA.Sequence</span></td>
-                                            <td><span style="color: var(--bs-white); font-weight: 500;">@gRNA.GCScore</span></td>
-                                            <td><span style="color: var(--bs-white); font-weight: 500;">@gRNA.HomopolymerCount</span></td>
-                                            <td class="font-monospace" style="font-size: 0.875rem;"><span style="color: var(--bs-white);">@gRNA.SeedRegion</span></td>
-                                            <td><span style="color: var(--color-purple-light); font-weight: 500;">@gRNA.Allignments</span></td>
-                                            <td><span style="color: var(--color-green-light); font-weight: 500;">@gRNA.RnaFoldResult.Energy.ToString("F2")</span></td>
-                                            <td><span style="color: var(--color-teal-light); font-weight: 500;">@gRNA.Score.ToString("P1")</span></td>
+                                            <td class="font-monospace grna-seq-cell">@gRNA.Sequence</td>
+                                            <td><span class="metric-default">@gRNA.GCScore</span></td>
+                                            <td><span class="metric-default">@gRNA.HomopolymerCount</span></td>
+                                            <td class="font-monospace grna-seed-cell">@gRNA.SeedRegion</td>
+                                            <td><span class="metric-accent-secondary">@gRNA.Allignments</span></td>
+                                            <td><span class="metric-accent-success">@gRNA.RnaFoldResult.Energy.ToString("F2")</span></td>
+                                            <td><span class="metric-accent-primary">@gRNA.Score.ToString("P1")</span></td>
                                         </tr>
                                     }
                                     </tbody>
@@ -121,10 +121,10 @@
 
         <div class="row">
             <div class="col">
-                <div class="card shadow-sm" style="border-color: var(--color-purple); border-width: 1px;">
+                <div class="card shadow-sm complete-grna-card">
                     <div class="card-body">
                         <div class="d-flex justify-content-between align-items-center mb-4">
-                            <h5 class="card-title mb-0" style="color: var(--color-purple-light);">
+                            <h5 class="card-title mb-0 complete-grna-title">
                                 <span class="oi oi-beaker me-2"></span>Complete gRNA
                             </h5>
                             @if (Data.SelectedSpacer != null)
@@ -155,46 +155,45 @@
                                 </div>
                             }
                         </div>
-                        <div class="font-monospace p-3 rounded" style="background: var(--surface); border: 1px solid var(--border-color); word-break: break-all; line-height: 2.2; font-size: 1.125rem; letter-spacing: 1px;">
-                            <span style="color: #F87171; font-weight: 600; text-shadow: 0 0 10px rgba(248, 113, 113, 0.3);">GAUUUAGACUACCCCAAAAACGAAGGGGACUAAAAC</span>
+                        <div class="font-monospace p-3 rounded complete-grna-sequence">
+                            <span class="scaffold-seq">GAUUUAGACUACCCCAAAAACGAAGGGGACUAAAAC</span>
                             @if (Data.SelectedSpacer != null)
-                            {<span style="color: #34D399; font-weight: 600; text-shadow: 0 0 10px rgba(52, 211, 153, 0.3);">@Data.SelectedSpacer</span>}
+                            {<span class="spacer-seq">@Data.SelectedSpacer</span>}
                         </div>
                         @if (Data.SelectedSpacer == null)
                         {
-                            <p class="text-muted mt-3 mb-0 d-flex align-items-center" style="font-size: 0.9375rem;">
-                                <span class="oi oi-info me-2" style="font-size: 0.875rem;"></span>
+                            <p class="text-muted mt-3 mb-0 d-flex align-items-center helper-note">
+                                <span class="oi oi-info me-2 helper-note-icon"></span>
                                 <span>Click the 🔨 button on a gRNA spacer to add it here</span>
                             </p>
                         }
                                                
                         @if (Data.RnaFoldResult != null)
                         {
-                            <div class="mt-4 pt-4" style="border-top: 2px solid var(--divider-color);">
-                                <h6 class="mb-4" style="color: var(--color-teal-light); font-size: 1.125rem;">
+                            <div class="mt-4 pt-4 structure-section">
+                                <h6 class="mb-4 structure-title">
                                     <span class="oi oi-graph me-2"></span>RNA Secondary Structure
                                 </h6>
                                 
                                 @if (!string.IsNullOrEmpty(Data.FornaUrl))
                                 {
-                                    <div class="mb-4" style="border: 1px solid var(--border-color); border-radius: var(--radius-lg); overflow: hidden; box-shadow: var(--shadow-md);">
+                                    <div class="mb-4 forna-frame">
                                         <iframe src=@Data.FornaUrl
-                                                style="width: 100%; height: 600px; border: none; display: block;"
                                                 title="RNA Secondary Structure Visualization">
                                         </iframe>
                                     </div>
                                 }
                                 
                                 <div class="mb-4">
-                                    <strong style="color: var(--text-primary); font-size: 0.9375rem;">Dot-Bracket Notation:</strong>
-                                    <div class="font-monospace p-3 rounded mt-2" style="background: var(--surface); border: 1px solid var(--border-color); word-break: break-all; line-height: 2; font-size: 0.9375rem; letter-spacing: 0.5px;">
+                                    <strong class="structure-label">Dot-Bracket Notation:</strong>
+                                    <div class="font-monospace p-3 rounded mt-2 structure-block">
                                         @Data.RnaFoldResult.Structure
                                     </div>
                                 </div>
                                 
-                                <div style="padding: 1rem; background: linear-gradient(135deg, rgba(6, 182, 212, 0.1) 0%, rgba(168, 85, 247, 0.1) 100%); border-radius: var(--radius-md); border: 1px solid var(--border-color);">
-                                    <strong style="color: var(--text-primary);">Minimum Free Energy:</strong> 
-                                    <span style="color: var(--color-green-light); font-size: 1.125rem; font-weight: 600; margin-left: 0.5rem;">
+                                <div class="energy-summary">
+                                    <strong class="alert-heading">Minimum Free Energy:</strong>
+                                    <span class="energy-value">
                                         @Data.RnaFoldResult.Energy.ToString("F2") kcal/mol
                                     </span>
                                 </div>
@@ -204,8 +203,8 @@
                         @if (Data.RnaFoldError != null)
                         {
                             <div class="alert alert-danger mt-4 mb-0" role="alert">
-                                <strong style="color: var(--text-primary);">⚠️ Error getting RNA structure:</strong><br/>
-                                <span style="margin-top: 0.5rem; display: block;">@Data.RnaFoldError</span>
+                                <strong class="alert-heading">⚠️ Error getting RNA structure:</strong><br/>
+                                <span class="alert-detail">@Data.RnaFoldError</span>
                             </div>
                         }
                     </div>
