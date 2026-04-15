@@ -35,6 +35,12 @@ let getBestgRNAFromHGVS (hgvsString: string) (grnaSize: int) (bowtieService: gRN
             bowtieService
             cancellationToken
 
+    let gRNAs =
+        if hgvsObj.Mutation = HGVS.MutationType.Substitution then
+            SpacerFinder.applySubstitutionSpecialRule grnaSize gRNAs
+        else
+            gRNAs
+
     return  {
         gRNA = gRNAs
         mutatedSequence = mutated
