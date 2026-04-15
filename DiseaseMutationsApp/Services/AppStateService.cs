@@ -13,6 +13,8 @@ namespace DiseaseMutationsApp.Services
         // ===== Index Page State =====
         public string? IndexHgvsInput { get; set; }
         public int IndexGRnaSize { get; set; } = 28;
+        public int IndexSeedStart { get; set; } = 10;
+        public int IndexSeedEnd { get; set; } = 17;
         public List<InputTabData> IndexInputTabs { get; set; } = new();
         public int IndexActiveTabIndex { get; set; }
         public Dictionary<int, int> IndexActiveChildTabIndices { get; set; } = new();
@@ -36,6 +38,8 @@ namespace DiseaseMutationsApp.Services
             // Clear Index state
             IndexHgvsInput = null;
             IndexGRnaSize = 28;
+            IndexSeedStart = 10;
+            IndexSeedEnd = 17;
             IndexInputTabs.Clear();
             IndexActiveTabIndex = 0;
             IndexActiveChildTabIndices.Clear();
@@ -56,6 +60,8 @@ namespace DiseaseMutationsApp.Services
         {
             IndexHgvsInput = null;
             IndexGRnaSize = 28;
+            IndexSeedStart = 10;
+            IndexSeedEnd = 17;
             IndexInputTabs.Clear();
             IndexActiveTabIndex = 0;
             IndexActiveChildTabIndices.Clear();

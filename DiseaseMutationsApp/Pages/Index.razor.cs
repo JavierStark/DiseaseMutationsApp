@@ -28,6 +28,53 @@ namespace DiseaseMutationsApp.Pages
             set => StateService.IndexGRnaSize = value;
         }
 
+        private int _seedStart
+        {
+            get => StateService.IndexSeedStart;
+            set => StateService.IndexSeedStart = value;
+        }
+
+        private int _seedEnd
+        {
+            get => StateService.IndexSeedEnd;
+            set => StateService.IndexSeedEnd = value;
+        }
+
+        private bool CanFetchData => !string.IsNullOrWhiteSpace(_hgvs) && _gRnaSize > 0 && SeedRangeValidationMessage == null;
+
+        private string? SeedRangeValidationMessage
+        {
+            get
+            {
+                if (_gRnaSize <= 0)
+                {
+                    return "gRNA size must be greater than 0.";
+                }
+
+                if (_seedStart < 0)
+                {
+                    return "Seed start must be between 0 and gRNA size - 1.";
+                }
+
+                if (_seedEnd < 0)
+                {
+                    return "Seed end must be between 0 and gRNA size - 1.";
+                }
+
+                if (_seedStart >= _gRnaSize || _seedEnd >= _gRnaSize)
+                {
+                    return $"Seed range must stay within 0 to {_gRnaSize - 1}.";
+                }
+
+                if (_seedStart > _seedEnd)
+                {
+                    return "Seed start must be less than or equal to seed end.";
+                }
+
+                return null;
+            }
+        }
+
         private List<InputTabData> _inputTabs => StateService.IndexInputTabs;
 
         private int _activeTabIndex
@@ -50,7 +97,6 @@ namespace DiseaseMutationsApp.Pages
                 GrnaSortColumn.Sequence => asc ? hgvsData.GRNAs.OrderBy(g => g.Sequence) : hgvsData.GRNAs.OrderByDescending(g => g.Sequence),
                 GrnaSortColumn.GCScore => asc ? hgvsData.GRNAs.OrderBy(g => g.GCScore) : hgvsData.GRNAs.OrderByDescending(g => g.GCScore),
                 GrnaSortColumn.HomopolymerCount => asc ? hgvsData.GRNAs.OrderBy(g => g.HomopolymerCount) : hgvsData.GRNAs.OrderByDescending(g => g.HomopolymerCount),
-                GrnaSortColumn.SeedRegion => asc ? hgvsData.GRNAs.OrderBy(g => g.SeedRegion) : hgvsData.GRNAs.OrderByDescending(g => g.SeedRegion),
                 GrnaSortColumn.Alignments => asc ? hgvsData.GRNAs.OrderBy(g => g.Allignments) : hgvsData.GRNAs.OrderByDescending(g => g.Allignments),
                 GrnaSortColumn.Energy => asc ? hgvsData.GRNAs.OrderBy(g => g.RnaFoldResult.Energy) : hgvsData.GRNAs.OrderByDescending(g => g.RnaFoldResult.Energy),
                 GrnaSortColumn.Score => asc ? hgvsData.GRNAs.OrderBy(g => g.Score) : hgvsData.GRNAs.OrderByDescending(g => g.Score),
@@ -74,7 +120,7 @@ namespace DiseaseMutationsApp.Pages
 
         private async Task FetchData()
         {
-            if (!string.IsNullOrWhiteSpace(_hgvs) && _gRnaSize > 0)
+            if (CanFetchData)
             {
                 _inputTabs.Clear();
                 _activeTabIndex = 0;
@@ -216,6 +262,8 @@ namespace DiseaseMutationsApp.Pages
                 hgvsData.Mutated = result.MutatedSequence;
                 hgvsData.GRNAs = result.gRNA;
                 var extraNucleotids = result.ExtraNucleotids;
+                hgvsData.ExtraNucleotids = extraNucleotids;
+
 
                 if (!string.IsNullOrEmpty(hgvsData.Original) && extraNucleotids >= 0 && extraNucleotids < hgvsData.Original.Length)
                 {

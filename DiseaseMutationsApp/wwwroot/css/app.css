@@ -374,7 +374,7 @@ input[type="number"] {
 }
 
 .table thead th {
-    background: linear-gradient(135deg, rgba(230, 141, 216, 0.22) 0%, rgba(161, 238, 198, 0.24) 100%);
+    background: rgb(230, 141, 216);
     color: var(--color-detail-dark);
     border-bottom: 2px solid var(--border-color);
     font-weight: 600;
@@ -390,7 +390,7 @@ input[type="number"] {
 }
 
 .table thead th.sortable-col:hover {
-    background: linear-gradient(135deg, rgba(230, 141, 216, 0.32) 0%, rgba(161, 238, 198, 0.32) 100%);
+    background: rgb(215, 100, 195);
     color: var(--color-detail);
 }
 
@@ -842,6 +842,14 @@ input[type="number"] {
     font-size: 0.875rem;
     letter-spacing: 0.5px;
     color: var(--text-primary);
+}
+
+.grna-seed-highlight {
+    color: #7D1D4F;
+    background: rgba(230, 141, 216, 0.24);
+    border-radius: 4px;
+    padding: 0 1px;
+    font-weight: 700;
 }
 
 .grna-seed-cell {

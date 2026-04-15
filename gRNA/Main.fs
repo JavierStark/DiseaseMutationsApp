@@ -18,10 +18,10 @@ let getBestgRNAFromHGVS (hgvsString: string) (grnaSize: int) (bowtieService: gRN
 
     let mutated, original = sequence.GetMutatedSubsequence(hgvsObj, extraNucleotids, extraNucleotids)
     
-    let! bestgRna = SpacerFinder.getOrderedgRna grnaSize mutated bowtieService cancellationToken
+    let! gRNAs = SpacerFinder.getOrderedgRna grnaSize mutated bowtieService cancellationToken
 
     return  {
-        gRNA = bestgRna
+        gRNA = gRNAs
         mutatedSequence = mutated
         originalSequence = original
         extraNucleotids = extraNucleotids

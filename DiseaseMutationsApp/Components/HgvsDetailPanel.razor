@@ -74,10 +74,6 @@
                                             Homopolymer
                                             <span class="sort-icon">@(Data.SortColumn == GrnaSortColumn.HomopolymerCount ? (Data.SortAscending ? " ▲" : " ▼") : " ⇅")</span>
                                         </th>
-                                        <th class="sortable-col" @onclick="() => OnSort?.Invoke(Data, GrnaSortColumn.SeedRegion)">
-                                            Seed Region
-                                            <span class="sort-icon">@(Data.SortColumn == GrnaSortColumn.SeedRegion ? (Data.SortAscending ? " ▲" : " ▼") : " ⇅")</span>
-                                        </th>
                                         <th class="sortable-col" @onclick="() => OnSort?.Invoke(Data, GrnaSortColumn.Alignments)">
                                             Alignments
                                             <span class="sort-icon">@(Data.SortColumn == GrnaSortColumn.Alignments ? (Data.SortAscending ? " ▲" : " ▼") : " ⇅")</span>
@@ -101,10 +97,9 @@
                                                     🔨
                                                 </button>
                                             </td>
-                                            <td class="font-monospace grna-seq-cell">@gRNA.Sequence</td>
+                                            <td class="font-monospace grna-seq-cell">@FormatSequenceWithSeedHighlight(gRNA.Sequence)</td>
                                             <td><span class="metric-default">@gRNA.GCScore</span></td>
                                             <td><span class="metric-default">@gRNA.HomopolymerCount</span></td>
-                                            <td class="font-monospace grna-seed-cell">@gRNA.SeedRegion</td>
                                             <td><span class="metric-accent-secondary">@gRNA.Allignments</span></td>
                                             <td><span class="metric-accent-success">@gRNA.RnaFoldResult.Energy.ToString("F2")</span></td>
                                             <td><span class="metric-accent-primary">@gRNA.Score.ToString("P1")</span></td>
@@ -221,4 +216,35 @@
     [Parameter] public Action<string, HgvsData>? OnCreateGrna { get; set; }
     [Parameter] public Func<HgvsData, Task>? OnCopyComplete { get; set; }
     [Parameter] public Func<HgvsData, Task>? OnGetRnaFold { get; set; }
+    [Parameter] public int SeedStart { get; set; }
+    [Parameter] public int SeedEnd { get; set; }
+
+    private MarkupString FormatSequenceWithSeedHighlight(string sequence)
+    {
+        if (string.IsNullOrEmpty(sequence))
+        {
+            return new MarkupString(string.Empty);
+        }
+
+        if (sequence.Length == 1)
+        {
+            var onlyChar = System.Text.Encodings.Web.HtmlEncoder.Default.Encode(sequence);
+            return new MarkupString($"<span class=\"grna-seed-highlight\">{onlyChar}</span>");
+        }
+
+        var clampedStart = Math.Clamp(SeedStart, 0, sequence.Length - 1);
+        var clampedEnd = Math.Clamp(SeedEnd, 0, sequence.Length - 1);
+
+        if (clampedStart > clampedEnd)
+        {
+            var encodedSequence = System.Text.Encodings.Web.HtmlEncoder.Default.Encode(sequence);
+            return new MarkupString(encodedSequence);
+        }
+
+        var prefix = System.Text.Encodings.Web.HtmlEncoder.Default.Encode(sequence[..clampedStart]);
+        var highlighted = System.Text.Encodings.Web.HtmlEncoder.Default.Encode(sequence.Substring(clampedStart, clampedEnd - clampedStart + 1));
+        var suffix = System.Text.Encodings.Web.HtmlEncoder.Default.Encode(sequence[(clampedEnd + 1)..]);
+
+        return new MarkupString($"{prefix}<span class=\"grna-seed-highlight\">{highlighted}</span>{suffix}");
+    }
 }

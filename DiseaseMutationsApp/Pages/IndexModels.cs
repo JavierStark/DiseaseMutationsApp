@@ -9,7 +9,7 @@ namespace DiseaseMutationsApp.Pages
         RS
     }
 
-    public enum GrnaSortColumn { Sequence, GCScore, HomopolymerCount, SeedRegion, Alignments, Energy, Score }
+    public enum GrnaSortColumn { Sequence, GCScore, HomopolymerCount, Alignments, Energy, Score }
 
     public class InputTabData
     {
@@ -31,6 +31,7 @@ namespace DiseaseMutationsApp.Pages
         public string Hgvs { get; init; } = string.Empty;
         public string? Original { get; set; }
         public string? Mutated { get; set; }
+        public int? ExtraNucleotids { get; set; }
         public List<GRNAResult>? GRNAs { get; set; }
         public string? SelectedSpacer { get; set; }
         public bool CopiedToClipboard { get; set; }
