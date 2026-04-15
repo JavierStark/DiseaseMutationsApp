@@ -69,4 +69,52 @@ public class SpacerFinderHighlightTests
             Assert.That(length, Is.EqualTo(0));
         });
     }
+
+    [Test]
+    public void AdjustFourthFromEndToAorU_ChangesToA_WhenNotA()
+    {
+        var adjusted = SpacerFinder.adjustFourthFromEndToAorU("UUUUGG");
+        Assert.That(adjusted, Is.EqualTo("UUAUGG"));
+    }
+
+    [Test]
+    public void ApplySubstitutionSpecialRule_SelectsSingleGrnaAndAdjustsFourthFromEnd()
+    {
+        var selected = new SpacerFinder.gRNAResult(
+            "UUUUGG",
+            1.0,
+            0,
+            "UUGG",
+            3,
+            new RNAFoldWrapper.RNAFoldResult("....", -1.2),
+            2,
+            0.75,
+            3,
+            1);
+        var other = new SpacerFinder.gRNAResult(
+            "CCCCCC",
+            1.0,
+            0,
+            "CCCC",
+            2,
+            new RNAFoldWrapper.RNAFoldResult("....", -0.8),
+            3,
+            0.5,
+            1,
+            1);
+
+        var input = Microsoft.FSharp.Collections.ListModule.OfSeq(new[] { other, selected });
+        var results = SpacerFinder.applySubstitutionSpecialRule(6, input);
+
+        Assert.Multiple(() =>
+        {
+            Assert.That(results.Count, Is.EqualTo(1));
+            Assert.That(results[0].MutationHighlightStart, Is.EqualTo(3));
+            Assert.That(results[0].MutationHighlightLength, Is.EqualTo(1));
+            Assert.That(results[0].Sequence, Is.EqualTo("UUAUGG"));
+            Assert.That(results[0].Allignments, Is.EqualTo(3));
+            Assert.That(results[0].Rank, Is.EqualTo(1));
+            Assert.That(results[0].Score, Is.EqualTo(1.0));
+        });
+    }
 }

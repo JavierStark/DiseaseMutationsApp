@@ -63,6 +63,37 @@ let getgRNAResult sequence : gRNAResult =
       MutationHighlightStart = -1
       MutationHighlightLength = 0}
 
+let adjustFourthFromEndToAorU (sequence: string) =
+    if System.String.IsNullOrEmpty(sequence) || sequence.Length < 4 then
+        sequence
+    else
+        let targetIndex = sequence.Length - 4
+        let replacement =
+            if sequence.[targetIndex] = 'A' then 'U'
+            else 'A'
+
+        sequence.Remove(targetIndex, 1).Insert(targetIndex, string replacement)
+
+let applySubstitutionSpecialRule (windowSize: int) (results: gRNAResult list) =
+    let targetMutationIndex = windowSize - 3
+
+    results
+    |> List.tryFind (fun result ->
+        result.MutationHighlightStart = targetMutationIndex
+        && result.MutationHighlightLength > 0)
+    |> Option.map (fun selected ->
+        let adjustedSequence = adjustFourthFromEndToAorU selected.Sequence
+        let adjustedBaseResult = getgRNAResult adjustedSequence
+
+        { adjustedBaseResult with
+            Allignments = selected.Allignments
+            RnaFoldResult = selected.RnaFoldResult
+            MutationHighlightStart = selected.MutationHighlightStart
+            MutationHighlightLength = selected.MutationHighlightLength
+            Rank = 1
+            Score = 1.0 })
+    |> Option.toList
+
 let getMutationHighlightSpan (windowStart: int) (windowSize: int) (mutationStart: int) (mutationLength: int) : int * int =
     let windowEndExclusive = windowStart + windowSize
     let mutationEndExclusive = mutationStart + mutationLength
