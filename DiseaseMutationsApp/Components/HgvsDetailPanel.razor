@@ -101,7 +101,7 @@
                                                     🔨
                                                 </button>
                                             </td>
-                                            <td class="font-monospace grna-seq-cell">@gRNA.Sequence</td>
+                                            <td class="font-monospace grna-seq-cell">@RenderSpacerWithMutationUnderline(gRNA)</td>
                                             <td><span class="metric-default">@gRNA.GCScore</span></td>
                                             <td><span class="metric-default">@gRNA.HomopolymerCount</span></td>
                                             <td class="font-monospace grna-seed-cell">@gRNA.SeedRegion</td>
@@ -221,4 +221,25 @@
     [Parameter] public Action<string, HgvsData>? OnCreateGrna { get; set; }
     [Parameter] public Func<HgvsData, Task>? OnCopyComplete { get; set; }
     [Parameter] public Func<HgvsData, Task>? OnGetRnaFold { get; set; }
+
+    private MarkupString RenderSpacerWithMutationUnderline(GRNAResult gRNA)
+    {
+        var sequence = gRNA.Sequence ?? string.Empty;
+        var start = gRNA.MutationHighlightStart;
+        var length = gRNA.MutationHighlightLength;
+
+        if (string.IsNullOrEmpty(sequence) ||
+            start < 0 ||
+            length <= 0 ||
+            start >= sequence.Length ||
+            start + length > sequence.Length)
+        {
+            return (MarkupString)System.Net.WebUtility.HtmlEncode(sequence);
+        }
+
+        var prefix = System.Net.WebUtility.HtmlEncode(sequence[..start]);
+        var mutated = System.Net.WebUtility.HtmlEncode(sequence.Substring(start, length));
+        var suffix = System.Net.WebUtility.HtmlEncode(sequence[(start + length)..]);
+        return (MarkupString)($"{prefix}<u>{mutated}</u>{suffix}");
+    }
 }

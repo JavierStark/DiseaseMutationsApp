@@ -42,7 +42,9 @@ type gRNAResult =
       Allignments: int
       RnaFoldResult: RNAFoldResult
       Rank: int
-      Score: float }
+      Score: float
+      MutationHighlightStart: int
+      MutationHighlightLength: int }
 
 let getgRNAResult sequence : gRNAResult =
     let gcContent = calculateGCContent sequence
@@ -57,7 +59,33 @@ let getgRNAResult sequence : gRNAResult =
       Allignments = 0
       RnaFoldResult = { Structure = ""; Energy = 0.0 }
       Rank = 0
-      Score = 0.0}
+      Score = 0.0
+      MutationHighlightStart = -1
+      MutationHighlightLength = 0}
+
+let getMutationHighlightSpan (windowStart: int) (windowSize: int) (mutationStart: int) (mutationLength: int) : int * int =
+    let windowEndExclusive = windowStart + windowSize
+    let mutationEndExclusive = mutationStart + mutationLength
+
+    if mutationLength > 0 then
+        let overlapStart = max windowStart mutationStart
+        let overlapEnd = min windowEndExclusive mutationEndExclusive
+        let overlapLength = overlapEnd - overlapStart
+
+        if overlapLength > 0 then
+            (overlapStart - windowStart, overlapLength)
+        else
+            (-1, 0)
+    else
+        // Anchor visualization for zero-length mutations (e.g. deletion in local mutated sequence)
+        if mutationStart >= windowStart && mutationStart <= windowEndExclusive then
+            let anchor =
+                if mutationStart <= windowStart then 0
+                elif mutationStart >= windowEndExclusive then windowSize - 1
+                else mutationStart - windowStart
+            (anchor, 1)
+        else
+            (-1, 0)
 
 let sortByResult (result: gRNAResult) =
     (result.Allignments, -result.RnaFoldResult.Energy, -result.GCScore, result.HomopolymerCount)
@@ -73,13 +101,21 @@ let complementary (sequence: string) =
     |> Seq.toArray
     |> System.String
 
-let getOrderedgRna (window: int) (sequence: string) (bowtieService: gRNA.Services.BowtieService) (cancellationToken: System.Threading.CancellationToken) : Task<gRNAResult list> =
+let getOrderedgRna (window: int) (sequence: string) (mutationStart: int) (mutationLength: int) (bowtieService: gRNA.Services.BowtieService) (cancellationToken: System.Threading.CancellationToken) : Task<gRNAResult list> =
     task {
         let subsequences = slidingWindow sequence window
-        let results = subsequences
-                      |> List.map complementary
-                      |> List.map _.Replace('T', 'U')
-                      |> List.map getgRNAResult
+        let results =
+            subsequences
+            |> List.mapi (fun i subsequence ->
+                let highlightStart, highlightLength = getMutationHighlightSpan i window mutationStart mutationLength
+                let sequenceResult =
+                    subsequence
+                    |> complementary
+                    |> _.Replace('T', 'U')
+                    |> getgRNAResult
+                { sequenceResult with
+                    MutationHighlightStart = highlightStart
+                    MutationHighlightLength = highlightLength })
         let gRNASequences = subsequences |> List.map (fun s -> s + "GAUUUAGACUACCCCAAAAACGAAGGGGACUAAAAC")
 
         let! allignments = bowtieService.ProcessMultipleSequencesAsync(subsequences, 2, 2, cancellationToken)

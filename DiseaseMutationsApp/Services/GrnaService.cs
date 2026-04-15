@@ -40,7 +40,9 @@ public class GrnaService
                         Energy = g.RnaFoldResult.Energy
                     },
                     Rank = g.Rank,
-                    Score = g.Score
+                    Score = g.Score,
+                    MutationHighlightStart = g.MutationHighlightStart,
+                    MutationHighlightLength = g.MutationHighlightLength
                 })
                 .ToList();
 
@@ -129,6 +131,8 @@ public record GRNAResult
     public required RNAFoldResult RnaFoldResult { get; init; }
     public int Rank { get; init; }
     public double Score { get; init; }
+    public int MutationHighlightStart { get; init; }
+    public int MutationHighlightLength { get; init; }
 }
 
 public record ResultFromHGVS
@@ -144,4 +148,3 @@ public record RNAFoldResult
     public required string Structure { get; init; }
     public double Energy { get; init; }
 }
-
