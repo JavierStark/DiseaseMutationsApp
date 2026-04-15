@@ -78,7 +78,7 @@ let getMutationHighlightSpan (windowStart: int) (windowSize: int) (mutationStart
             (-1, 0)
     else
         // Anchor visualization for zero-length mutations (e.g. deletion in local mutated sequence)
-        if mutationStart >= windowStart && mutationStart <= windowEndExclusive then
+        if mutationStart >= windowStart && mutationStart < windowEndExclusive then
             let anchor =
                 if mutationStart <= windowStart then 0
                 elif mutationStart >= windowEndExclusive then windowSize - 1
