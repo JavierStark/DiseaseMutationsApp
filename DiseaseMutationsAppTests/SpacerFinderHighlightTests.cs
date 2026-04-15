@@ -117,4 +117,25 @@ public class SpacerFinderHighlightTests
             Assert.That(results[0].Score, Is.EqualTo(1.0));
         });
     }
+
+    [Test]
+    public void ApplySubstitutionSpecialRule_NoMatchingPosition_ReturnsEmpty()
+    {
+        var nonMatching = new SpacerFinder.gRNAResult(
+            "UUUUGG",
+            1.0,
+            0,
+            "UUGG",
+            3,
+            new RNAFoldWrapper.RNAFoldResult("....", -1.2),
+            2,
+            0.75,
+            2,
+            1);
+
+        var input = Microsoft.FSharp.Collections.ListModule.OfSeq(new[] { nonMatching });
+        var results = SpacerFinder.applySubstitutionSpecialRule(6, input);
+
+        Assert.That(results, Is.Empty);
+    }
 }
