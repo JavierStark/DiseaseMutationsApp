@@ -14,8 +14,4 @@ bowtie/indexes/*
 **/.git/
 **/.gitignore
 **/node_modules/
-**/.dockerignore
 **/.env
-**/docker-compose.yml
-**/Dockerfile
-**/*.md

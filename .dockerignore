@@ -1,0 +1,14 @@
+**/bin/
+**/obj/
+**/.vs/
+**/.vscode/
+**/.idea/
+**/*.user
+**/*.suo
+**/*.cache
+.git/
+.gitignore
+.DS_Store
+
+# Keep Bowtie executable in context, ignore local indexes (downloaded during Docker build)
+bowtie/indexes/
