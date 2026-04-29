@@ -27,7 +27,9 @@
                             <span class="oi oi-document me-2"></span>Original Sequence
                         </h5>
                         <div class="font-monospace p-3 rounded sequence-block">
+                            <span class="text-muted me-1">5'</span>
                             @((MarkupString)Data.Original)
+                            <span class="text-muted ms-1">3'</span>
                         </div>
                     </div>
                 </div>
@@ -37,7 +39,9 @@
                             <span class="oi oi-target me-2"></span>Mutated Sequence
                         </h5>
                         <div class="font-monospace p-3 rounded sequence-block">
+                            <span class="text-muted me-1">5'</span>
                             @((MarkupString)Data.Mutated)
+                            <span class="text-muted ms-1">3'</span>
                         </div>
                     </div>
                 </div>
@@ -63,7 +67,7 @@
                                     <tr>
                                         <th class="grna-action-col">Action</th>
                                         <th class="sortable-col" @onclick="() => OnSort?.Invoke(Data, GrnaSortColumn.Sequence)">
-                                            gRNA Spacer
+                                            gRNA Spacer (5'→3')
                                             <span class="sort-icon">@(Data.SortColumn == GrnaSortColumn.Sequence ? (Data.SortAscending ? " ▲" : " ▼") : " ⇅")</span>
                                         </th>
                                         <th class="sortable-col" @onclick="() => OnSort?.Invoke(Data, GrnaSortColumn.GCScore)">
@@ -97,7 +101,9 @@
                                                     🔨
                                                 </button>
                                             </td>
-                                            <td class="font-monospace grna-seq-cell">@RenderComposableSpacer(gRNA)</td>
+                                            <td class="font-monospace grna-seq-cell">
+                                                <span class="text-muted me-1">5'</span>@RenderComposableSpacer(gRNA)<span class="text-muted ms-1">3'</span>
+                                            </td>
                                             <td><span class="metric-default">@gRNA.GCScore</span></td>
                                             <td><span class="metric-default">@gRNA.HomopolymerCount</span></td>
                                             <td><span class="metric-accent-secondary">@gRNA.Allignments</span></td>
@@ -151,9 +157,11 @@
                             }
                         </div>
                         <div class="font-monospace p-3 rounded complete-grna-sequence">
+                            <span class="text-muted me-1">5'</span>
                             <span class="scaffold-seq">GAUUUAGACUACCCCAAAAACGAAGGGGACUAAAAC</span>
                             @if (Data.SelectedSpacer != null)
                             {<span class="spacer-seq">@Data.SelectedSpacer</span>}
+                            <span class="text-muted ms-1">3'</span>
                         </div>
                         @if (Data.SelectedSpacer == null)
                         {
