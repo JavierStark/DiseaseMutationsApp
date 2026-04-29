@@ -168,8 +168,8 @@ wsl --shutdown
 2. **Run the installer script**:
 
    ```bash
-   chmod +x DiseaseMutationApp.sh
-   ./DiseaseMutationApp.sh
+   chmod +x start.sh
+   ./start.sh
    ```
 
    This script validates Docker/Docker Compose, builds the app image when needed, and starts the container.
@@ -177,7 +177,7 @@ wsl --shutdown
 3. **Force rebuild when needed**:
 
    ```bash
-   ./DiseaseMutationApp.sh --rebuild
+   ./start.sh --rebuild
    ```
 
 4. **Access the application**:
@@ -187,13 +187,13 @@ wsl --shutdown
 
 ```bash
 # Start (without rebuilding when image already exists)
-./DiseaseMutationApp.sh
+./start.sh
 
 # Rebuild image and start
-./DiseaseMutationApp.sh --rebuild
+./start.sh --rebuild
 
 # Show script usage
-./DiseaseMutationApp.sh --help
+./start.sh --help
 ```
 
 ### Option 2: Manual Docker Compose
@@ -220,7 +220,7 @@ You can rebuild quickly using cached Docker layers and BuildKit cache mounts:
 
 ```bash
 # Rebuild and restart the application
-./DiseaseMutationApp.sh --rebuild
+./start.sh --rebuild
 
 # Manual alternative
 docker compose up -d --build
@@ -576,7 +576,7 @@ DiseaseMutationsApp/
 │
 ├── docker-compose.yml           # Docker orchestration
 ├── Dockerfile                   # Application container image
-├── DiseaseMutationApp.sh        # Install/run helper for Docker workflow
+├── start.sh        # Install/run helper for Docker workflow
 ├── DiseaseMutationsApp.sln      # Visual Studio solution
 └── README.md                    # This file
 ```
@@ -710,7 +710,7 @@ Adjust these limits based on your system capabilities and workload requirements.
 - Check that all required files are in the build context
 - Ensure outbound network access to download Bowtie indexes during build
 - Rebuild from scratch if cache was corrupted: `docker compose build --no-cache app`
-- Use installer rebuild path if needed: `./DiseaseMutationApp.sh --rebuild`
+- Use installer rebuild path if needed: `./start.sh --rebuild`
 
 #### Navigation state lost
 
