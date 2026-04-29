@@ -161,7 +161,7 @@ wsl --shutdown
 1. **Clone the repository**:
 
    ```bash
-   git clone https://github.com/yourusername/DiseaseMutationsApp.git
+   git clone https://github.com/JavierStark/DiseaseMutationsApp.git
    cd DiseaseMutationsApp
    ```
 
@@ -201,7 +201,7 @@ wsl --shutdown
 1. **Clone the repository**:
 
    ```bash
-   git clone https://github.com/yourusername/DiseaseMutationsApp.git
+   git clone https://github.com/JavierStark/DiseaseMutationsApp.git
    cd DiseaseMutationsApp
    ```
 
@@ -236,7 +236,7 @@ The single Dockerfile keeps build speed high by caching dependency and data down
 1. **Clone the repository**:
 
    ```bash
-   git clone https://github.com/yourusername/DiseaseMutationsApp.git
+   git clone https://github.com/JavierStark/DiseaseMutationsApp.git
    cd DiseaseMutationsApp
    ```
 
