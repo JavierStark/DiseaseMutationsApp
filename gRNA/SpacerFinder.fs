@@ -30,7 +30,7 @@ let calculateGCScore (gcContent: float) (lowerThreshold: float, upperThreshold: 
         (100.0 - gcContent) / (100.0 - upperThreshold)
 
 let countHomopolymers (sequence: string) =
-    let pattern = "(A{4,}|C{4,}|G{4,}|T{4,})"
+    let pattern = "(A{4,}|C{4,}|G{4,}|U{4,})"
     System.Text.RegularExpressions.Regex.Matches(sequence, pattern).Count
 
 
@@ -132,16 +132,28 @@ let complementary (sequence: string) =
     |> Seq.toArray
     |> System.String
 
+let reverse (sequence: string) =
+    sequence
+    |> Seq.rev
+    |> Seq.toArray
+    |> System.String
+
 let getOrderedgRna (window: int) (sequence: string) (mutationStart: int) (mutationLength: int) (bowtieService: gRNA.Services.BowtieService) (cancellationToken: System.Threading.CancellationToken) : Task<gRNAResult list> =
     task {
         let subsequences = slidingWindow sequence window
         let results =
             subsequences
             |> List.mapi (fun i subsequence ->
-                let highlightStart, highlightLength = getMutationHighlightSpan i window mutationStart mutationLength
+                let rawHighlightStart, highlightLength = getMutationHighlightSpan i window mutationStart mutationLength
+                let highlightStart =
+                    if rawHighlightStart >= 0 && highlightLength > 0 then
+                        window - (rawHighlightStart + highlightLength)
+                    else
+                        rawHighlightStart
                 let sequenceResult =
                     subsequence
                     |> complementary
+                    |> reverse
                     |> _.Replace('T', 'U')
                     |> getgRNAResult
                 { sequenceResult with
