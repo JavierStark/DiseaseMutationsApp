@@ -23,9 +23,21 @@
             <div class="col">
                 <div class="card shadow-sm mb-4">
                     <div class="card-body">
-                        <h5 class="card-title mb-3 sequence-title-original">
-                            <span class="oi oi-document me-2"></span>Original Sequence
-                        </h5>
+                        <div class="d-flex justify-content-between align-items-center gap-3 mb-3">
+                            <h5 class="card-title mb-0 sequence-title-original">
+                                <span class="oi oi-document me-2"></span>Original Sequence
+                            </h5>
+                            @if (!string.IsNullOrWhiteSpace(Data.SourceUrl))
+                            {
+                                <a class="btn btn-sm btn-outline-secondary source-link-btn"
+                                   href="@Data.SourceUrl"
+                                   target="_blank"
+                                   rel="noopener noreferrer"
+                                   title="Open source sequence in NCBI">
+                                    <span class="oi oi-link-intact"></span>
+                                </a>
+                            }
+                        </div>
                         <div class="font-monospace p-3 rounded sequence-block">
                             <span class="text-muted me-1">5'</span>
                             @((MarkupString)Data.Original)

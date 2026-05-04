@@ -118,6 +118,22 @@ public class GrnaService
     {
         return $"http://nibiru.tbi.univie.ac.at/forna/forna.html?id=url/name&sequence={sequence}&structure={structure}";
     }
+
+    public string? GetNcbiNuccoreUrl(string hgvs)
+    {
+        if (string.IsNullOrWhiteSpace(hgvs))
+        {
+            return null;
+        }
+
+        var accession = hgvs.Split(':', 2)[0].Trim();
+        if (string.IsNullOrWhiteSpace(accession))
+        {
+            return null;
+        }
+
+        return $"https://www.ncbi.nlm.nih.gov/nuccore/{Uri.EscapeDataString(accession)}";
+    }
 }
 
 // Model classes previously defined in IDiseaseMutationsApi.cs

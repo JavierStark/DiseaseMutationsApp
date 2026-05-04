@@ -256,6 +256,7 @@ namespace DiseaseMutationsApp.Pages
         {
             try
             {
+                hgvsData.SourceUrl = GrnaService.GetNcbiNuccoreUrl(hgvsData.Hgvs);
                 var result = await GrnaService.GetBestgRNAFromHgvs(hgvsData.Hgvs, _gRnaSize);
 
                 hgvsData.Original = result.OriginalSequence;

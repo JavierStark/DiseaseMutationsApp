@@ -31,6 +31,7 @@ namespace DiseaseMutationsApp.Pages
         public string Hgvs { get; init; } = string.Empty;
         public string? Original { get; set; }
         public string? Mutated { get; set; }
+        public string? SourceUrl { get; set; }
         public int? ExtraNucleotids { get; set; }
         public List<GRNAResult>? GRNAs { get; set; }
         public string? SelectedSpacer { get; set; }
