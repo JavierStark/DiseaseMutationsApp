@@ -31,6 +31,7 @@ public class GrnaService
                 {
                     Sequence = g.Sequence,
                     GCScore = (float)g.GCScore,
+                    GCContent = (float)g.GCContent,
                     HomopolymerCount = g.HomopolymerCount,
                     SeedRegion = g.SeedRegion,
                     Allignments = g.Allignments,
@@ -119,6 +120,8 @@ public class GrnaService
         return $"http://nibiru.tbi.univie.ac.at/forna/forna.html?id=url/name&sequence={sequence}&structure={structure}";
     }
 
+    
+
     public string? GetNcbiNuccoreUrl(string hgvs)
     {
         if (string.IsNullOrWhiteSpace(hgvs))
@@ -141,6 +144,7 @@ public record GRNAResult
 {
     public required string Sequence { get; init; }
     public float GCScore { get; init; }
+    public float GCContent { get; init; }
     public int HomopolymerCount { get; init; }
     public required string SeedRegion { get; init; }
     public int Allignments { get; init; }

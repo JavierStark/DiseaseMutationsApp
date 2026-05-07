@@ -37,6 +37,7 @@ let countHomopolymers (sequence: string) =
 type gRNAResult =
     { Sequence: string
       GCScore: float
+      GCContent: float
       HomopolymerCount: int
       SeedRegion: string
       Allignments: int
@@ -52,16 +53,19 @@ let getgRNAResult sequence : gRNAResult =
     let homopolymerCount = countHomopolymers sequence
     let seedRegion = sequence[10..17]
 
-    { Sequence = sequence
-      GCScore = gcScore
-      HomopolymerCount = homopolymerCount
-      SeedRegion = seedRegion
-      Allignments = 0
-      RnaFoldResult = { Structure = ""; Energy = 0.0 }
-      Rank = 0
-      Score = 0.0
-      MutationHighlightStart = -1
-      MutationHighlightLength = 0}
+    { 
+        Sequence = sequence
+        GCScore = gcScore
+        GCContent = gcContent
+        HomopolymerCount = homopolymerCount
+        SeedRegion = seedRegion
+        Allignments = 0
+        RnaFoldResult = { Structure = ""; Energy = 0.0 }
+        Rank = 0
+        Score = 0.0
+        MutationHighlightStart = -1
+        MutationHighlightLength = 0
+    }
 
 let adjustFourthFromEndToAorU (sequence: string) =
     if System.String.IsNullOrEmpty(sequence) || sequence.Length < 4 then

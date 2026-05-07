@@ -96,6 +96,7 @@ namespace DiseaseMutationsApp.Pages
             {
                 GrnaSortColumn.Sequence => asc ? hgvsData.GRNAs.OrderBy(g => g.Sequence) : hgvsData.GRNAs.OrderByDescending(g => g.Sequence),
                 GrnaSortColumn.GCScore => asc ? hgvsData.GRNAs.OrderBy(g => g.GCScore) : hgvsData.GRNAs.OrderByDescending(g => g.GCScore),
+                GrnaSortColumn.GCContent => asc ? hgvsData.GRNAs.OrderBy(g => g.GCContent) : hgvsData.GRNAs.OrderByDescending(g => g.GCContent),
                 GrnaSortColumn.HomopolymerCount => asc ? hgvsData.GRNAs.OrderBy(g => g.HomopolymerCount) : hgvsData.GRNAs.OrderByDescending(g => g.HomopolymerCount),
                 GrnaSortColumn.Alignments => asc ? hgvsData.GRNAs.OrderBy(g => g.Allignments) : hgvsData.GRNAs.OrderByDescending(g => g.Allignments),
                 GrnaSortColumn.Energy => asc ? hgvsData.GRNAs.OrderBy(g => g.RnaFoldResult.Energy) : hgvsData.GRNAs.OrderByDescending(g => g.RnaFoldResult.Energy),
@@ -427,8 +428,9 @@ namespace DiseaseMutationsApp.Pages
                     var energy = gRNA.RnaFoldResult?.Energy.ToString(System.Globalization.CultureInfo.InvariantCulture) ?? "N/A";
                     var score = gRNA.Score.ToString(System.Globalization.CultureInfo.InvariantCulture);
                     var gcScore = gRNA.GCScore.ToString(System.Globalization.CultureInfo.InvariantCulture);
+                    var gcContent = gRNA.GCContent.ToString(System.Globalization.CultureInfo.InvariantCulture);
 
-                    sb.AppendLine($"{tabData.RsId},{hgvs.Hgvs},{gRNA.Rank},{gRNA.Sequence},{score},{gcScore},{gRNA.Allignments},{gRNA.SeedRegion},{gRNA.HomopolymerCount},{energy}");
+                    sb.AppendLine($"{tabData.RsId},{hgvs.Hgvs},{gRNA.Rank},{gRNA.Sequence},{score},{gcContent},{gRNA.Allignments},{gRNA.SeedRegion},{gRNA.HomopolymerCount},{energy}");
                 }
             }
 
@@ -455,8 +457,9 @@ namespace DiseaseMutationsApp.Pages
                         var energy = gRNA.RnaFoldResult?.Energy.ToString(System.Globalization.CultureInfo.InvariantCulture) ?? "N/A";
                         var score = gRNA.Score.ToString(System.Globalization.CultureInfo.InvariantCulture);
                         var gcScore = gRNA.GCScore.ToString(System.Globalization.CultureInfo.InvariantCulture);
+                        var gcContent = gRNA.GCContent.ToString(System.Globalization.CultureInfo.InvariantCulture);
 
-                        sb.AppendLine($"{tabData.RsId},{hgvs.Hgvs},{gRNA.Rank},{gRNA.Sequence},{score},{gcScore},{gRNA.Allignments},{gRNA.SeedRegion},{gRNA.HomopolymerCount},{energy}");
+                        sb.AppendLine($"{tabData.RsId},{hgvs.Hgvs},{gRNA.Rank},{gRNA.Sequence},{score},{gcContent},{gRNA.Allignments},{gRNA.SeedRegion},{gRNA.HomopolymerCount},{energy}");
                     }
                 }
             }
