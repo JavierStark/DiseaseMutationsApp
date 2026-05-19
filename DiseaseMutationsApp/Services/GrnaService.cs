@@ -78,21 +78,22 @@ public class GrnaService
         }
     }
 
-    public async Task<List<string>> GetRsFromOmim(int omim)
-    {
-        try
-        {
-            _logger.LogInformation("Getting RS codes from OMIM: {Omim}", omim);
-
-            var fsharpList = await Omim.rsFromOmim(omim);
-            return new List<string>(fsharpList);
-        }
-        catch (Exception ex)
-        {
-            _logger.LogError(ex, "Error getting RS from OMIM: {Omim}", omim);
-            throw;
-        }
-    }
+    // OMIM feature deactivated
+    // public async Task<List<string>> GetRsFromOmim(int omim)
+    // {
+    //     try
+    //     {
+    //         _logger.LogInformation("Getting RS codes from OMIM: {Omim}", omim);
+    //
+    //         var fsharpList = await Omim.rsFromOmim(omim);
+    //         return new List<string>(fsharpList);
+    //     }
+    //     catch (Exception ex)
+    //     {
+    //         _logger.LogError(ex, "Error getting RS from OMIM: {Omim}", omim);
+    //         throw;
+    //     }
+    // }
 
     public async Task<RNAFoldResult> GetRnaFold(string sequence)
     {

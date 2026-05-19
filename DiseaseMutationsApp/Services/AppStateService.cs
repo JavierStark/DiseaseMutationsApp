@@ -19,11 +19,11 @@ namespace DiseaseMutationsApp.Services
         public int IndexActiveTabIndex { get; set; }
         public Dictionary<int, int> IndexActiveChildTabIndices { get; set; } = new();
 
-        // ===== OmimToRs Page State =====
-        public int? OmimCode { get; set; }
-        public List<string>? OmimRsList { get; set; }
-        public HashSet<string> OmimSelectedRs { get; set; } = new(StringComparer.OrdinalIgnoreCase);
-        public string? OmimErrorMessage { get; set; }
+        // ===== OmimToRs Page State (deactivated) =====
+        // public int? OmimCode { get; set; }
+        // public List<string>? OmimRsList { get; set; }
+        // public HashSet<string> OmimSelectedRs { get; set; } = new(StringComparer.OrdinalIgnoreCase);
+        // public string? OmimErrorMessage { get; set; }
 
         // Events to notify components when state changes
         public event Action? OnStateChanged;
@@ -44,11 +44,11 @@ namespace DiseaseMutationsApp.Services
             IndexActiveTabIndex = 0;
             IndexActiveChildTabIndices.Clear();
 
-            // Clear OmimToRs state
-            OmimCode = null;
-            OmimRsList = null;
-            OmimSelectedRs.Clear();
-            OmimErrorMessage = null;
+            // Clear OmimToRs state (deactivated)
+            // OmimCode = null;
+            // OmimRsList = null;
+            // OmimSelectedRs.Clear();
+            // OmimErrorMessage = null;
 
             NotifyStateChanged();
         }
@@ -68,17 +68,17 @@ namespace DiseaseMutationsApp.Services
             NotifyStateChanged();
         }
 
-        /// <summary>
-        /// Clear only OmimToRs page state
-        /// </summary>
-        public void ClearOmimState()
-        {
-            OmimCode = null;
-            OmimRsList = null;
-            OmimSelectedRs.Clear();
-            OmimErrorMessage = null;
-            NotifyStateChanged();
-        }
+        // /// <summary>
+        // /// Clear only OmimToRs page state (deactivated)
+        // /// </summary>
+        // public void ClearOmimState()
+        // {
+        //     OmimCode = null;
+        //     OmimRsList = null;
+        //     OmimSelectedRs.Clear();
+        //     OmimErrorMessage = null;
+        //     NotifyStateChanged();
+        // }
     }
 }
 

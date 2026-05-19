@@ -18,10 +18,10 @@
 
     <ItemGroup>
         <None Include="LibraryTesting.fsx" />
-        <Compile Include="LevenshteinDistance.fs" />
+        <None Include="LevenshteinDistance.fs" />
         <Compile Include="SNP.fs" />
         <Content Include="snp_sample.json" />
-        <Compile Include="Omim.fs" />
+        <None Include="Omim.fs" />
     </ItemGroup>
 
     <ItemGroup>
