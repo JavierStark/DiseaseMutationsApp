@@ -125,17 +125,6 @@ let getMutationHighlightSpan (windowStart: int) (windowSize: int) (mutationStart
 let sortByResult (result: gRNAResult) =
     (result.Allignments, -result.RnaFoldResult.Energy, -result.GCScore, result.HomopolymerCount)
 
-let complementary (sequence: string) =
-    sequence
-    |> Seq.map (function
-        | 'A' -> 'T'
-        | 'T' -> 'A'
-        | 'C' -> 'G'
-        | 'G' -> 'C'
-        | c -> c)
-    |> Seq.toArray
-    |> System.String
-
 let reverse (sequence: string) =
     sequence
     |> Seq.rev
@@ -156,7 +145,7 @@ let getOrderedgRna (window: int) (sequence: string) (mutationStart: int) (mutati
                         rawHighlightStart
                 let sequenceResult =
                     subsequence
-                    |> complementary
+                    |> Sequence.complementary
                     |> reverse
                     |> _.Replace('T', 'U')
                     |> getgRNAResult

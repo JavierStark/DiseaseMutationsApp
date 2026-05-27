@@ -2,6 +2,17 @@
 
 open gRNA.HGVS
 
+let complementary (sequence: string) =
+    sequence
+    |> Seq.map (function
+        | 'A' -> 'T'
+        | 'T' -> 'A'
+        | 'C' -> 'G'
+        | 'G' -> 'C'
+        | c -> c)
+    |> Seq.toArray
+    |> System.String
+
 type Sequence(id: string, data: string) =
     member _.Id = id
     member _.Data = data

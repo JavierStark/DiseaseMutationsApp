@@ -779,6 +779,10 @@ input[type="number"] {
     color: #1E5B3F;
 }
 
+.tab-state-complement {
+    color: #6B4FA0;
+}
+
 .helper-hint {
     font-size: 0.875rem;
 }

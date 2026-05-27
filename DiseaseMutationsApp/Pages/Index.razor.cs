@@ -201,12 +201,12 @@ namespace DiseaseMutationsApp.Pages
                             var hgvsList = await GrnaService.GetHgvsFromSnp(tabData.RsId);
                             Console.WriteLine($"RS{tabData.RsId} returned {hgvsList.Count} HGVS variants.");
 
-                            // Create child HGVS tabs with loading state
-                            tabData.ChildHgvsList = hgvsList.Select(h => new HgvsData
+                            // Create child HGVS tabs with loading state (normal + complement)
+                            tabData.ChildHgvsList = [.. hgvsList.SelectMany(h => new[]
                             {
-                                Hgvs = h,
-                                IsLoading = true
-                            }).ToList();
+                                new HgvsData { Hgvs = h, IsLoading = true, IsComplement = false },
+                                new HgvsData { Hgvs = h, IsLoading = true, IsComplement = true }
+                            })];
 
                             // Initialize active child tab for this parent
                             if (tabData.ChildHgvsList.Any())
@@ -219,10 +219,13 @@ namespace DiseaseMutationsApp.Pages
 
                             await InvokeAsync(StateHasChanged);
 
-                            // Fetch data for each child HGVS
+                            // Fetch data for each child HGVS (normal and complement)
                             foreach (var childHgvs in tabData.ChildHgvsList)
                             {
-                                await FetchHgvsDataAsync(childHgvs);
+                                if (childHgvs.IsComplement)
+                                    await FetchComplementHgvsDataAsync(childHgvs);
+                                else
+                                    await FetchHgvsDataAsync(childHgvs);
                             }
 
                             break;
@@ -249,6 +252,50 @@ namespace DiseaseMutationsApp.Pages
             finally
             {
                 tabData.IsLoading = false;
+                await InvokeAsync(StateHasChanged);
+            }
+        }
+
+        private async Task FetchComplementHgvsDataAsync(HgvsData hgvsData)
+        {
+            try
+            {
+                hgvsData.SourceUrl = GrnaService.GetNcbiNuccoreUrl(hgvsData.Hgvs);
+                var result = await GrnaService.GetBestgRNAFromHgvsComplement(hgvsData.Hgvs, _gRnaSize);
+
+                hgvsData.Original = result.OriginalSequence;
+                hgvsData.Mutated = result.MutatedSequence;
+                hgvsData.GRNAs = result.gRNA;
+                var extraNucleotids = result.ExtraNucleotids;
+                hgvsData.ExtraNucleotids = extraNucleotids;
+
+
+                if (!string.IsNullOrEmpty(hgvsData.Original) && extraNucleotids >= 0 && extraNucleotids < hgvsData.Original.Length)
+                {
+                    hgvsData.Original = hgvsData.Original.Insert(extraNucleotids, "<u>");
+                    if (hgvsData.Original.Length > extraNucleotids)
+                    {
+                        hgvsData.Original = hgvsData.Original.Insert(hgvsData.Original.Length - extraNucleotids, "</u>");
+                    }
+                }
+
+                if (!string.IsNullOrEmpty(hgvsData.Mutated) && extraNucleotids >= 0 && extraNucleotids < hgvsData.Mutated.Length)
+                {
+                    hgvsData.Mutated = hgvsData.Mutated.Insert(extraNucleotids, "<u>");
+                    if (hgvsData.Mutated.Length > extraNucleotids)
+                    {
+                        hgvsData.Mutated = hgvsData.Mutated.Insert(hgvsData.Mutated.Length - extraNucleotids, "</u>");
+                    }
+                }
+            }
+            catch (Exception ex)
+            {
+                hgvsData.ErrorMessage = $"Error fetching data: {ex.Message}";
+                Console.WriteLine($"Error for {hgvsData.Hgvs} (complement): {ex}");
+            }
+            finally
+            {
+                hgvsData.IsLoading = false;
                 await InvokeAsync(StateHasChanged);
             }
         }

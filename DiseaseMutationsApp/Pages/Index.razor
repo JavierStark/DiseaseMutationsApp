@@ -190,15 +190,45 @@
                                                         @onclick="() => _activeChildTabIndices[tabIndex] = childIndex">
                                                     @if (childHgvs.IsLoading)
                                                     {
-                                                        <span>⏳ @childHgvs.Hgvs[..Math.Min(20, childHgvs.Hgvs.Length)]@(childHgvs.Hgvs.Length > 20 ? "..." : "")</span>
+                                                        @if (childHgvs.IsComplement)
+                                                        {
+                                                            var maxLen = 16;
+                                                            var label = childHgvs.Hgvs.Length > maxLen ? childHgvs.Hgvs[..maxLen] + "..." : childHgvs.Hgvs;
+                                                            <span>⏳ @label (C)</span>
+                                                        }
+                                                        else
+                                                        {
+                                                            var maxLen = 18;
+                                                            var label = childHgvs.Hgvs.Length > maxLen ? childHgvs.Hgvs[..maxLen] + "..." : childHgvs.Hgvs;
+                                                            <span>⏳ @label</span>
+                                                        }
                                                     }
                                                     else if (childHgvs.ErrorMessage != null)
                                                     {
-                                                        <span class="tab-state-error">⚠️ @childHgvs.Hgvs[..Math.Min(20, childHgvs.Hgvs.Length)]@(childHgvs.Hgvs.Length > 20 ? "..." : "")</span>
+                                                        @if (childHgvs.IsComplement)
+                                                        {
+                                                            var maxLen = 16;
+                                                            var label = childHgvs.Hgvs.Length > maxLen ? childHgvs.Hgvs[..maxLen] + "..." : childHgvs.Hgvs;
+                                                            <span class="tab-state-error">⚠️ @label (C)</span>
+                                                        }
+                                                        else
+                                                        {
+                                                            var maxLen = 18;
+                                                            var label = childHgvs.Hgvs.Length > maxLen ? childHgvs.Hgvs[..maxLen] + "..." : childHgvs.Hgvs;
+                                                            <span class="tab-state-error">⚠️ @label</span>
+                                                        }
+                                                    }
+                                                    else if (childHgvs.IsComplement)
+                                                    {
+                                                        var maxLen = 16;
+                                                        var label = childHgvs.Hgvs.Length > maxLen ? childHgvs.Hgvs[..maxLen] + "..." : childHgvs.Hgvs;
+                                                        <span class="tab-state-complement">↕ @label (C)</span>
                                                     }
                                                     else
                                                     {
-                                                        <span class="tab-state-success">✓ @childHgvs.Hgvs[..Math.Min(20, childHgvs.Hgvs.Length)]@(childHgvs.Hgvs.Length > 20 ? "..." : "")</span>
+                                                        var maxLen = 18;
+                                                        var label = childHgvs.Hgvs.Length > maxLen ? childHgvs.Hgvs[..maxLen] + "..." : childHgvs.Hgvs;
+                                                        <span class="tab-state-success">✓ @label</span>
                                                     }
                                                 </button>
                                             </li>

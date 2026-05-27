@@ -84,6 +84,7 @@ public class SpacerFinderHighlightTests
             "UUUUGG",
             1.0,
             0,
+            0,
             "UUGG",
             3,
             new RNAFoldWrapper.RNAFoldResult("....", -1.2),
@@ -94,6 +95,7 @@ public class SpacerFinderHighlightTests
         var other = new SpacerFinder.gRNAResult(
             "CCCCCC",
             1.0,
+            0,
             0,
             "CCCC",
             2,
@@ -124,6 +126,7 @@ public class SpacerFinderHighlightTests
         var nonMatching = new SpacerFinder.gRNAResult(
             "UUUUGG",
             1.0,
+            0,
             0,
             "UUGG",
             3,

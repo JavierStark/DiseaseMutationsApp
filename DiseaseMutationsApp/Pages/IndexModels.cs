@@ -42,6 +42,7 @@ namespace DiseaseMutationsApp.Pages
         public RNAFoldResult? RnaFoldResult { get; set; }
         public string? RnaFoldError { get; set; }
         public string? FornaUrl { get; set; }
+        public bool IsComplement { get; init; }
         // Sorting state for gRNA table
         public GrnaSortColumn SortColumn { get; set; } = GrnaSortColumn.Score;
         public bool SortAscending { get; set; }

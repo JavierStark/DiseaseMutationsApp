@@ -25,7 +25,7 @@
                     <div class="card-body">
                         <div class="d-flex justify-content-between align-items-center gap-3 mb-3">
                             <h5 class="card-title mb-0 sequence-title-original">
-                                <span class="oi oi-document me-2"></span>Original Sequence
+                                <span class="oi oi-document me-2"></span>@(Data.IsComplement ? "Complement Original Sequence" : "Original Sequence")
                             </h5>
                             @if (!string.IsNullOrWhiteSpace(Data.SourceUrl))
                             {
@@ -48,7 +48,7 @@
                 <div class="card shadow-sm">
                     <div class="card-body">
                         <h5 class="card-title mb-3 sequence-title-mutated">
-                            <span class="oi oi-target me-2"></span>Mutated Sequence
+                            <span class="oi oi-target me-2"></span>@(Data.IsComplement ? "Complement Mutated Sequence" : "Mutated Sequence")
                         </h5>
                         <div class="font-monospace p-3 rounded sequence-block">
                             <span class="text-muted me-1">5'</span>

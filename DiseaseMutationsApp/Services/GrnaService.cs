@@ -62,6 +62,50 @@ public class GrnaService
         }
     }
 
+    public async Task<ResultFromHGVS> GetBestgRNAFromHgvsComplement(string hgvs, int window, CancellationToken cancellationToken = default)
+    {
+        try
+        {
+            _logger.LogInformation("Getting best gRNA from HGVS complement: {Hgvs}, Window: {Window}", hgvs, window);
+
+            var fsharpResult = await Main.getBestgRNAFromHGVSComplement(hgvs, window, _bowtieService, cancellationToken);
+
+            var grnaResults = fsharpResult.gRNA
+                .Select(g => new GRNAResult
+                {
+                    Sequence = g.Sequence,
+                    GCScore = (float)g.GCScore,
+                    GCContent = (float)g.GCContent,
+                    HomopolymerCount = g.HomopolymerCount,
+                    SeedRegion = g.SeedRegion,
+                    Allignments = g.Allignments,
+                    RnaFoldResult = new RNAFoldResult
+                    {
+                        Structure = g.RnaFoldResult.Structure,
+                        Energy = g.RnaFoldResult.Energy
+                    },
+                    Rank = g.Rank,
+                    Score = g.Score,
+                    MutationHighlightStart = g.MutationHighlightStart,
+                    MutationHighlightLength = g.MutationHighlightLength
+                })
+                .ToList();
+
+            return new ResultFromHGVS
+            {
+                gRNA = grnaResults,
+                MutatedSequence = fsharpResult.mutatedSequence,
+                OriginalSequence = fsharpResult.originalSequence,
+                ExtraNucleotids = fsharpResult.extraNucleotids
+            };
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "Error getting best gRNA from HGVS complement: {Hgvs}", hgvs);
+            throw;
+        }
+    }
+
     public async Task<List<string>> GetHgvsFromSnp(string rsid)
     {
         try
