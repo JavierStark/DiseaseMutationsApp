@@ -1,4 +1,4 @@
-﻿﻿@using BlazorBootstrap
+﻿@using BlazorBootstrap
 @using DiseaseMutationsApp.Services
 @using DiseaseMutationsApp.Pages
 
@@ -87,7 +87,7 @@
                                             <span class="sort-icon">@(Data.SortColumn == GrnaSortColumn.GCScore ? (Data.SortAscending ? " ▲" : " ▼") : " ⇅")</span>
                                         </th>
                                         <th class="sortable-col" @onclick="() => OnSort?.Invoke(Data, GrnaSortColumn.GCContent)">
-                                            GC Content
+                                            GC Content (%)
                                             <span class="sort-icon">@(Data.SortColumn == GrnaSortColumn.GCContent ? (Data.SortAscending ? " ▲" : " ▼") : " ⇅")</span>
                                         </th>
                                         <th class="sortable-col" @onclick="() => OnSort?.Invoke(Data, GrnaSortColumn.HomopolymerCount)">
@@ -99,7 +99,7 @@
                                             <span class="sort-icon">@(Data.SortColumn == GrnaSortColumn.Alignments ? (Data.SortAscending ? " ▲" : " ▼") : " ⇅")</span>
                                         </th>
                                         <th class="sortable-col" @onclick="() => OnSort?.Invoke(Data, GrnaSortColumn.Energy)">
-                                            Energy
+                                            Energy (kcal/mol)
                                             <span class="sort-icon">@(Data.SortColumn == GrnaSortColumn.Energy ? (Data.SortAscending ? " ▲" : " ▼") : " ⇅")</span>
                                         </th>
                                         <th class="sortable-col" @onclick="() => OnSort?.Invoke(Data, GrnaSortColumn.Score)">
