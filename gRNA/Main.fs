@@ -16,20 +16,26 @@ let private calculateMutationSpanInMutated (extraNucleotids: int) (sequenceLengt
     let mutationLengthInMutated = max 0 (mutatedLength - leftContext - rightContext)
     (leftContext, mutationLengthInMutated)
 
-let getBestgRNAFromHGVS (hgvsString: string) (grnaSize: int) (bowtieService: gRNA.Services.BowtieService) (cancellationToken: System.Threading.CancellationToken) = task {
+let getBestgRNAFromHGVS (hgvsString: string) (grnaSize: int) (bowtieService: gRNA.Services.BowtieService) (cancellationToken: System.Threading.CancellationToken) (complement: bool) = task {
     let hgvsObj = HGVS.HGVS(hgvsString)
     let! sequence = SequenceRepository.SequenceRepository.GetSequence(hgvsObj.Accession)
     let extraNucleotids = grnaSize - hgvsObj.GetMutationLength()
 
     let mutated, original = sequence.GetMutatedSubsequence(hgvsObj, extraNucleotids, extraNucleotids)
-    
+
+    let finalMutated, finalOriginal =
+        if complement then
+            Sequence.complementary mutated, Sequence.complementary original
+        else
+            mutated, original
+
     let mutationStartInMutated, mutationLengthInMutated =
-        calculateMutationSpanInMutated extraNucleotids sequence.Data.Length hgvsObj mutated.Length
+        calculateMutationSpanInMutated extraNucleotids sequence.Data.Length hgvsObj finalMutated.Length
 
     let! gRNAs =
         SpacerFinder.getOrderedgRna
             grnaSize
-            mutated
+            finalMutated
             mutationStartInMutated
             mutationLengthInMutated
             bowtieService
@@ -43,44 +49,8 @@ let getBestgRNAFromHGVS (hgvsString: string) (grnaSize: int) (bowtieService: gRN
 
     return  {
         gRNA = gRNAs
-        mutatedSequence = mutated
-        originalSequence = original
-        extraNucleotids = extraNucleotids
-    }
-}
-
-let getBestgRNAFromHGVSComplement (hgvsString: string) (grnaSize: int) (bowtieService: gRNA.Services.BowtieService) (cancellationToken: System.Threading.CancellationToken) = task {
-    let hgvsObj = HGVS.HGVS(hgvsString)
-    let! sequence = SequenceRepository.SequenceRepository.GetSequence(hgvsObj.Accession)
-    let extraNucleotids = grnaSize - hgvsObj.GetMutationLength()
-
-    let mutated, original = sequence.GetMutatedSubsequence(hgvsObj, extraNucleotids, extraNucleotids)
-
-    let compOriginal = Sequence.complementary original
-    let compMutated = Sequence.complementary mutated
-
-    let mutationStartInMutated, mutationLengthInMutated =
-        calculateMutationSpanInMutated extraNucleotids sequence.Data.Length hgvsObj compMutated.Length
-
-    let! gRNAs =
-        SpacerFinder.getOrderedgRna
-            grnaSize
-            compMutated
-            mutationStartInMutated
-            mutationLengthInMutated
-            bowtieService
-            cancellationToken
-
-    let gRNAs =
-        if hgvsObj.Mutation = HGVS.MutationType.Substitution then
-            SpacerFinder.applySubstitutionSpecialRule grnaSize gRNAs
-        else
-            gRNAs
-
-    return  {
-        gRNA = gRNAs
-        mutatedSequence = compMutated
-        originalSequence = compOriginal
+        mutatedSequence = finalMutated
+        originalSequence = finalOriginal
         extraNucleotids = extraNucleotids
     }
 }

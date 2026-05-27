@@ -1,4 +1,4 @@
-﻿﻿using System;
+﻿using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
@@ -222,10 +222,7 @@ namespace DiseaseMutationsApp.Pages
                             // Fetch data for each child HGVS (normal and complement)
                             foreach (var childHgvs in tabData.ChildHgvsList)
                             {
-                                if (childHgvs.IsComplement)
-                                    await FetchComplementHgvsDataAsync(childHgvs);
-                                else
-                                    await FetchHgvsDataAsync(childHgvs);
+                                await FetchHgvsDataAsync(childHgvs, childHgvs.IsComplement);
                             }
 
                             break;
@@ -256,12 +253,12 @@ namespace DiseaseMutationsApp.Pages
             }
         }
 
-        private async Task FetchComplementHgvsDataAsync(HgvsData hgvsData)
+        private async Task FetchHgvsDataAsync(HgvsData hgvsData, bool complement = false)
         {
             try
             {
                 hgvsData.SourceUrl = GrnaService.GetNcbiNuccoreUrl(hgvsData.Hgvs);
-                var result = await GrnaService.GetBestgRNAFromHgvsComplement(hgvsData.Hgvs, _gRnaSize);
+                var result = await GrnaService.GetBestgRNAFromHgvs(hgvsData.Hgvs, _gRnaSize, complement);
 
                 hgvsData.Original = result.OriginalSequence;
                 hgvsData.Mutated = result.MutatedSequence;
@@ -291,51 +288,7 @@ namespace DiseaseMutationsApp.Pages
             catch (Exception ex)
             {
                 hgvsData.ErrorMessage = $"Error fetching data: {ex.Message}";
-                Console.WriteLine($"Error for {hgvsData.Hgvs} (complement): {ex}");
-            }
-            finally
-            {
-                hgvsData.IsLoading = false;
-                await InvokeAsync(StateHasChanged);
-            }
-        }
-
-        private async Task FetchHgvsDataAsync(HgvsData hgvsData)
-        {
-            try
-            {
-                hgvsData.SourceUrl = GrnaService.GetNcbiNuccoreUrl(hgvsData.Hgvs);
-                var result = await GrnaService.GetBestgRNAFromHgvs(hgvsData.Hgvs, _gRnaSize);
-
-                hgvsData.Original = result.OriginalSequence;
-                hgvsData.Mutated = result.MutatedSequence;
-                hgvsData.GRNAs = result.gRNA;
-                var extraNucleotids = result.ExtraNucleotids;
-                hgvsData.ExtraNucleotids = extraNucleotids;
-
-
-                if (!string.IsNullOrEmpty(hgvsData.Original) && extraNucleotids >= 0 && extraNucleotids < hgvsData.Original.Length)
-                {
-                    hgvsData.Original = hgvsData.Original.Insert(extraNucleotids, "<u>");
-                    if (hgvsData.Original.Length > extraNucleotids)
-                    {
-                        hgvsData.Original = hgvsData.Original.Insert(hgvsData.Original.Length - extraNucleotids, "</u>");
-                    }
-                }
-
-                if (!string.IsNullOrEmpty(hgvsData.Mutated) && extraNucleotids >= 0 && extraNucleotids < hgvsData.Mutated.Length)
-                {
-                    hgvsData.Mutated = hgvsData.Mutated.Insert(extraNucleotids, "<u>");
-                    if (hgvsData.Mutated.Length > extraNucleotids)
-                    {
-                        hgvsData.Mutated = hgvsData.Mutated.Insert(hgvsData.Mutated.Length - extraNucleotids, "</u>");
-                    }
-                }
-            }
-            catch (Exception ex)
-            {
-                hgvsData.ErrorMessage = $"Error fetching data: {ex.Message}";
-                Console.WriteLine($"Error for {hgvsData.Hgvs}: {ex}");
+                Console.WriteLine($"Error for {hgvsData.Hgvs}{(complement ? " (complement)" : "")}: {ex}");
             }
             finally
             {
