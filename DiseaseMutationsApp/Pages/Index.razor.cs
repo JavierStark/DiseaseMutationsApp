@@ -48,17 +48,17 @@ namespace DiseaseMutationsApp.Pages
             {
                 if (_gRnaSize <= 0)
                 {
-                    return "gRNA size must be greater than 0.";
+                    return "spacer size must be greater than 0.";
                 }
 
                 if (_seedStart < 0)
                 {
-                    return "Seed start must be between 0 and gRNA size - 1.";
+                    return "Seed start must be between 0 and spacer size - 1.";
                 }
 
                 if (_seedEnd < 0)
                 {
-                    return "Seed end must be between 0 and gRNA size - 1.";
+                    return "Seed end must be between 0 and spacer size - 1.";
                 }
 
                 if (_seedStart >= _gRnaSize || _seedEnd >= _gRnaSize)

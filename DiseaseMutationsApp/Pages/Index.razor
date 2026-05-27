@@ -23,14 +23,14 @@
                     </h5>
                     <div class="mb-4">
                         <label for="hgvs" class="form-label">HGVS or RS codes (comma-separated for multiple)</label>
-                        <textarea id="hgvs" class="form-control" @bind="_hgvs" rows="5" placeholder="e.g., NG_016465.4:g.98765C>T, rs12345, NG_056131.3:g.755G>A&#10;You can enter multiple HGVS or RS codes separated by commas"></textarea>
+                        <textarea id="hgvs" class="form-control" @bind="_hgvs" rows="5" placeholder="e.g., NG_008690.2:g.123012G>T, rs12345, . You can enter multiple HGVS or RS codes separated by commas"></textarea>
                         <small class="text-muted mt-2 d-block">Enter one or more genetic variants to analyze</small>
                     </div>
                     <div class="mb-4">
                         <label class="form-label">gRNA and Seed Region</label>
                         <div class="row g-3">
                             <div class="col-sm-4">
-                                <label for="grna-size" class="form-label">gRNA size</label>
+                                <label for="grna-size" class="form-label">Spacer size</label>
                                 <input id="grna-size" type="number" class="form-control" @bind="_gRnaSize" min="1" />
                             </div>
                             <div class="col-sm-4">
