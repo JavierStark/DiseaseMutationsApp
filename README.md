@@ -11,7 +11,6 @@ The Disease Mutations App is designed to streamline the process of designing CRI
 - **Multiple Input Types**:
   - **HGVS Format**: Standard genome variation notation (e.g., `NC_000017.11:g.7674220C>T`)
   - **rsID Support**: SNP reference IDs (e.g., `rs12345`)
-  - **OMIM Integration**: Disease-to-variant lookup (e.g., `605543`)
 - **Automated Sequence Retrieval**: Fetch genomic sequences from NCBI databases
 - **gRNA Optimization**: Generate and rank gRNA candidates based on:
   - GC content (optimal range: 40-60%)
