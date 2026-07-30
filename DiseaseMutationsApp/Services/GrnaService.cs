@@ -25,30 +25,10 @@ public class GrnaService
 
             var fsharpResult = await Main.getBestgRNAFromHGVS(hgvs, window, _bowtieService, cancellationToken, complement);
 
-            var grnaResults = fsharpResult.gRNA
-                .Select(g => new GRNAResult
-                {
-                    Sequence = g.Sequence,
-                    GCScore = (float)g.GCScore,
-                    GCContent = (float)g.GCContent,
-                    HomopolymerCount = g.HomopolymerCount,
-                    SeedRegion = g.SeedRegion,
-                    Allignments = g.Allignments,
-                    RnaFoldResult = new RNAFoldResult
-                    {
-                        Structure = g.RnaFoldResult.Structure,
-                        Energy = g.RnaFoldResult.Energy
-                    },
-                    Rank = g.Rank,
-                    Score = g.Score,
-                    MutationHighlightStart = g.MutationHighlightStart,
-                    MutationHighlightLength = g.MutationHighlightLength
-                })
-                .ToList();
-
             return new ResultFromHGVS
             {
-                gRNA = grnaResults,
+                gRNA = MapGrnaResults(fsharpResult.gRNA),
+                OriginalGRNA = MapGrnaResults(fsharpResult.originalGRNA),
                 MutatedSequence = fsharpResult.mutatedSequence,
                 OriginalSequence = fsharpResult.originalSequence,
                 ExtraNucleotids = fsharpResult.extraNucleotids
@@ -59,6 +39,30 @@ public class GrnaService
             _logger.LogError(ex, "Error getting best gRNA from HGVS: {Hgvs}", hgvs);
             throw;
         }
+    }
+
+    private static List<GRNAResult> MapGrnaResults(IEnumerable<gRNA.SpacerFinder.gRNAResult> results)
+    {
+        return results
+            .Select(g => new GRNAResult
+            {
+                Sequence = g.Sequence,
+                GCScore = (float)g.GCScore,
+                GCContent = (float)g.GCContent,
+                HomopolymerCount = g.HomopolymerCount,
+                SeedRegion = g.SeedRegion,
+                Allignments = g.Allignments,
+                RnaFoldResult = new RNAFoldResult
+                {
+                    Structure = g.RnaFoldResult.Structure,
+                    Energy = g.RnaFoldResult.Energy
+                },
+                Rank = g.Rank,
+                Score = g.Score,
+                MutationHighlightStart = g.MutationHighlightStart,
+                MutationHighlightLength = g.MutationHighlightLength
+            })
+            .ToList();
     }
 
     public async Task<List<string>> GetHgvsFromSnp(string rsid)
@@ -158,6 +162,7 @@ public record GRNAResult
 public record ResultFromHGVS
 {
     public required List<GRNAResult> gRNA { get; init; }
+    public required List<GRNAResult> OriginalGRNA { get; init; }
     public required string MutatedSequence { get; init; }
     public required string OriginalSequence { get; init; }
     public int ExtraNucleotids { get; init; }

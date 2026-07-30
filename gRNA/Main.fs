@@ -5,6 +5,7 @@ open System.Threading.Tasks
 
 type ResultFromHGVS = {
     gRNA: SpacerFinder.gRNAResult list
+    originalGRNA: SpacerFinder.gRNAResult list
     mutatedSequence: string
     originalSequence: string
     extraNucleotids: int
@@ -32,7 +33,10 @@ let getBestgRNAFromHGVS (hgvsString: string) (grnaSize: int) (bowtieService: gRN
     let mutationStartInMutated, mutationLengthInMutated =
         calculateMutationSpanInMutated extraNucleotids sequence.Data.Length hgvsObj finalMutated.Length
 
-    let! gRNAs =
+    let mutationStartInOriginal, mutationLengthInOriginal =
+        calculateMutationSpanInMutated extraNucleotids sequence.Data.Length hgvsObj finalOriginal.Length
+
+    let gRNAsTask =
         SpacerFinder.getOrderedgRna
             grnaSize
             finalMutated
@@ -40,6 +44,18 @@ let getBestgRNAFromHGVS (hgvsString: string) (grnaSize: int) (bowtieService: gRN
             mutationLengthInMutated
             bowtieService
             cancellationToken
+
+    let originalGRNAsTask =
+        SpacerFinder.getOrderedgRna
+            grnaSize
+            finalOriginal
+            mutationStartInOriginal
+            mutationLengthInOriginal
+            bowtieService
+            cancellationToken
+
+    let! gRNAs = gRNAsTask
+    let! originalGRNAs = originalGRNAsTask
 
     let gRNAs =
         if hgvsObj.Mutation = HGVS.MutationType.Substitution then
@@ -49,6 +65,7 @@ let getBestgRNAFromHGVS (hgvsString: string) (grnaSize: int) (bowtieService: gRN
 
     return  {
         gRNA = gRNAs
+        originalGRNA = originalGRNAs
         mutatedSequence = finalMutated
         originalSequence = finalOriginal
         extraNucleotids = extraNucleotids

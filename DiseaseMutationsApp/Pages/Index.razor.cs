@@ -85,27 +85,34 @@ namespace DiseaseMutationsApp.Pages
 
         private Dictionary<int, int> _activeChildTabIndices => StateService.IndexActiveChildTabIndices;
 
-        // Helper to get sorted gRNA list for display
-        private IEnumerable<GRNAResult> GetSortedGRNAs(HgvsData hgvsData)
+        // Helper to sort a gRNA list by the given column/direction
+        private static IEnumerable<GRNAResult> SortGRNAs(List<GRNAResult>? grnas, GrnaSortColumn column, bool ascending)
         {
-            if (hgvsData.GRNAs == null || hgvsData.GRNAs.Count == 0)
+            if (grnas == null || grnas.Count == 0)
                 return Enumerable.Empty<GRNAResult>();
 
-            var asc = hgvsData.SortAscending;
-            return hgvsData.SortColumn switch
+            return column switch
             {
-                GrnaSortColumn.Sequence => asc ? hgvsData.GRNAs.OrderBy(g => g.Sequence) : hgvsData.GRNAs.OrderByDescending(g => g.Sequence),
-                GrnaSortColumn.GCScore => asc ? hgvsData.GRNAs.OrderBy(g => g.GCScore) : hgvsData.GRNAs.OrderByDescending(g => g.GCScore),
-                GrnaSortColumn.GCContent => asc ? hgvsData.GRNAs.OrderBy(g => g.GCContent) : hgvsData.GRNAs.OrderByDescending(g => g.GCContent),
-                GrnaSortColumn.HomopolymerCount => asc ? hgvsData.GRNAs.OrderBy(g => g.HomopolymerCount) : hgvsData.GRNAs.OrderByDescending(g => g.HomopolymerCount),
-                GrnaSortColumn.Alignments => asc ? hgvsData.GRNAs.OrderBy(g => g.Allignments) : hgvsData.GRNAs.OrderByDescending(g => g.Allignments),
-                GrnaSortColumn.Energy => asc ? hgvsData.GRNAs.OrderBy(g => g.RnaFoldResult.Energy) : hgvsData.GRNAs.OrderByDescending(g => g.RnaFoldResult.Energy),
-                GrnaSortColumn.Score => asc ? hgvsData.GRNAs.OrderBy(g => g.Score) : hgvsData.GRNAs.OrderByDescending(g => g.Score),
-                _ => hgvsData.GRNAs
+                GrnaSortColumn.Sequence => ascending ? grnas.OrderBy(g => g.Sequence) : grnas.OrderByDescending(g => g.Sequence),
+                GrnaSortColumn.GCScore => ascending ? grnas.OrderBy(g => g.GCScore) : grnas.OrderByDescending(g => g.GCScore),
+                GrnaSortColumn.GCContent => ascending ? grnas.OrderBy(g => g.GCContent) : grnas.OrderByDescending(g => g.GCContent),
+                GrnaSortColumn.HomopolymerCount => ascending ? grnas.OrderBy(g => g.HomopolymerCount) : grnas.OrderByDescending(g => g.HomopolymerCount),
+                GrnaSortColumn.Alignments => ascending ? grnas.OrderBy(g => g.Allignments) : grnas.OrderByDescending(g => g.Allignments),
+                GrnaSortColumn.Energy => ascending ? grnas.OrderBy(g => g.RnaFoldResult.Energy) : grnas.OrderByDescending(g => g.RnaFoldResult.Energy),
+                GrnaSortColumn.Score => ascending ? grnas.OrderBy(g => g.Score) : grnas.OrderByDescending(g => g.Score),
+                _ => grnas
             };
         }
 
-        // Toggle sort state
+        // Helper to get sorted gRNA list for display (mutated sequence)
+        private IEnumerable<GRNAResult> GetSortedGRNAs(HgvsData hgvsData) =>
+            SortGRNAs(hgvsData.GRNAs, hgvsData.SortColumn, hgvsData.SortAscending);
+
+        // Helper to get sorted gRNA list for display (original sequence)
+        private IEnumerable<GRNAResult> GetSortedOriginalGRNAs(HgvsData hgvsData) =>
+            SortGRNAs(hgvsData.OriginalGRNAs, hgvsData.OriginalSortColumn, hgvsData.OriginalSortAscending);
+
+        // Toggle sort state (mutated sequence table)
         private void SortBy(HgvsData hgvsData, GrnaSortColumn column)
         {
             if (hgvsData.SortColumn == column)
@@ -116,6 +123,20 @@ namespace DiseaseMutationsApp.Pages
             {
                 hgvsData.SortColumn = column;
                 hgvsData.SortAscending = true;
+            }
+        }
+
+        // Toggle sort state (original sequence table)
+        private void SortByOriginal(HgvsData hgvsData, GrnaSortColumn column)
+        {
+            if (hgvsData.OriginalSortColumn == column)
+            {
+                hgvsData.OriginalSortAscending = !hgvsData.OriginalSortAscending;
+            }
+            else
+            {
+                hgvsData.OriginalSortColumn = column;
+                hgvsData.OriginalSortAscending = true;
             }
         }
 
@@ -263,6 +284,7 @@ namespace DiseaseMutationsApp.Pages
                 hgvsData.Original = result.OriginalSequence;
                 hgvsData.Mutated = result.MutatedSequence;
                 hgvsData.GRNAs = result.gRNA;
+                hgvsData.OriginalGRNAs = result.OriginalGRNA;
                 var extraNucleotids = result.ExtraNucleotids;
                 hgvsData.ExtraNucleotids = extraNucleotids;
 
@@ -412,26 +434,31 @@ namespace DiseaseMutationsApp.Pages
             }
         }
 
+        private static void AppendGrnaRows(System.Text.StringBuilder sb, string? rsId, string hgvsStr, List<GRNAResult>? grnas, string sequenceType)
+        {
+            if (grnas == null) return;
+
+            foreach (var gRNA in grnas)
+            {
+                var energy = gRNA.RnaFoldResult?.Energy.ToString(System.Globalization.CultureInfo.InvariantCulture) ?? "N/A";
+                var score = gRNA.Score.ToString(System.Globalization.CultureInfo.InvariantCulture);
+                var gcContent = gRNA.GCContent.ToString(System.Globalization.CultureInfo.InvariantCulture);
+
+                sb.AppendLine($"{rsId},{hgvsStr},{sequenceType},{gRNA.Rank},{gRNA.Sequence},{score},{gcContent},{gRNA.Allignments},{gRNA.SeedRegion},{gRNA.HomopolymerCount},{energy}");
+            }
+        }
+
         private async Task DownloadReport(InputTabData tabData)
         {
             if (tabData == null || tabData.ChildHgvsList == null || !tabData.ChildHgvsList.Any()) return;
 
             var sb = new System.Text.StringBuilder();
-            sb.AppendLine("RS ID,HGVS,Rank,Sequence,Score,GC Content,Alignments,Seed Region,Homopolymers,Fold Energy");
+            sb.AppendLine("RS ID,HGVS,Sequence Type,Rank,Sequence,Score,GC Content,Alignments,Seed Region,Homopolymers,Fold Energy");
 
             foreach (var hgvs in tabData.ChildHgvsList)
             {
-                if (hgvs.GRNAs == null) continue;
-
-                foreach (var gRNA in hgvs.GRNAs)
-                {
-                    var energy = gRNA.RnaFoldResult?.Energy.ToString(System.Globalization.CultureInfo.InvariantCulture) ?? "N/A";
-                    var score = gRNA.Score.ToString(System.Globalization.CultureInfo.InvariantCulture);
-                    var gcScore = gRNA.GCScore.ToString(System.Globalization.CultureInfo.InvariantCulture);
-                    var gcContent = gRNA.GCContent.ToString(System.Globalization.CultureInfo.InvariantCulture);
-
-                    sb.AppendLine($"{tabData.RsId},{hgvs.Hgvs},{gRNA.Rank},{gRNA.Sequence},{score},{gcContent},{gRNA.Allignments},{gRNA.SeedRegion},{gRNA.HomopolymerCount},{energy}");
-                }
+                AppendGrnaRows(sb, tabData.RsId, hgvs.Hgvs, hgvs.GRNAs, "Mutated");
+                AppendGrnaRows(sb, tabData.RsId, hgvs.Hgvs, hgvs.OriginalGRNAs, "Original");
             }
 
             var fileName = $"Report_RS{tabData.RsId}_{DateTime.Now:yyyyMMdd_HHmmss}.csv";
@@ -444,23 +471,14 @@ namespace DiseaseMutationsApp.Pages
             if (!allRsTabs.Any()) return;
 
             var sb = new System.Text.StringBuilder();
-            sb.AppendLine("RS ID,HGVS,Rank,Sequence,Score,GC Content,Alignments,Seed Region,Homopolymers,Fold Energy");
+            sb.AppendLine("RS ID,HGVS,Sequence Type,Rank,Sequence,Score,GC Content,Alignments,Seed Region,Homopolymers,Fold Energy");
 
             foreach (var tabData in allRsTabs)
             {
                 foreach (var hgvs in tabData.ChildHgvsList!)
                 {
-                    if (hgvs.GRNAs == null) continue;
-
-                    foreach (var gRNA in hgvs.GRNAs)
-                    {
-                        var energy = gRNA.RnaFoldResult?.Energy.ToString(System.Globalization.CultureInfo.InvariantCulture) ?? "N/A";
-                        var score = gRNA.Score.ToString(System.Globalization.CultureInfo.InvariantCulture);
-                        var gcScore = gRNA.GCScore.ToString(System.Globalization.CultureInfo.InvariantCulture);
-                        var gcContent = gRNA.GCContent.ToString(System.Globalization.CultureInfo.InvariantCulture);
-
-                        sb.AppendLine($"{tabData.RsId},{hgvs.Hgvs},{gRNA.Rank},{gRNA.Sequence},{score},{gcContent},{gRNA.Allignments},{gRNA.SeedRegion},{gRNA.HomopolymerCount},{energy}");
-                    }
+                    AppendGrnaRows(sb, tabData.RsId, hgvs.Hgvs, hgvs.GRNAs, "Mutated");
+                    AppendGrnaRows(sb, tabData.RsId, hgvs.Hgvs, hgvs.OriginalGRNAs, "Original");
                 }
             }
 

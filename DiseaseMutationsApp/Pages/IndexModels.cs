@@ -34,6 +34,7 @@ namespace DiseaseMutationsApp.Pages
         public string? SourceUrl { get; set; }
         public int? ExtraNucleotids { get; set; }
         public List<GRNAResult>? GRNAs { get; set; }
+        public List<GRNAResult>? OriginalGRNAs { get; set; }
         public string? SelectedSpacer { get; set; }
         public bool CopiedToClipboard { get; set; }
         public string? ErrorMessage { get; set; }
@@ -43,9 +44,12 @@ namespace DiseaseMutationsApp.Pages
         public string? RnaFoldError { get; set; }
         public string? FornaUrl { get; set; }
         public bool IsComplement { get; init; }
-        // Sorting state for gRNA table
+        // Sorting state for gRNA table (mutated sequence)
         public GrnaSortColumn SortColumn { get; set; } = GrnaSortColumn.Score;
         public bool SortAscending { get; set; }
+        // Sorting state for gRNA table (original sequence)
+        public GrnaSortColumn OriginalSortColumn { get; set; } = GrnaSortColumn.Score;
+        public bool OriginalSortAscending { get; set; }
     }
 }
 

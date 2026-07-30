@@ -141,8 +141,10 @@
                             {
                                 <HgvsDetailPanel 
                                     Data="tab.DirectHgvs" 
-                                    OnSort="SortBy" 
-                                    GetSorted="GetSortedGRNAs" 
+                                    OnSort="SortBy"
+                                    GetSorted="GetSortedGRNAs"
+                                    OnSortOriginal="SortByOriginal"
+                                    GetSortedOriginal="GetSortedOriginalGRNAs"
                                     OnCreateGrna="HandlegRNACreationButton"
                                     OnCopyComplete="CopyCompleteGRNA"
                                     OnGetRnaFold="GetRnaFolding"
@@ -243,10 +245,12 @@
                                             var isActiveChild = _activeChildTabIndices.TryGetValue(tabIndex, out var activeChild) && activeChild == childIndex;
                                             
                                             <div class="@(isActiveChild ? "d-block fade-in-up" : "d-none")">
-                                                <HgvsDetailPanel 
-                                                    Data="childHgvs" 
-                                                    OnSort="SortBy" 
-                                                    GetSorted="GetSortedGRNAs" 
+                                                <HgvsDetailPanel
+                                                    Data="childHgvs"
+                                                    OnSort="SortBy"
+                                                    GetSorted="GetSortedGRNAs"
+                                                    OnSortOriginal="SortByOriginal"
+                                                    GetSortedOriginal="GetSortedOriginalGRNAs"
                                                     OnCreateGrna="HandlegRNACreationButton"
                                                     OnCopyComplete="CopyCompleteGRNA"
                                                     OnGetRnaFold="GetRnaFolding"

@@ -15,3 +15,5 @@ bowtie/indexes/*
 **/.gitignore
 **/node_modules/
 **/.env
+
+.fake

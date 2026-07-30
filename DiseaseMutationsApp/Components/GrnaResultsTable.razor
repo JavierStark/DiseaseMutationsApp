@@ -1,0 +1,189 @@
+@using DiseaseMutationsApp.Services
+@using DiseaseMutationsApp.Pages
+
+<div class="card shadow-sm">
+    <div class="card-body">
+        <h5 class="card-title mb-3 section-title-secondary">
+            <span class="oi oi-list me-2"></span>@Title
+        </h5>
+        <p class="text-muted small mb-3 helper-hint">
+            <span class="oi oi-info helper-hint-icon"></span>
+            Click any column header to sort. Tables with more than 5 rows are scrollable.
+        </p>
+        <div class="table-responsive grna-table-wrapper @(RowCount > 5 ? "grna-table-wrapper-scrollable" : string.Empty)">
+            <table class="table table-hover align-middle mb-0">
+                <thead class="table-light grna-table-head">
+                <tr>
+                    <th class="grna-action-col">Action</th>
+                    <th class="sortable-col" @onclick="() => OnSortRequested.InvokeAsync(GrnaSortColumn.Sequence)">
+                        gRNA Spacer (5'→3')
+                        <span class="sort-icon">@(SortColumn == GrnaSortColumn.Sequence ? (SortAscending ? " ▲" : " ▼") : " ⇅")</span>
+                    </th>
+                    <th class="sortable-col" @onclick="() => OnSortRequested.InvokeAsync(GrnaSortColumn.GCScore)">
+                        GC Score
+                        <span class="sort-icon">@(SortColumn == GrnaSortColumn.GCScore ? (SortAscending ? " ▲" : " ▼") : " ⇅")</span>
+                    </th>
+                    <th class="sortable-col" @onclick="() => OnSortRequested.InvokeAsync(GrnaSortColumn.GCContent)">
+                        GC Content (%)
+                        <span class="sort-icon">@(SortColumn == GrnaSortColumn.GCContent ? (SortAscending ? " ▲" : " ▼") : " ⇅")</span>
+                    </th>
+                    <th class="sortable-col" @onclick="() => OnSortRequested.InvokeAsync(GrnaSortColumn.HomopolymerCount)">
+                        Homopolymer
+                        <span class="sort-icon">@(SortColumn == GrnaSortColumn.HomopolymerCount ? (SortAscending ? " ▲" : " ▼") : " ⇅")</span>
+                    </th>
+                    <th class="sortable-col" @onclick="() => OnSortRequested.InvokeAsync(GrnaSortColumn.Alignments)">
+                        Alignments
+                        <span class="sort-icon">@(SortColumn == GrnaSortColumn.Alignments ? (SortAscending ? " ▲" : " ▼") : " ⇅")</span>
+                    </th>
+                    <th class="sortable-col" @onclick="() => OnSortRequested.InvokeAsync(GrnaSortColumn.Energy)">
+                        Energy (kcal/mol)
+                        <span class="sort-icon">@(SortColumn == GrnaSortColumn.Energy ? (SortAscending ? " ▲" : " ▼") : " ⇅")</span>
+                    </th>
+                    <th class="sortable-col" @onclick="() => OnSortRequested.InvokeAsync(GrnaSortColumn.Score)">
+                        Score
+                        <span class="sort-icon">@(SortColumn == GrnaSortColumn.Score ? (SortAscending ? " ▲" : " ▼") : " ⇅")</span>
+                    </th>
+                </tr>
+                </thead>
+                <tbody>
+                @foreach (var gRNA in GRNAs ?? [])
+                {
+                    <tr>
+                        <td>
+                            <button class="btn btn-sm btn-secondary action-btn-icon" @onclick="() => OnCreateGrna.InvokeAsync(gRNA.Sequence)" title="Create gRNA">
+                                🔨
+                            </button>
+                        </td>
+                        <td class="font-monospace grna-seq-cell">
+                            <span class="text-muted me-1">5'</span>@RenderComposableSpacer(gRNA)<span class="text-muted ms-1">3'</span>
+                        </td>
+                        <td><span class="metric-default">@gRNA.GCScore</span></td>
+                        <td><span class="metric-default">@gRNA.GCContent.ToString("F2")</span></td>
+                        <td><span class="metric-default">@gRNA.HomopolymerCount</span></td>
+                        <td><span class="metric-accent-secondary">@gRNA.Allignments</span></td>
+                        <td><span class="metric-accent-success">@gRNA.RnaFoldResult.Energy.ToString("F2")</span></td>
+                        <td><span class="metric-accent-primary">@gRNA.Score.ToString("P1")</span></td>
+                    </tr>
+                }
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>
+
+@code {
+    [Parameter] public string Title { get; set; } = "gRNA Spacer Results";
+    [Parameter] public IEnumerable<GRNAResult>? GRNAs { get; set; }
+    [Parameter] public GrnaSortColumn SortColumn { get; set; }
+    [Parameter] public bool SortAscending { get; set; }
+    [Parameter] public EventCallback<GrnaSortColumn> OnSortRequested { get; set; }
+    [Parameter] public EventCallback<string> OnCreateGrna { get; set; }
+    [Parameter] public int SeedStart { get; set; }
+    [Parameter] public int SeedEnd { get; set; }
+
+    private int RowCount => GRNAs?.Count() ?? 0;
+
+    private MarkupString RenderComposableSpacer(GRNAResult gRNA)
+    {
+        var sequence = gRNA.Sequence ?? string.Empty;
+        return RenderSequenceWithHighlights(sequence, SeedStart, SeedEnd, gRNA.MutationHighlightStart, gRNA.MutationHighlightLength);
+    }
+
+    private static MarkupString RenderSequenceWithHighlights(
+        string sequence,
+        int? seedStart,
+        int? seedEnd,
+        int? mutationStart,
+        int? mutationLength)
+    {
+        if (string.IsNullOrEmpty(sequence))
+        {
+            return new MarkupString(string.Empty);
+        }
+
+        var hasSeed = false;
+        var clampedSeedStart = 0;
+        var clampedSeedEnd = 0;
+
+        if (seedStart.HasValue && seedEnd.HasValue)
+        {
+            clampedSeedStart = Math.Clamp(seedStart.Value, 0, sequence.Length - 1);
+            clampedSeedEnd = Math.Clamp(seedEnd.Value, 0, sequence.Length - 1);
+            hasSeed = clampedSeedStart <= clampedSeedEnd;
+        }
+
+        var hasMutation = false;
+        var mutationRangeStart = 0;
+        var mutationRangeEnd = 0;
+
+        if (mutationStart.HasValue && mutationLength.HasValue)
+        {
+            var start = mutationStart.Value;
+            var length = mutationLength.Value;
+
+            hasMutation = start >= 0 &&
+                          length > 0 &&
+                          start < sequence.Length &&
+                          start + length <= sequence.Length;
+
+            if (hasMutation)
+            {
+                mutationRangeStart = start;
+                mutationRangeEnd = start + length - 1;
+            }
+        }
+
+        static bool InRange(int index, int start, int end) => index >= start && index <= end;
+
+        var output = new System.Text.StringBuilder();
+        var segmentStart = 0;
+        var currentSeed = hasSeed && InRange(0, clampedSeedStart, clampedSeedEnd);
+        var currentMutation = hasMutation && InRange(0, mutationRangeStart, mutationRangeEnd);
+
+        void AppendSegment(int start, int endExclusive, bool seed, bool mutation)
+        {
+            if (endExclusive <= start)
+            {
+                return;
+            }
+
+            var encodedSegment = System.Text.Encodings.Web.HtmlEncoder.Default.Encode(sequence.Substring(start, endExclusive - start));
+
+            if (seed && mutation)
+            {
+                output.Append("<span class=\"grna-seed-highlight\"><u>").Append(encodedSegment).Append("</u></span>");
+            }
+            else if (seed)
+            {
+                output.Append("<span class=\"grna-seed-highlight\">").Append(encodedSegment).Append("</span>");
+            }
+            else if (mutation)
+            {
+                output.Append("<u>").Append(encodedSegment).Append("</u>");
+            }
+            else
+            {
+                output.Append(encodedSegment);
+            }
+        }
+
+        for (var i = 1; i < sequence.Length; i++)
+        {
+            var isSeed = hasSeed && InRange(i, clampedSeedStart, clampedSeedEnd);
+            var isMutation = hasMutation && InRange(i, mutationRangeStart, mutationRangeEnd);
+
+            if (isSeed == currentSeed && isMutation == currentMutation)
+            {
+                continue;
+            }
+
+            AppendSegment(segmentStart, i, currentSeed, currentMutation);
+            segmentStart = i;
+            currentSeed = isSeed;
+            currentMutation = isMutation;
+        }
+
+        AppendSegment(segmentStart, sequence.Length, currentSeed, currentMutation);
+        return new MarkupString(output.ToString());
+    }
+}
