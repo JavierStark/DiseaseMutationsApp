@@ -23,24 +23,20 @@ type Sequence(id: string, data: string) =
         
         let start = fst hgvs.Position - 1
         let mutable limitLeft = start - leftPadding
-        
+
         let mutable actualStart = start
-        let mutable actualLeftPadding = leftPadding
-        
+
         if actualStart < 0 then actualStart <- 0
-        if limitLeft < 0 then 
-            actualLeftPadding <- 0
+        if limitLeft < 0 then
             limitLeft <- 0
-        
+
         let end' = snd hgvs.Position
         let mutable limitRight = end' + rightPadding
-        
+
         let mutable actualEnd = end'
-        let mutable actualRightPadding = rightPadding
-        
+
         if actualEnd > data.Length then actualEnd <- data.Length
-        if limitRight > data.Length then 
-            actualRightPadding <- data.Length
+        if limitRight > data.Length then
             limitRight <- data.Length
         
         let original = data.[limitLeft..limitRight - 1]

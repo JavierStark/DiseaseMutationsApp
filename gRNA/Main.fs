@@ -11,13 +11,13 @@ type ResultFromHGVS = {
     extraNucleotids: int
 }
 
-let private calculateMutationSpanInMutated (extraNucleotids: int) (sequenceLength: int) (hgvs: HGVS.HGVS) (mutatedLength: int) : int * int =
+let calculateMutationSpanInMutated (extraNucleotids: int) (sequenceLength: int) (hgvs: HGVS.HGVS) (mutatedLength: int) : int * int =
     let leftContext = max 0 (min extraNucleotids ((fst hgvs.Position) - 1))
     let rightContext = max 0 (min extraNucleotids (sequenceLength - (snd hgvs.Position)))
     let mutationLengthInMutated = max 0 (mutatedLength - leftContext - rightContext)
     (leftContext, mutationLengthInMutated)
 
-let getBestgRNAFromHGVS (hgvsString: string) (grnaSize: int) (bowtieService: gRNA.Services.BowtieService) (cancellationToken: System.Threading.CancellationToken) (complement: bool) = task {
+let getBestgRNAFromHGVS (hgvsString: string) (grnaSize: int) (seedStart: int) (seedEnd: int) (bowtieService: gRNA.Services.BowtieService) (cancellationToken: System.Threading.CancellationToken) (complement: bool) = task {
     let hgvsObj = HGVS.HGVS(hgvsString)
     let! sequence = SequenceRepository.SequenceRepository.GetSequence(hgvsObj.Accession)
     let extraNucleotids = grnaSize - hgvsObj.GetMutationLength()
@@ -38,6 +38,8 @@ let getBestgRNAFromHGVS (hgvsString: string) (grnaSize: int) (bowtieService: gRN
 
     let gRNAsTask =
         SpacerFinder.getOrderedgRna
+            seedStart
+            seedEnd
             grnaSize
             finalMutated
             mutationStartInMutated
@@ -47,6 +49,8 @@ let getBestgRNAFromHGVS (hgvsString: string) (grnaSize: int) (bowtieService: gRN
 
     let originalGRNAsTask =
         SpacerFinder.getOrderedgRna
+            seedStart
+            seedEnd
             grnaSize
             finalOriginal
             mutationStartInOriginal
@@ -59,8 +63,8 @@ let getBestgRNAFromHGVS (hgvsString: string) (grnaSize: int) (bowtieService: gRN
 
     let gRNAs, originalGRNAs =
         if hgvsObj.Mutation = HGVS.MutationType.Substitution then
-            SpacerFinder.applySubstitutionSpecialRule grnaSize gRNAs,
-            SpacerFinder.applySubstitutionSpecialRule grnaSize originalGRNAs
+            SpacerFinder.applySubstitutionSpecialRule seedStart seedEnd grnaSize gRNAs,
+            SpacerFinder.applySubstitutionSpecialRule seedStart seedEnd grnaSize originalGRNAs
         else
             gRNAs, originalGRNAs
 

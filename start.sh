@@ -28,10 +28,10 @@ for arg in "$@"; do
 			;;
 		-h|--help)
 			echo "Usage:"
-			echo "  ./DiseaseMutationApp.sh                  # Install (skip rebuild if images exist)"
-			echo "  ./DiseaseMutationApp.sh --rebuild        # Force rebuild app image only"
-			echo "  ./DiseaseMutationApp.sh --rebuild-bowtie # Force rebuild bowtie base image"
-			echo "  ./DiseaseMutationApp.sh --rebuild --rebuild-bowtie"
+			echo "  ./start.sh                  # Install (skip rebuild if images exist)"
+			echo "  ./start.sh --rebuild        # Force rebuild app image only"
+			echo "  ./start.sh --rebuild-bowtie # Force rebuild bowtie base image"
+			echo "  ./start.sh --rebuild --rebuild-bowtie"
 			exit 0
 			;;
 		*)
@@ -80,10 +80,10 @@ fi
 log "Install completed successfully."
 echo
 echo "Usage:"
-echo "  ./DiseaseMutationApp.sh                  # Install (skip rebuild if images exist)"
-echo "  ./DiseaseMutationApp.sh --rebuild        # Force rebuild app image only"
-echo "  ./DiseaseMutationApp.sh --rebuild-bowtie # Force rebuild bowtie base image"
-echo "  ./DiseaseMutationApp.sh --rebuild --rebuild-bowtie"
+echo "  ./start.sh                  # Install (skip rebuild if images exist)"
+echo "  ./start.sh --rebuild        # Force rebuild app image only"
+echo "  ./start.sh --rebuild-bowtie # Force rebuild bowtie base image"
+echo "  ./start.sh --rebuild --rebuild-bowtie"
 echo
 echo "How to start the app:"
 echo "  ${COMPOSE_CMD[*]} up -d"
