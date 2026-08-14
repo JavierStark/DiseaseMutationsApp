@@ -17,13 +17,18 @@ public class GrnaService
         _bowtieService = bowtieService;
     }
 
-    public async Task<ResultFromHGVS> GetBestgRNAFromHgvs(string hgvs, int window, bool complement = false, CancellationToken cancellationToken = default)
+    /// <summary>
+    /// The constant Cas13 scaffold (36 nt) that precedes the spacer in a complete gRNA.
+    /// </summary>
+    public static string Scaffold => gRNA.SpacerFinder.scaffold;
+
+    public async Task<ResultFromHGVS> GetBestgRNAFromHgvs(string hgvs, int window, int seedStart, int seedEnd, bool complement = false, CancellationToken cancellationToken = default)
     {
         try
         {
-            _logger.LogInformation("Getting best gRNA from HGVS: {Hgvs}, Window: {Window}, Complement: {Complement}", hgvs, window, complement);
+            _logger.LogInformation("Getting best gRNA from HGVS: {Hgvs}, Window: {Window}, Seed: [{SeedStart}, {SeedEnd}], Complement: {Complement}", hgvs, window, seedStart, seedEnd, complement);
 
-            var fsharpResult = await Main.getBestgRNAFromHGVS(hgvs, window, _bowtieService, cancellationToken, complement);
+            var fsharpResult = await Main.getBestgRNAFromHGVS(hgvs, window, seedStart, seedEnd, _bowtieService, cancellationToken, complement);
 
             return new ResultFromHGVS
             {

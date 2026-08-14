@@ -279,7 +279,7 @@ namespace DiseaseMutationsApp.Pages
             try
             {
                 hgvsData.SourceUrl = GrnaService.GetNcbiNuccoreUrl(hgvsData.Hgvs);
-                var result = await GrnaService.GetBestgRNAFromHgvs(hgvsData.Hgvs, _gRnaSize, complement);
+                var result = await GrnaService.GetBestgRNAFromHgvs(hgvsData.Hgvs, _gRnaSize, _seedStart, _seedEnd, complement);
 
                 hgvsData.Original = result.OriginalSequence;
                 hgvsData.Mutated = result.MutatedSequence;
@@ -333,7 +333,7 @@ namespace DiseaseMutationsApp.Pages
             {
                 hgvsData.CopiedToClipboard = true;
                 StateHasChanged();
-                var completeGRNA = "GAUUUAGACUACCCCAAAAACGAAGGGGACUAAAAC" + hgvsData.SelectedSpacer;
+                var completeGRNA = GrnaService.Scaffold + hgvsData.SelectedSpacer;
 
                 await JSRuntime.InvokeVoidAsync("navigator.clipboard.writeText", completeGRNA);
             }
@@ -351,7 +351,7 @@ namespace DiseaseMutationsApp.Pages
                 hgvsData.FornaUrl = null;
                 StateHasChanged();
 
-                var completeGRNA = "GAUUUAGACUACCCCAAAAACGAAGGGGACUAAAAC" + hgvsData.SelectedSpacer;
+                var completeGRNA = GrnaService.Scaffold + hgvsData.SelectedSpacer;
                 var result = await GrnaService.GetRnaFold(completeGRNA);
 
                 hgvsData.RnaFoldResult = result;

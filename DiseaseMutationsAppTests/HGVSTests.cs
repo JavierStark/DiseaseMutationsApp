@@ -123,4 +123,44 @@ public class HGVSTests
         var sut = new HGVS.HGVS("NM_000546.6:c.215=");
         Assert.That(sut.Mutation, Is.EqualTo(HGVS.MutationType.NoChange));
     }
+
+    [Test]
+    public void ParseGenomicNotation()
+    {
+        var sut = new HGVS.HGVS("NC_000017.11:g.7674220C>T");
+        Assert.Multiple(() =>
+        {
+            Assert.That(sut.Accession, Is.EqualTo("NC_000017.11"));
+            Assert.That(sut.Type, Is.EqualTo("g"));
+            Assert.That(sut.Position.Item1, Is.EqualTo(7674220));
+            Assert.That(sut.Position.Item2, Is.EqualTo(7674220));
+            Assert.That(sut.Mutation, Is.EqualTo(HGVS.MutationType.Substitution));
+        });
+    }
+
+    [Test]
+    public void GetMutationLength_SinglePosition_ReturnsOne()
+    {
+        var sut = new HGVS.HGVS("NM_000546.6:c.215C>G");
+        Assert.That(sut.GetMutationLength(), Is.EqualTo(1));
+    }
+
+    [Test]
+    public void GetMutationLength_RangePosition_ReturnsSpanSize()
+    {
+        var sut = new HGVS.HGVS("NM_000546.6:c.215_217del");
+        Assert.That(sut.GetMutationLength(), Is.EqualTo(3));
+    }
+
+    [Test]
+    public void ParseUnknownMutationMethod_Throws()
+    {
+        Assert.That(() => new HGVS.HGVS("NM_000546.6:c.215XYZ"), Throws.Exception);
+    }
+
+    [Test]
+    public void ParseMissingPosition_Throws()
+    {
+        Assert.That(() => new HGVS.HGVS("NM_000546.6:c.XYZ"), Throws.Exception);
+    }
 }

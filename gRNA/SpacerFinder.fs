@@ -3,6 +3,9 @@
 open System.Threading.Tasks
 open gRNA.RNAFoldWrapper
 
+/// Constant Cas13 scaffold (36 nt) that precedes the spacer in the complete gRNA.
+let scaffold = "GAUUUAGACUACCCCAAAAACGAAGGGGACUAAAAC"
+
 let slidingWindow (input: string) (windowSize: int) =
     if windowSize <= 0 then
         invalidArg "windowSize" "Window size must be greater than 0."
@@ -47,13 +50,28 @@ type gRNAResult =
       MutationHighlightStart: int
       MutationHighlightLength: int }
 
-let getgRNAResult sequence : gRNAResult =
+/// Extracts the seed region substring for a given inclusive [seedStart, seedEnd] range,
+/// clamping into the sequence bounds. Returns "" for an empty sequence or an inverted range.
+let getSeedRegion (seedStart: int) (seedEnd: int) (sequence: string) =
+    if System.String.IsNullOrEmpty(sequence) then
+        ""
+    else
+        let lastIndex = sequence.Length - 1
+        let clampedStart = seedStart |> max 0 |> min lastIndex
+        let clampedEnd = seedEnd |> max 0 |> min lastIndex
+
+        if clampedStart > clampedEnd then
+            ""
+        else
+            sequence[clampedStart..clampedEnd]
+
+let getgRNAResult (seedStart: int) (seedEnd: int) (sequence: string) : gRNAResult =
     let gcContent = calculateGCContent sequence
     let gcScore = calculateGCScore gcContent (40.0, 60.0)
     let homopolymerCount = countHomopolymers sequence
-    let seedRegion = sequence[10..17]
+    let seedRegion = getSeedRegion seedStart seedEnd sequence
 
-    { 
+    {
         Sequence = sequence
         GCScore = gcScore
         GCContent = gcContent
@@ -78,7 +96,7 @@ let adjustFourthFromEndToAorU (sequence: string) =
 
         sequence.Remove(targetIndex, 1).Insert(targetIndex, string replacement)
 
-let applySubstitutionSpecialRule (windowSize: int) (results: gRNAResult list) =
+let applySubstitutionSpecialRule (seedStart: int) (seedEnd: int) (windowSize: int) (results: gRNAResult list) =
     let targetMutationIndex = windowSize - 3
 
     results
@@ -87,7 +105,7 @@ let applySubstitutionSpecialRule (windowSize: int) (results: gRNAResult list) =
         && result.MutationHighlightLength > 0)
     |> Option.map (fun selected ->
         let adjustedSequence = adjustFourthFromEndToAorU selected.Sequence
-        let adjustedBaseResult = getgRNAResult adjustedSequence
+        let adjustedBaseResult = getgRNAResult seedStart seedEnd adjustedSequence
 
         { adjustedBaseResult with
             Allignments = selected.Allignments
@@ -112,8 +130,10 @@ let getMutationHighlightSpan (windowStart: int) (windowSize: int) (mutationStart
         else
             (-1, 0)
     else
-        // Anchor visualization for zero-length mutations (e.g. deletion in local mutated sequence)
-        if mutationStart >= windowStart && mutationStart < windowEndExclusive then
+        // Anchor visualization for zero-length mutations (e.g. deletion in local mutated sequence).
+        // The upper bound is inclusive of windowEndExclusive itself so a deletion sitting right at
+        // the window's exclusive end still anchors to the window's last base instead of being dropped.
+        if mutationStart >= windowStart && mutationStart <= windowEndExclusive then
             let anchor =
                 if mutationStart <= windowStart then 0
                 elif mutationStart >= windowEndExclusive then windowSize - 1
@@ -131,7 +151,7 @@ let reverse (sequence: string) =
     |> Seq.toArray
     |> System.String
 
-let getOrderedgRna (window: int) (sequence: string) (mutationStart: int) (mutationLength: int) (bowtieService: gRNA.Services.BowtieService) (cancellationToken: System.Threading.CancellationToken) : Task<gRNAResult list> =
+let getOrderedgRna (seedStart: int) (seedEnd: int) (window: int) (sequence: string) (mutationStart: int) (mutationLength: int) (bowtieService: gRNA.Services.BowtieService) (cancellationToken: System.Threading.CancellationToken) : Task<gRNAResult list> =
     task {
         let subsequences = slidingWindow sequence window
         let results =
@@ -148,11 +168,12 @@ let getOrderedgRna (window: int) (sequence: string) (mutationStart: int) (mutati
                     |> Sequence.complementary
                     |> reverse
                     |> _.Replace('T', 'U')
-                    |> getgRNAResult
+                    |> getgRNAResult seedStart seedEnd
                 { sequenceResult with
                     MutationHighlightStart = highlightStart
                     MutationHighlightLength = highlightLength })
-        let gRNASequences = subsequences |> List.map (fun s -> s + "GAUUUAGACUACCCCAAAAACGAAGGGGACUAAAAC")
+        // Fold the actual RNA gRNA (scaffold + spacer), not the raw DNA window.
+        let gRNASequences = results |> List.map (fun r -> scaffold + r.Sequence)
 
         let! allignments = bowtieService.ProcessMultipleSequencesAsync(subsequences, 2, 2, cancellationToken)
         let! folds = foldMany gRNASequences
