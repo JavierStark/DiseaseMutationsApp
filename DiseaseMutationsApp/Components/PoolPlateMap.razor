@@ -1,0 +1,110 @@
+@using DiseaseMutationsApp.Services
+
+@if (Plan.PlateCount > 1)
+{
+    <div class="d-flex flex-wrap gap-2 mb-3">
+        @for (var plate = 1; plate <= Plan.PlateCount; plate++)
+        {
+            var target = plate;
+            <button type="button"
+                    class="btn btn-sm @(target == ActivePlate ? "btn-primary" : "btn-outline-primary")"
+                    @onclick="() => OnShowPlate.InvokeAsync(target)">
+                Plate @target
+            </button>
+        }
+    </div>
+}
+
+<div class="pool-plate-scroll">
+    <table class="pool-plate">
+        <thead>
+            <tr>
+                <th class="pool-plate-corner"></th>
+                @for (var column = 1; column <= Plan.PlateColumns; column++)
+                {
+                    <th class="pool-plate-axis">@column</th>
+                }
+            </tr>
+        </thead>
+        <tbody>
+            @for (var row = 0; row < Plan.PlateRows; row++)
+            {
+                var rowLetter = (char)('A' + row);
+                <tr>
+                    <th class="pool-plate-axis">@rowLetter</th>
+                    @for (var column = 1; column <= Plan.PlateColumns; column++)
+                    {
+                        var pool = PoolAt(rowLetter, column);
+                        <td class="pool-plate-cell-wrap">
+                            @if (pool is null)
+                            {
+                                <span class="pool-well pool-well-unused" title="@($"{rowLetter}{column} - not used")"></span>
+                            }
+                            else
+                            {
+                                var cell = pool;
+                                <button type="button"
+                                        class="pool-well @(cell.IsEmpty ? "pool-well-empty" : "pool-well-filled") @(cell.Id == SelectedPoolId ? "pool-well-selected" : null)"
+                                        title="@Tooltip(cell)"
+                                        @onclick="() => OnSelectPool.InvokeAsync(cell)">
+                                    @cell.Id
+                                </button>
+                            }
+                        </td>
+                    }
+                </tr>
+            }
+        </tbody>
+    </table>
+</div>
+
+<div class="d-flex flex-wrap gap-3 mt-3">
+    <span class="pool-legend"><span class="pool-legend-swatch pool-well-filled"></span> Prepare this mix</span>
+    <span class="pool-legend"><span class="pool-legend-swatch pool-well-empty"></span> Empty &mdash; do not prepare</span>
+    <span class="pool-legend"><span class="pool-legend-swatch pool-well-unused"></span> Not used</span>
+</div>
+
+@code {
+    [Parameter, EditorRequired] public PoolingPlanDto Plan { get; set; } = default!;
+
+    [Parameter] public int ActivePlate { get; set; } = 1;
+
+    [Parameter] public int? SelectedPoolId { get; set; }
+
+    [Parameter] public EventCallback<PoolWell> OnSelectPool { get; set; }
+
+    [Parameter] public EventCallback<int> OnShowPlate { get; set; }
+
+    private Dictionary<(char Row, int Column), PoolWell> _wellsOnPlate = new();
+    private PoolingPlanDto? _indexedPlan;
+    private int _indexedPlate = -1;
+
+    protected override void OnParametersSet()
+    {
+        // Rebuild the lookup only when the plan or the visible plate actually changes:
+        // a 384-well plate is re-rendered on every well click.
+        if (ReferenceEquals(_indexedPlan, Plan) && _indexedPlate == ActivePlate)
+        {
+            return;
+        }
+
+        _wellsOnPlate = Plan.Pools
+            .Where(p => p.Plate == ActivePlate)
+            .ToDictionary(p => (p.Row, p.Column));
+
+        _indexedPlan = Plan;
+        _indexedPlate = ActivePlate;
+    }
+
+    private PoolWell? PoolAt(char row, int column) =>
+        _wellsOnPlate.TryGetValue((row, column), out var pool) ? pool : null;
+
+    private static string Tooltip(PoolWell pool)
+    {
+        var contents = pool.IsEmpty
+            ? "Empty - do not prepare"
+            : string.Join(", ", pool.GuideLabels);
+
+        return $"{pool.WellLabel} | Tube {pool.Id} | {pool.Name}\n{contents}";
+    }
+}

@@ -1,0 +1,44 @@
+@using DiseaseMutationsApp.Services
+
+<div class="grna-table-wrapper grna-table-wrapper-scrollable">
+    <table class="table table-hover table-sm mb-0 align-middle">
+        <thead class="grna-table-head">
+            <tr>
+                <th scope="col" class="pool-col-id">Tube ID</th>
+                <th scope="col" class="pool-col-name">Mixture name</th>
+                <th scope="col">Guides in tandem</th>
+                <th scope="col" class="pool-col-well">Final well on plate</th>
+            </tr>
+        </thead>
+        <tbody>
+            @foreach (var pool in Pools)
+            {
+                var current = pool;
+                <tr class="pool-row @(current.Id == SelectedPoolId ? "pool-row-selected" : null)"
+                    @onclick="() => OnSelectPool.InvokeAsync(current)">
+                    <td class="metric-accent-primary">@current.Id</td>
+                    <td class="metric-default">@current.Name</td>
+                    <td>
+                        @if (current.IsEmpty)
+                        {
+                            <span class="pool-empty-note">Empty &mdash; do not prepare</span>
+                        }
+                        else
+                        {
+                            <span class="pool-guide-list">@string.Join(", ", current.GuideLabels)</span>
+                        }
+                    </td>
+                    <td class="metric-accent-secondary">@current.WellLabel</td>
+                </tr>
+            }
+        </tbody>
+    </table>
+</div>
+
+@code {
+    [Parameter, EditorRequired] public List<PoolWell> Pools { get; set; } = new();
+
+    [Parameter] public int? SelectedPoolId { get; set; }
+
+    [Parameter] public EventCallback<PoolWell> OnSelectPool { get; set; }
+}

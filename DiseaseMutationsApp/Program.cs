@@ -16,6 +16,9 @@ builder.Services.AddSingleton<gRNA.Services.BowtieService>();
 // Register the gRNA service that provides direct access to F# library
 builder.Services.AddScoped<GrnaService>();
 
+// Register the combinatorial pooling service (wraps the F# Pooling module)
+builder.Services.AddScoped<PoolingService>();
+
 // Add CORS for development (if needed)
 builder.Services.AddCors(options =>
 {
