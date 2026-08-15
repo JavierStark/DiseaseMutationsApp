@@ -933,6 +933,178 @@ input[type="number"] {
     box-shadow: var(--shadow-md);
 }
 
+/* ==========================================
+   GUIDE POOLING
+   ========================================== */
+
+.pool-stat {
+    background: var(--surface);
+    border: 1px solid var(--border-color);
+    border-radius: var(--radius-md);
+    padding: var(--space-sm) var(--space-md);
+    height: 100%;
+}
+
+.pool-stat-value {
+    font-size: 1.5rem;
+    line-height: 1.2;
+}
+
+.pool-stat-label {
+    font-size: 0.75rem;
+    color: var(--text-muted);
+    text-transform: uppercase;
+    letter-spacing: 0.04em;
+    margin-top: 0.125rem;
+}
+
+.pool-model-row-active {
+    background: linear-gradient(135deg, rgba(230, 141, 216, 0.16) 0%, rgba(161, 238, 198, 0.14) 100%);
+}
+
+.pool-badge-optimal {
+    background: var(--color-secondary-dark);
+    color: var(--text-inverse);
+    font-weight: 600;
+}
+
+.pool-formula {
+    font-size: 0.8125rem;
+    color: var(--text-secondary);
+    background: transparent;
+}
+
+/* Plate map */
+.pool-plate-scroll {
+    overflow-x: auto;
+    border: 1px solid var(--border-color);
+    border-radius: var(--radius-md);
+    padding: var(--space-sm);
+    background: var(--surface);
+}
+
+.pool-plate {
+    border-collapse: separate;
+    border-spacing: 3px;
+    margin: 0;
+}
+
+.pool-plate-axis {
+    font-size: 0.6875rem;
+    font-weight: 600;
+    color: var(--text-muted);
+    text-align: center;
+    padding: 0 2px;
+}
+
+.pool-plate-corner {
+    width: 1.25rem;
+}
+
+.pool-plate-cell-wrap {
+    padding: 0;
+}
+
+.pool-well {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 2.25rem;
+    height: 2.25rem;
+    border-radius: 50%;
+    border: 1px solid var(--border-color);
+    font-size: 0.6875rem;
+    font-weight: 600;
+    padding: 0;
+    transition: transform var(--transition-fast), box-shadow var(--transition-fast);
+}
+
+button.pool-well {
+    cursor: pointer;
+}
+
+button.pool-well:hover {
+    transform: scale(1.12);
+    box-shadow: var(--shadow-sm);
+}
+
+.pool-well-filled {
+    background: linear-gradient(135deg, rgba(230, 141, 216, 0.42) 0%, rgba(161, 238, 198, 0.42) 100%);
+    color: var(--color-detail-dark);
+    border-color: var(--border-color-hover);
+}
+
+.pool-well-empty {
+    background: #F1ECEF;
+    color: var(--text-muted);
+    border-style: dashed;
+}
+
+.pool-well-unused {
+    background: transparent;
+    border-style: dotted;
+    opacity: 0.45;
+}
+
+.pool-well-selected {
+    outline: 2px solid var(--color-detail);
+    outline-offset: 1px;
+    box-shadow: var(--shadow-glow-primary);
+}
+
+.pool-legend {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.5rem;
+    font-size: 0.8125rem;
+    color: var(--text-secondary);
+}
+
+.pool-legend-swatch {
+    display: inline-block;
+    width: 1rem;
+    height: 1rem;
+    border-radius: 50%;
+    border: 1px solid var(--border-color);
+}
+
+.pool-detail-card {
+    border-color: var(--color-primary-dark);
+}
+
+/* Mixture list */
+.pool-row {
+    cursor: pointer;
+}
+
+.pool-row-selected {
+    background: linear-gradient(135deg, rgba(230, 141, 216, 0.2) 0%, rgba(161, 238, 198, 0.18) 100%);
+}
+
+.pool-col-id {
+    width: 5rem;
+}
+
+.pool-col-name {
+    width: 14rem;
+}
+
+.pool-col-well {
+    width: 10rem;
+}
+
+.pool-guide-list {
+    font-size: 0.875rem;
+    color: var(--text-primary);
+    word-break: break-word;
+}
+
+.pool-empty-note {
+    font-size: 0.875rem;
+    color: var(--text-muted);
+    font-style: italic;
+}
+
 .forna-frame iframe {
     width: 100%;
     height: 600px;

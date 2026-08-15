@@ -1,0 +1,75 @@
+@using DiseaseMutationsApp.Services
+
+<div class="grna-table-wrapper">
+    <table class="table table-hover mb-0 align-middle">
+        <thead class="grna-table-head">
+            <tr>
+                <th scope="col">Model</th>
+                <th scope="col" class="table-cell-center">Wells (N)</th>
+                <th scope="col" class="table-cell-center">Repetitions (R)</th>
+                <th scope="col">Formula</th>
+                <th scope="col" class="table-cell-center">Layout</th>
+            </tr>
+        </thead>
+        <tbody>
+            @foreach (var estimate in Estimates)
+            {
+                var isActive = estimate.Model == ActiveModel;
+                <tr class="@(isActive ? "pool-model-row-active" : null)">
+                    <td>
+                        <span class="metric-accent-primary">@estimate.Name</span>
+                        @if (estimate.IsOptimal)
+                        {
+                            <span class="badge pool-badge-optimal ms-2">Optimal</span>
+                        }
+                    </td>
+                    <td class="table-cell-center metric-accent-secondary">@estimate.Wells</td>
+                    <td class="table-cell-center metric-default">@estimate.Repetitions</td>
+                    <td><code class="pool-formula">@estimate.Formula</code></td>
+                    <td class="table-cell-center">
+                        @if (isActive)
+                        {
+                            <span class="metric-accent-success">
+                                <span class="oi oi-check me-1" aria-hidden="true"></span>Showing
+                            </span>
+                        }
+                        else
+                        {
+                            <button type="button" class="btn btn-sm btn-outline-primary"
+                                    @onclick="() => OnSelect.InvokeAsync(estimate.Model)">
+                                Show this
+                            </button>
+                        }
+                    </td>
+                </tr>
+            }
+        </tbody>
+    </table>
+</div>
+
+@if (IsOverridden)
+{
+    <div class="d-flex align-items-center justify-content-between mt-3">
+        <small class="helper-hint text-muted">
+            <span class="oi oi-info helper-hint-icon me-1" aria-hidden="true"></span>
+            You are overriding the automatic choice.
+        </small>
+        <button type="button" class="btn btn-sm btn-outline-secondary" @onclick="OnUseOptimal">
+            Back to optimal
+        </button>
+    </div>
+}
+
+@code {
+    [Parameter, EditorRequired] public List<PoolingModelEstimate> Estimates { get; set; } = new();
+
+    /// <summary>The model whose layout is currently displayed.</summary>
+    [Parameter, EditorRequired] public PoolingModelKind ActiveModel { get; set; }
+
+    /// <summary>True when the active model is not the cheapest one.</summary>
+    [Parameter] public bool IsOverridden { get; set; }
+
+    [Parameter] public EventCallback<PoolingModelKind> OnSelect { get; set; }
+
+    [Parameter] public EventCallback OnUseOptimal { get; set; }
+}

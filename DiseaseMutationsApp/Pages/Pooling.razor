@@ -1,0 +1,263 @@
+@page "/pooling"
+@using DiseaseMutationsApp.Services
+@rendermode @(new InteractiveServerRenderMode())
+
+<PageTitle>Guide Pooling</PageTitle>
+
+<div class="container-fluid px-4 py-4 fade-in-up container-max-xl">
+    <div class="row mb-5">
+        <div class="col">
+            <h1 class="mb-2 page-title">
+                🧪 Guide Pooling
+            </h1>
+            <p class="text-muted mb-0">
+                Combine guides into wells so a whole variant panel can be screened in far fewer reactions
+            </p>
+        </div>
+    </div>
+
+    <div class="row mb-5">
+        <div class="col-lg-10 col-xl-8">
+            <div class="card shadow-sm">
+                <div class="card-body">
+                    <h5 class="card-title mb-4 section-title-accent">
+                        <span class="oi oi-cog me-2"></span>Input Parameters
+                    </h5>
+
+                    <ul class="nav nav-tabs nav-tabs-sm mb-0" role="tablist">
+                        <li class="nav-item" role="presentation">
+                            <button type="button"
+                                    class="nav-link @(_inputMode == PoolingInputMode.GuideCount ? "active" : null)"
+                                    @onclick="() => SetInputMode(PoolingInputMode.GuideCount)">
+                                <span class="oi oi-calculator me-2" aria-hidden="true"></span>Guide count
+                            </button>
+                        </li>
+                        <li class="nav-item" role="presentation">
+                            <button type="button"
+                                    class="nav-link @(_inputMode == PoolingInputMode.GuideList ? "active" : null)"
+                                    @onclick="() => SetInputMode(PoolingInputMode.GuideList)">
+                                <span class="oi oi-list me-2" aria-hidden="true"></span>Guide list
+                            </button>
+                        </li>
+                    </ul>
+
+                    <div class="tab-content-container-nested mb-4">
+                        @if (_inputMode == PoolingInputMode.GuideCount)
+                        {
+                            <div class="mb-2">
+                                <label for="guide-count" class="form-label">Number of guides (V)</label>
+                                <input id="guide-count" type="number" class="form-control input-max-sm"
+                                       @bind="_guideCount" min="1" max="@PoolingService.MaxGuideCount" />
+                                <small class="text-muted mt-2 d-block">
+                                    One guide per pathogenic variant you intend to screen.
+                                </small>
+                            </div>
+                        }
+                        else
+                        {
+                            <div class="mb-2">
+                                <label for="guide-list" class="form-label">Guides</label>
+                                <textarea id="guide-list" class="form-control" rows="6" @bind="_guideListText"
+                                          placeholder="One guide per line (or comma-separated) — or paste a CSV report downloaded from the gRNA Builder tab"></textarea>
+
+                                @if (_parsedGuides.Count > 0)
+                                {
+                                    <div class="alert alert-info mt-3 mb-0">
+                                        <div class="alert-heading mb-2">
+                                            <span class="oi oi-check me-2" aria-hidden="true"></span>
+                                            Detected @(_guideListSource == GuideListSource.BuilderCsv ? "a gRNA Builder CSV report" : "a plain guide list")
+                                            — <strong>@_parsedGuides.Count</strong> guide@(_parsedGuides.Count == 1 ? "" : "s").
+                                        </div>
+                                        <div class="alert-detail">
+                                            @string.Join(", ", _parsedGuides.Take(8).Select(g => g.Label))@(_parsedGuides.Count > 8 ? $", … (+{_parsedGuides.Count - 8} more)" : "")
+                                        </div>
+                                        @foreach (var warning in _parseWarnings)
+                                        {
+                                            <div class="alert-detail mt-1"><span class="oi oi-info me-1" aria-hidden="true"></span>@warning</div>
+                                        }
+                                    </div>
+                                }
+                                else if (!string.IsNullOrWhiteSpace(_guideListText))
+                                {
+                                    <div class="alert alert-warning mt-3 mb-0">
+                                        No guides could be read from that text.
+                                    </div>
+                                }
+                                else
+                                {
+                                    <small class="text-muted mt-2 d-block">
+                                        A Builder report keeps the best-ranked mutated spacer for each variant.
+                                    </small>
+                                }
+                            </div>
+                        }
+                    </div>
+
+                    <div class="row g-3 mb-4">
+                        <div class="col-sm-5">
+                            <label for="well-capacity" class="form-label">Guides per well (K)</label>
+                            <input id="well-capacity" type="number" class="form-control" @bind="_wellCapacity" min="1" />
+                            <small class="text-muted mt-2 d-block">
+                                Guides are transcribed in tandem; more than 5–6 risks RNA conformations that block Cas13.
+                            </small>
+                        </div>
+                        <div class="col-sm-5">
+                            <label for="plate-format" class="form-label">Plate format</label>
+                            <select id="plate-format" class="form-select" @bind="_plate" @bind:after="OnPlateChanged">
+                                <option value="@PlateKind.Plate96">96-well (8 × 12)</option>
+                                <option value="@PlateKind.Plate384">384-well (16 × 24)</option>
+                            </select>
+                        </div>
+                    </div>
+
+                    <div class="d-flex flex-wrap gap-2 mt-2">
+                        <button class="btn btn-primary btn-lg" @onclick="Calculate" disabled="@(!CanCalculate)">
+                            <span class="oi oi-grid-three-up me-2"></span>
+                            <span>Calculate distribution</span>
+                        </button>
+                        @if (_plan is not null)
+                        {
+                            <button class="btn btn-outline-secondary btn-lg" @onclick="ClearAll">
+                                <span class="oi oi-trash me-2"></span>
+                                <span>Reset</span>
+                            </button>
+                        }
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    @if (_errorMessage is not null)
+    {
+        <div class="row mb-5">
+            <div class="col-lg-10 col-xl-8">
+                <div class="alert alert-danger">
+                    <div class="alert-heading"><span class="oi oi-warning me-2" aria-hidden="true"></span>Cannot build a plan</div>
+                    <div class="alert-detail">@_errorMessage</div>
+                </div>
+            </div>
+        </div>
+    }
+
+    @if (_estimates is not null && _plan is not null)
+    {
+        <div class="row mb-5 fade-in-up">
+            <div class="col">
+                <div class="card shadow-sm">
+                    <div class="card-body">
+                        <h5 class="card-title mb-4 section-title-secondary">
+                            <span class="oi oi-bar-chart me-2"></span>Model comparison
+                        </h5>
+                        <PoolingModelComparison Estimates="_estimates"
+                                                ActiveModel="_plan.Model"
+                                                IsOverridden="@(!_estimates[0].Model.Equals(_plan.Model))"
+                                                OnSelect="SelectModel"
+                                                OnUseOptimal="UseOptimalModel" />
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="row mb-5 fade-in-up">
+            <div class="col">
+                <div class="card shadow-sm">
+                    <div class="card-body">
+                        <h5 class="card-title mb-4 section-title-accent">
+                            <span class="oi oi-spreadsheet me-2"></span>@_plan.ModelName distribution
+                        </h5>
+
+                        <div class="row g-3 mb-4">
+                            <div class="col-6 col-md-3 col-lg-2">
+                                <div class="pool-stat">
+                                    <div class="pool-stat-value metric-accent-primary">@_plan.GuideCount</div>
+                                    <div class="pool-stat-label">Guides (V)</div>
+                                </div>
+                            </div>
+                            <div class="col-6 col-md-3 col-lg-2">
+                                <div class="pool-stat">
+                                    <div class="pool-stat-value metric-accent-secondary">@_plan.NonEmptyWells</div>
+                                    <div class="pool-stat-label">Mixes to prepare</div>
+                                </div>
+                            </div>
+                            <div class="col-6 col-md-3 col-lg-2">
+                                <div class="pool-stat">
+                                    <div class="pool-stat-value metric-default">@_plan.TotalWells</div>
+                                    <div class="pool-stat-label">Wells reserved (N)</div>
+                                </div>
+                            </div>
+                            <div class="col-6 col-md-3 col-lg-2">
+                                <div class="pool-stat">
+                                    <div class="pool-stat-value metric-default">@_plan.Repetitions</div>
+                                    <div class="pool-stat-label">Repetitions (R)</div>
+                                </div>
+                            </div>
+                            <div class="col-6 col-md-3 col-lg-2">
+                                <div class="pool-stat">
+                                    <div class="pool-stat-value metric-default">@_plan.MaxPoolSize</div>
+                                    <div class="pool-stat-label">Largest mix</div>
+                                </div>
+                            </div>
+                            <div class="col-6 col-md-3 col-lg-2">
+                                <div class="pool-stat">
+                                    <div class="pool-stat-value metric-accent-success">@_plan.PlateCount</div>
+                                    <div class="pool-stat-label">Plate@(_plan.PlateCount == 1 ? "" : "s")</div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <p class="helper-note text-muted">
+                            <span class="oi oi-info helper-note-icon me-1" aria-hidden="true"></span>
+                            Screening @_plan.GuideCount guides individually would take @_plan.GuideCount reactions;
+                            this layout needs @_plan.NonEmptyWells, and each guide appears in @_plan.Repetitions of them.
+                        </p>
+
+                        <h6 class="mt-4 mb-3 section-title-success">Plate map</h6>
+                        <PoolPlateMap Plan="_plan"
+                                      ActivePlate="_activePlate"
+                                      SelectedPoolId="_selectedPoolId"
+                                      OnSelectPool="SelectPool"
+                                      OnShowPlate="ShowPlate" />
+
+                        @if (SelectedPool is { } selected)
+                        {
+                            <div class="card mt-4 pool-detail-card">
+                                <div class="card-body">
+                                    <h6 class="card-title mb-3">
+                                        Tube @selected.Id &mdash; @selected.Name
+                                        <span class="text-muted ms-2">@selected.WellLabel</span>
+                                    </h6>
+                                    @if (selected.IsEmpty)
+                                    {
+                                        <p class="mb-0 pool-empty-note">This slot is reserved by the layout but holds no guides &mdash; do not prepare it.</p>
+                                    }
+                                    else
+                                    {
+                                        <div class="sequence-block p-3 rounded">
+                                            @string.Join(", ", selected.GuideLabels)
+                                        </div>
+                                    }
+                                </div>
+                            </div>
+                        }
+
+                        <div class="d-flex align-items-center justify-content-between mt-5 mb-3">
+                            <h6 class="mb-0 section-title-success">Mixture list</h6>
+                            <button class="btn btn-outline-primary shadow-sm" @onclick="DownloadPlan">
+                                <span class="oi oi-data-transfer-download me-2"></span>
+                                <span>Download CSV</span>
+                            </button>
+                        </div>
+                        <PoolTable Pools="_plan.Pools"
+                                   SelectedPoolId="_selectedPoolId"
+                                   OnSelectPool="SelectPool" />
+                    </div>
+                </div>
+            </div>
+        </div>
+    }
+</div>
+
+@code {
+    // Logic moved to Pooling.razor.cs
+}

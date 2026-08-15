@@ -19,6 +19,25 @@ namespace DiseaseMutationsApp.Services
         public int IndexActiveTabIndex { get; set; }
         public Dictionary<int, int> IndexActiveChildTabIndices { get; set; } = new();
 
+        // ===== Guide Pooling Page State =====
+        public PoolingInputMode PoolingInputMode { get; set; } = PoolingInputMode.GuideCount;
+        public int PoolingGuideCount { get; set; } = 100;
+        public string? PoolingGuideListText { get; set; }
+        public List<GuideEntry> PoolingParsedGuides { get; set; } = new();
+        public List<string> PoolingParseWarnings { get; set; } = new();
+        public GuideListSource PoolingGuideListSource { get; set; } = GuideListSource.PlainList;
+        public int PoolingWellCapacity { get; set; } = 5;
+        public PlateKind PoolingPlate { get; set; } = PlateKind.Plate96;
+
+        /// <summary>Null means "use whichever model the comparison says is cheapest".</summary>
+        public PoolingModelKind? PoolingSelectedModel { get; set; }
+
+        public List<PoolingModelEstimate>? PoolingEstimates { get; set; }
+        public PoolingPlanDto? PoolingPlan { get; set; }
+        public int PoolingActivePlate { get; set; } = 1;
+        public int? PoolingSelectedPoolId { get; set; }
+        public string? PoolingErrorMessage { get; set; }
+
         // ===== OmimToRs Page State (deactivated) =====
         // public int? OmimCode { get; set; }
         // public List<string>? OmimRsList { get; set; }
@@ -44,6 +63,9 @@ namespace DiseaseMutationsApp.Services
             IndexActiveTabIndex = 0;
             IndexActiveChildTabIndices.Clear();
 
+            // Clear Guide Pooling state
+            ResetPoolingState();
+
             // Clear OmimToRs state (deactivated)
             // OmimCode = null;
             // OmimRsList = null;
@@ -66,6 +88,33 @@ namespace DiseaseMutationsApp.Services
             IndexActiveTabIndex = 0;
             IndexActiveChildTabIndices.Clear();
             NotifyStateChanged();
+        }
+
+        /// <summary>
+        /// Clear only Guide Pooling page state
+        /// </summary>
+        public void ClearPoolingState()
+        {
+            ResetPoolingState();
+            NotifyStateChanged();
+        }
+
+        private void ResetPoolingState()
+        {
+            PoolingInputMode = PoolingInputMode.GuideCount;
+            PoolingGuideCount = 100;
+            PoolingGuideListText = null;
+            PoolingParsedGuides = new();
+            PoolingParseWarnings = new();
+            PoolingGuideListSource = GuideListSource.PlainList;
+            PoolingWellCapacity = 5;
+            PoolingPlate = PlateKind.Plate96;
+            PoolingSelectedModel = null;
+            PoolingEstimates = null;
+            PoolingPlan = null;
+            PoolingActivePlate = 1;
+            PoolingSelectedPoolId = null;
+            PoolingErrorMessage = null;
         }
 
         // /// <summary>
