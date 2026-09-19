@@ -154,6 +154,30 @@ public class GuideListParserTests
         });
     }
 
+    /// <summary>
+    /// Ctrl+A/Ctrl+C from Excel puts the Builder report on the clipboard tab-delimited rather
+    /// than comma-delimited, even though the file itself is a .csv. This must still be recognised
+    /// as a Builder report, not read as a plain list that treats each whole row as one guide.
+    /// </summary>
+    [Test]
+    public void Parse_TabDelimitedBuilderCsv_IsRecognisedAndParsed()
+    {
+        var header = string.Join('\t', "RS ID", "HGVS", "Sequence Type", "Rank", "Sequence", "Score", "GC Content", "Alignments", "Seed Region", "Homopolymers", "Fold Energy");
+        var row1 = string.Join('\t', "12345", "NM_000546.6:c.215C>G", "Mutated", "1", "AAAA", "0.9", "50", "0", "AAAA", "0", "-4.1");
+        var row2 = string.Join('\t', "12345", "NM_000546.6:c.215C>G", "Original", "1", "CCCC", "0.7", "50", "0", "CCCC", "0", "-2.0");
+        var csv = string.Join("\n", header, row1, row2);
+
+        var result = GuideListParser.Parse(csv);
+
+        Assert.Multiple(() =>
+        {
+            Assert.That(result.Source, Is.EqualTo(GuideListSource.BuilderCsv));
+            Assert.That(result.Count, Is.EqualTo(1));
+            Assert.That(result.Guides[0].Label, Is.EqualTo("NM_000546.6:c.215C>G"));
+            Assert.That(result.Guides[0].Sequence, Is.EqualTo("AAAA"));
+        });
+    }
+
     [Test]
     public void LooksLikeBuilderCsv_DetectsHeaderCaseInsensitively()
     {

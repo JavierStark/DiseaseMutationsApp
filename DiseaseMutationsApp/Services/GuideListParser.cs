@@ -38,10 +38,13 @@ public record ParsedGuideList
 public static class GuideListParser
 {
     /// <summary>
-    /// Prefix of the header written by Index.razor.cs when exporting a report. Matching on the
-    /// leading columns keeps this tolerant of extra columns being appended later.
+    /// Leading columns of the header written by Index.razor.cs when exporting a report. Matching
+    /// on just these keeps this tolerant of extra columns being appended later, and checking them
+    /// as separate fields (rather than a literal string prefix) keeps it tolerant of the header
+    /// being pasted tab-delimited, which is what a spreadsheet's Ctrl+A/Ctrl+C puts on the
+    /// clipboard even though the Builder itself exports comma-delimited.
     /// </summary>
-    private const string BuilderCsvHeaderPrefix = "RS ID,HGVS,Sequence Type";
+    private static readonly string[] BuilderCsvHeaderFields = { "RS ID", "HGVS", "Sequence Type" };
 
     private const string MutatedSequenceType = "Mutated";
 
@@ -85,8 +88,18 @@ public static class GuideListParser
             .ToList();
     }
 
-    private static bool IsBuilderCsvHeader(string line) =>
-        line.StartsWith(BuilderCsvHeaderPrefix, StringComparison.OrdinalIgnoreCase);
+    /// <summary>A line is tab-delimited when it has more tabs than commas.</summary>
+    private static char DetectDelimiter(string line) =>
+        line.Count(c => c == '\t') > line.Count(c => c == ',') ? '\t' : ',';
+
+    private static bool IsBuilderCsvHeader(string line)
+    {
+        var fields = line.Split(DetectDelimiter(line));
+        return fields.Length >= BuilderCsvHeaderFields.Length
+            && fields.Take(BuilderCsvHeaderFields.Length)
+                .Select(f => f.Trim())
+                .SequenceEqual(BuilderCsvHeaderFields, StringComparer.OrdinalIgnoreCase);
+    }
 
     private static ParsedGuideList ParsePlainList(List<string> lines)
     {
@@ -134,10 +147,11 @@ public static class GuideListParser
         var malformed = 0;
         var originalRows = 0;
         var order = 0;
+        var delimiter = DetectDelimiter(lines[0]);
 
         foreach (var line in lines.Skip(1))
         {
-            var fields = line.Split(',');
+            var fields = line.Split(delimiter);
             if (fields.Length < MinCsvColumns)
             {
                 malformed++;
