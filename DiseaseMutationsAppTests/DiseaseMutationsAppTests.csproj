@@ -16,6 +16,7 @@
         <PackageReference Include="NUnit.Analyzers" />
         <PackageReference Include="coverlet.collector" />
         <PackageReference Include="bunit" />
+        <PackageReference Include="JunitXml.TestLogger" />
     </ItemGroup>
 
     <ItemGroup>

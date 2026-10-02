@@ -1,22 +1,39 @@
 services:
+  # Builds the GRCh38 index base image. Not started by default:  docker compose --profile base build bowtie-base
+  # (./start.sh does this for you on first run, or pulls it from the registry when GRNA_REGISTRY is set).
+  bowtie-base:
+    profiles: ["base"]
+    build:
+      context: .
+      dockerfile: Dockerfile.bowtie-base
+    image: ${GRNA_BOWTIE_BASE:-disease-mutations-bowtie:grch38-noalt-20260526}
+
   app:
     build:
       context: .
       dockerfile: Dockerfile
-    image: disease-mutations-app:latest
+      args:
+        BOWTIE_BASE: ${GRNA_BOWTIE_BASE:-disease-mutations-bowtie:grch38-noalt-20260526}
+    image: ${GRNA_APP_IMAGE:-disease-mutations-app:latest}
     container_name: disease-mutations-app
     ports:
-      - "5000:5000"
+      # Loopback only by default. To expose on your network, set GRNA_BIND=0.0.0.0 (there is no authentication).
+      - "${GRNA_BIND:-127.0.0.1}:5000:5000"
     environment:
-      - ASPNETCORE_ENVIRONMENT=Development
+      - ASPNETCORE_ENVIRONMENT=Production
       - ASPNETCORE_URLS=http://+:5000
+      # Variants analysed at once (1-4). Bowtie is serialised per process, so 2 is usually enough.
+      - Analysis__MaxConcurrentVariants=${GRNA_MAX_CONCURRENT_VARIANTS:-2}
+      # Optional: higher NCBI rate limit (10 req/s instead of 3) and the contact NCBI asks for.
+      - GRNA_NCBI_API_KEY=${GRNA_NCBI_API_KEY:-}
+      - GRNA_NCBI_CONTACT=${GRNA_NCBI_CONTACT:-}
     restart: unless-stopped
     deploy:
       resources:
         limits:
           cpus: '1.5'
-          memory: 2G
-
-volumes:
-  bowtie-data:
-    driver: local
+          # The ~4 GB GRCh38 index is memory-mapped and shared page cache; the rest is the sequence cache,
+          # the CLR and ViennaRNA processes. See docs/runtime-contract.md.
+          memory: 4G
+# There is deliberately NO volume for the Bowtie index: it is baked into the image layer because
+# memory-mapped reads from a volume or bind mount are 10x+ slower. See docs/runtime-contract.md.

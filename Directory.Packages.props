@@ -12,5 +12,6 @@
     <PackageVersion Include="NUnit.Analyzers" Version="4.15.0" />
     <PackageVersion Include="coverlet.collector" Version="10.1.0" />
     <PackageVersion Include="bunit" Version="2.11.3" />
+    <PackageVersion Include="JunitXml.TestLogger" Version="8.0.0" />
   </ItemGroup>
 </Project>

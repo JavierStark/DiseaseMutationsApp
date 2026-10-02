@@ -85,3 +85,28 @@ public class CsvRoundTripTests
         });
     }
 }
+
+public class ReportSchemaParityTests
+{
+    [Test]
+    public void FsharpRow_MatchesWebExportRow_ForTheSameCandidate()
+    {
+        var fs = new gRNA.SpacerFinder.gRNAResult(
+            "ACGUACGUAC", 1.0, 52.5, 0, "ACGU", 2,
+            new gRNA.RNAFoldWrapper.RNAFoldResult("....", -3.25), 4, 0.75, -1, 0);
+        var web = new GRNAResult
+        {
+            Sequence = "ACGUACGUAC", GCScore = 1f, GCContent = 52.5f, HomopolymerCount = 0, SeedRegion = "ACGU", Allignments = 2,
+            RnaFoldResult = new RNAFoldResult { Structure = "....", Energy = -3.25 }, Rank = 4, Score = 0.75
+        };
+
+        foreach (var complement in new[] { false, true })
+        {
+            var fsRow = gRNA.ReportSchema.row(Microsoft.FSharp.Core.FSharpOption<string>.Some("12"), "NM_1:c.1A>G", "Mutated", complement, fs);
+            var webRow = GrnaCsvSchema.Row("12", "NM_1:c.1A>G", "Mutated", web, complement);
+            Assert.That(fsRow, Is.EqualTo(webRow));
+        }
+
+        Assert.That(GrnaCsvSchema.Header, Is.EqualTo(gRNA.ReportSchema.header));
+    }
+}

@@ -9,11 +9,8 @@ namespace DiseaseMutationsApp.Services;
 /// </summary>
 public static class GrnaCsvSchema
 {
-    public static readonly string[] Columns =
-    {
-        "RS ID", "HGVS", "Sequence Type", "Rank", "Sequence", "Score", "GC Content",
-        "Alignments", "Seed Region", "Homopolymers", "Fold Energy", "Strand"
-    };
+    /// <summary>Column names come from the F# library so the CLI and the web export share one definition.</summary>
+    public static readonly string[] Columns = gRNA.ReportSchema.columns.ToArray();
 
     // Column positions.
     public const int ColRsId = 0;

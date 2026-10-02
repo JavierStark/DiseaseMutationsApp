@@ -1,13 +1,29 @@
-﻿FROM mcr.microsoft.com/dotnet/aspnet:9.0-bookworm-slim
+# Base image carrying the GRCh38 Bowtie index. It changes approximately never, so it is built once
+# (./start.sh builds it on first run; CI publishes it to the registry) and the app image derives from it.
+#
+# The index lives IN the image layer on purpose: Bowtie reads it memory-mapped (--mm), and serving it
+# from a volume or bind mount makes alignment 10x+ slower. See docs/runtime-contract.md.
+FROM mcr.microsoft.com/dotnet/aspnet:9.0.10-bookworm-slim@sha256:3dcb33395722d14c80d19107158293ed677b2c07841100d51df07275ae2b2682
 WORKDIR /app
 
+# s5cmd v2.2.2 (checksum from the upstream s5cmd_checksums.txt of the same release).
+ARG S5CMD_VERSION=2.2.2
+ARG S5CMD_SHA256=a15f83d2a6dc091e43b2a120f29f8f6c86d146c381766c0197ec75d7985af2b6
+# s3://genome-idx/bt/GRCh38_noalt_as.zip, object last modified 2026-05-26, 3,749,245,718 bytes.
+ARG INDEX_SHA256=f12495639adbc9bc676eba68044c6bfb1145e0ca587beaf6c7c41446f9d3c573
+
+# One layer: the 3.7 GB zip never persists. ca-certificates stays (all NCBI access is HTTPS);
+# only the build-time tools are purged.
 RUN apt-get update && \
     apt-get install -y --no-install-recommends curl unzip ca-certificates && \
-    curl -L https://github.com/peak/s5cmd/releases/download/v2.2.2/s5cmd_2.2.2_Linux-64bit.tar.gz | tar -xz && \
-    ./s5cmd --no-sign-request cp s3://genome-idx/bt/GRCh38_noalt_as.zip /tmp/archive.zip && \
+    curl -fsSL -o /tmp/s5cmd.tar.gz "https://github.com/peak/s5cmd/releases/download/v${S5CMD_VERSION}/s5cmd_${S5CMD_VERSION}_Linux-64bit.tar.gz" && \
+    echo "${S5CMD_SHA256}  /tmp/s5cmd.tar.gz" | sha256sum -c - && \
+    tar -xzf /tmp/s5cmd.tar.gz -C /tmp s5cmd && \
+    /tmp/s5cmd --no-sign-request cp s3://genome-idx/bt/GRCh38_noalt_as.zip /tmp/archive.zip && \
+    echo "${INDEX_SHA256}  /tmp/archive.zip" | sha256sum -c - && \
     mkdir -p /app/bowtie/indexes && \
-    unzip /tmp/archive.zip -d /app/bowtie/indexes && \
-    rm /tmp/archive.zip ./s5cmd && \
-    apt-get purge -y curl unzip ca-certificates && \
+    unzip -q /tmp/archive.zip -d /app/bowtie/indexes && \
+    rm -f /tmp/archive.zip /tmp/s5cmd /tmp/s5cmd.tar.gz && \
+    apt-get purge -y curl unzip && \
     apt-get autoremove -y && \
     rm -rf /var/lib/apt/lists/*

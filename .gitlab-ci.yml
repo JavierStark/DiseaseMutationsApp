@@ -1,0 +1,97 @@
+# GitLab CI/CD. Additive to ./start.sh: the registry gives a prebuilt-image shortcut, the local build stays fully supported.
+# Every job image is pinned by digest (scripts/check-pins.sh enforces it).
+
+stages: [lint, test, build-base, build-app, smoke]
+
+variables:
+  BOWTIE_TAG: "grch38-noalt-20260526"
+  DOTNET_CLI_TELEMETRY_OPTOUT: "1"
+  DOTNET_NOLOGO: "1"
+  NUGET_PACKAGES: "$CI_PROJECT_DIR/.nuget"
+  DOCKER_BUILDKIT: "1"
+  DOCKER_TLS_CERTDIR: "/certs"
+
+.docker:
+  image: docker:27.5.1-cli@sha256:851f91d241214e7c6db86513b270d58776379aacc5eb9c4a87e5b47115e3065c
+  services:
+    - name: docker:27.5.1-dind@sha256:aa3df78ecf320f5fafdce71c659f1629e96e9de0968305fe1de670e0ca9176ce
+      alias: docker
+  before_script:
+    - echo "$CI_REGISTRY_PASSWORD" | docker login -u "$CI_REGISTRY_USER" --password-stdin "$CI_REGISTRY"
+
+# Pinning gate: no :latest inputs, no floating versions, no unpinned pip installs, lock files present.
+pins:
+  stage: lint
+  image: alpine:3.20.3@sha256:1e42bbe2508154c9126d48c2b8a75420c3544343bf86fd041fb7527e017a4b4a
+  before_script: [apk add --no-cache bash grep]
+  script: [bash scripts/check-pins.sh]
+
+# Pure tests: no container, no native dependencies. Integration tests needing ViennaRNA skip themselves.
+test:
+  stage: test
+  image: mcr.microsoft.com/dotnet/sdk:9.0.306-bookworm-slim@sha256:81f6d622fe21ed9d31375167f62a3538ff4d6835f9d5e6da9c2defa8a84b7687
+  cache:
+    key:
+      files: [gRNA/packages.lock.json, DiseaseMutationsApp/packages.lock.json, gRNA.Cli/packages.lock.json, DiseaseMutationsAppTests/packages.lock.json]
+    paths: [.nuget/]
+  script:
+    - dotnet restore --locked-mode
+    - dotnet build --no-restore -c Release
+    - dotnet test --no-build -c Release --collect:"XPlat Code Coverage" --logger "junit;LogFilePath=$CI_PROJECT_DIR/test-results.xml" -- NUnit.TestOutputXml=TestResults
+  coverage: '/Total\s*\|\s*(\d+(?:\.\d+)?)/'
+  artifacts:
+    when: always
+    reports:
+      junit: test-results.xml
+
+# The GRCh38 index base image: ~3.7 GB download, ~10 GB free disk. Manual, scheduled, or when its Dockerfile changes.
+# Shared runners will not have the disk or timeout for this: use a project runner, or build once locally
+# (./start.sh) and push by hand. The base changes approximately never, which is why it is a separate image.
+build-base:
+  extends: .docker
+  stage: build-base
+  timeout: 3h
+  rules:
+    - if: $CI_PIPELINE_SOURCE == "schedule"
+    - changes: [Dockerfile.bowtie-base]
+      when: manual
+      allow_failure: true
+    - when: manual
+      allow_failure: true
+  script:
+    - docker build -f Dockerfile.bowtie-base -t "$CI_REGISTRY_IMAGE/bowtie-base:$BOWTIE_TAG" .
+    - docker push "$CI_REGISTRY_IMAGE/bowtie-base:$BOWTIE_TAG"
+
+build-app:
+  extends: .docker
+  stage: build-app
+  rules:
+    - if: $CI_PIPELINE_SOURCE == "merge_request_event"
+    - if: $CI_COMMIT_BRANCH == $CI_DEFAULT_BRANCH
+  script:
+    - docker pull "$CI_REGISTRY_IMAGE/app:cache" || true
+    - >
+      docker build
+      --build-arg BOWTIE_BASE="$CI_REGISTRY_IMAGE/bowtie-base:$BOWTIE_TAG"
+      --cache-from "$CI_REGISTRY_IMAGE/app:cache"
+      --build-arg BUILDKIT_INLINE_CACHE=1
+      -t "$CI_REGISTRY_IMAGE/app:$CI_COMMIT_SHA" -t "$CI_REGISTRY_IMAGE/app:cache" .
+    - docker push "$CI_REGISTRY_IMAGE/app:$CI_COMMIT_SHA"
+    - docker push "$CI_REGISTRY_IMAGE/app:cache"
+    - |
+      if [ "$CI_COMMIT_BRANCH" = "$CI_DEFAULT_BRANCH" ]; then
+        docker tag "$CI_REGISTRY_IMAGE/app:$CI_COMMIT_SHA" "$CI_REGISTRY_IMAGE/app:latest"
+        docker push "$CI_REGISTRY_IMAGE/app:latest"
+      fi
+
+# Build gate: the real index, Bowtie binary and ViennaRNA inside the freshly built image must all check out.
+# Catches an unpinned-dependency drift such as a ViennaRNA release changing its Python output.
+smoke:
+  extends: .docker
+  stage: smoke
+  needs: [build-app]
+  rules:
+    - if: $CI_PIPELINE_SOURCE == "merge_request_event"
+    - if: $CI_COMMIT_BRANCH == $CI_DEFAULT_BRANCH
+  script:
+    - docker run --rm --entrypoint grna "$CI_REGISTRY_IMAGE/app:$CI_COMMIT_SHA" doctor
