@@ -150,16 +150,22 @@ public class GrnaService : IGrnaAnalysis
         return new OffTargetReport(loci, loci.Count >= MaxLociHits);
     }
 
+    private static readonly System.Text.RegularExpressions.Regex FornaSequence = new("^[ACGUTacgut]+$");
+    private static readonly System.Text.RegularExpressions.Regex FornaStructure = new(@"^[.()\[\]{}<>]+$");
+
     /// <summary>
-    /// The FORNA host does not accept HTTPS connections (verified: connection refused), so this is http with encoded parameters.
-    /// Browsers block it inside an https page, which is why the UI also offers an "Open in FORNA" link.
+    /// FORNA link. Two quirks of that host, both verified: it refuses HTTPS (connection refused), and its page script splits
+    /// the query string itself WITHOUT percent-decoding, so encoded values (e.g. %28 for a bracket) reach its API verbatim
+    /// and are rejected with HTTP 400. Sequence and dot-bracket characters are all URL-safe, so they go in raw; anything
+    /// else is refused rather than allowed to inject extra query parameters. Browsers block the http frame inside an https
+    /// page, which is why the UI also offers an "Open in FORNA" link.
     /// </summary>
     public string GetFornaUrl(string sequence, string structure)
     {
-        return $"http://nibiru.tbi.univie.ac.at/forna/forna.html?id=url/name&sequence={Uri.EscapeDataString(sequence)}&structure={Uri.EscapeDataString(structure)}";
+        if (!FornaSequence.IsMatch(sequence)) throw new ArgumentException("Sequence must contain only A, C, G, U/T.", nameof(sequence));
+        if (!FornaStructure.IsMatch(structure)) throw new ArgumentException("Structure must be dot-bracket notation.", nameof(structure));
+        return $"http://nibiru.tbi.univie.ac.at/forna/forna.html?id=url/name&sequence={sequence}&structure={structure}";
     }
-
-    
 
     public string? GetNcbiNuccoreUrl(string hgvs)
     {

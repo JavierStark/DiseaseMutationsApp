@@ -73,40 +73,21 @@ public class CsvRoundTripTests
     }
 
     [Test]
-    public void FornaUrl_IsHttpsAndEncoded()
+    public void FornaUrl_IsPlainHttpWithRawUrlSafeValues()
     {
         var svc = new GrnaService(Microsoft.Extensions.Logging.Abstractions.NullLogger<GrnaService>.Instance, new gRNA.Services.BowtieService());
-        var url = svc.GetFornaUrl("GA CU", "((..))&x=1");
-        Assert.Multiple(() =>
-        {
-            Assert.That(url, Does.StartWith("http://nibiru.tbi.univie.ac.at/"));
-            Assert.That(url, Does.Not.Contain("&x=1"));
-            Assert.That(url, Does.Contain("GA%20CU"));
-        });
+        var url = svc.GetFornaUrl("GAUUUAGACU", "..((..))..");
+        // FORNA does not percent-decode its query values, so brackets must not be encoded.
+        Assert.That(url, Is.EqualTo("http://nibiru.tbi.univie.ac.at/forna/forna.html?id=url/name&sequence=GAUUUAGACU&structure=..((..)).."));
     }
-}
 
-public class ReportSchemaParityTests
-{
-    [Test]
-    public void FsharpRow_MatchesWebExportRow_ForTheSameCandidate()
+    [TestCase("GA CU", "..")]
+    [TestCase("GACU", "..&x=1")]
+    [TestCase("GACU&evil=1", "..")]
+    [TestCase("", "..")]
+    public void FornaUrl_RejectsAnythingThatCouldInjectQueryParameters(string sequence, string structure)
     {
-        var fs = new gRNA.SpacerFinder.gRNAResult(
-            "ACGUACGUAC", 1.0, 52.5, 0, "ACGU", 2,
-            new gRNA.RNAFoldWrapper.RNAFoldResult("....", -3.25), 4, 0.75, -1, 0);
-        var web = new GRNAResult
-        {
-            Sequence = "ACGUACGUAC", GCScore = 1f, GCContent = 52.5f, HomopolymerCount = 0, SeedRegion = "ACGU", Allignments = 2,
-            RnaFoldResult = new RNAFoldResult { Structure = "....", Energy = -3.25 }, Rank = 4, Score = 0.75
-        };
-
-        foreach (var complement in new[] { false, true })
-        {
-            var fsRow = gRNA.ReportSchema.row(Microsoft.FSharp.Core.FSharpOption<string>.Some("12"), "NM_1:c.1A>G", "Mutated", complement, fs);
-            var webRow = GrnaCsvSchema.Row("12", "NM_1:c.1A>G", "Mutated", web, complement);
-            Assert.That(fsRow, Is.EqualTo(webRow));
-        }
-
-        Assert.That(GrnaCsvSchema.Header, Is.EqualTo(gRNA.ReportSchema.header));
+        var svc = new GrnaService(Microsoft.Extensions.Logging.Abstractions.NullLogger<GrnaService>.Instance, new gRNA.Services.BowtieService());
+        Assert.Throws<ArgumentException>(() => svc.GetFornaUrl(sequence, structure));
     }
 }

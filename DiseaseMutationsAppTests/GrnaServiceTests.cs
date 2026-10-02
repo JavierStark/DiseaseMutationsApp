@@ -70,7 +70,7 @@ public class GrnaServiceTests
         Assert.Multiple(() =>
         {
             Assert.That(url, Does.Contain("GAUUUAGACUACCCCAAAAACGAAGGGGACUAAAAC"));
-            Assert.That(url, Does.Contain(Uri.EscapeDataString("(((...)))")));
+            Assert.That(url, Does.Contain("(((...)))"));
         });
     }
 }
