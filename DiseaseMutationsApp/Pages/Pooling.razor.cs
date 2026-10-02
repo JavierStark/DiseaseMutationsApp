@@ -94,6 +94,16 @@ namespace DiseaseMutationsApp.Pages
             set => StateService.PoolingErrorMessage = value;
         }
 
+        // Decode panel state (transient; not worth surviving navigation).
+        private string? _decodeText;
+        private DecodeOutcome? _decodeResult;
+
+        private void RunDecode()
+        {
+            if (_plan is null) return;
+            _decodeResult = PoolingService.Decode(_plan, _decodeText);
+        }
+
         // ===== Derived values =====
 
         /// <summary>V: how many guides the plan is for, from whichever input mode is active.</summary>
@@ -182,6 +192,7 @@ namespace DiseaseMutationsApp.Pages
                 : null;
 
             _plan = PoolingService.BuildPlan(model, v, k, _plate, guides);
+            _decodeResult = null;
             _activePlate = 1;
             _selectedPoolId = null;
         }
@@ -220,6 +231,7 @@ namespace DiseaseMutationsApp.Pages
         {
             _estimates = null;
             _plan = null;
+            _decodeResult = null;
             _activePlate = 1;
             _selectedPoolId = null;
         }

@@ -1,3 +1,4 @@
+using DiseaseMutationsApp.Services;
 using Microsoft.FSharp.Collections;
 using gRNA;
 
@@ -95,5 +96,55 @@ public class PoolingDecodeTests
             Assert.That(result.Implicated, Is.Empty);
             Assert.That(result.IsAmbiguous, Is.False);
         });
+    }
+}
+
+public class PoolingServiceDecodeTests
+{
+    private static PoolingService Svc() =>
+        new(Microsoft.Extensions.Logging.Abstractions.NullLogger<PoolingService>.Instance);
+
+    [Test]
+    public void Decode_WellLabels_IdentifyTheGuide()
+    {
+        var svc = Svc();
+        var plan = svc.BuildPlan(PoolingModelKind.TwoDFragmented, 25, 5, PlateKind.Plate96);
+        var wells = plan.Pools.Where(p => p.GuideIndices.Contains(7)).Select(p => p.WellLabel).ToList();
+        // Mix label styles: full label and short form.
+        var shortForm = $"{plan.Pools.First(p => p.WellLabel == wells[0]).Row}{plan.Pools.First(p => p.WellLabel == wells[0]).Column}";
+        var text = shortForm + ", " + wells[1];
+
+        var outcome = svc.Decode(plan, text);
+
+        Assert.Multiple(() =>
+        {
+            Assert.That(outcome.Implicated.Select(g => g.Index), Is.EqualTo(new[] { 7 }));
+            Assert.That(outcome.Unrecognised, Is.Empty);
+            Assert.That(outcome.IsAmbiguous, Is.False);
+        });
+    }
+
+    [Test]
+    public void Decode_TubeIds_AndGarbage()
+    {
+        var svc = Svc();
+        var plan = svc.BuildPlan(PoolingModelKind.TwoDMatrix, 25, 5, PlateKind.Plate96);
+        var ids = plan.Pools.Where(p => p.GuideIndices.Contains(1)).Select(p => p.Id).ToList();
+
+        var outcome = svc.Decode(plan, $"#{ids[0]}; {ids[1]}\nnonsense");
+
+        Assert.Multiple(() =>
+        {
+            Assert.That(outcome.Implicated.Select(g => g.Index), Is.EqualTo(new[] { 1 }));
+            Assert.That(outcome.Unrecognised, Is.EqualTo(new[] { "nonsense" }));
+        });
+    }
+
+    [Test]
+    public void Decode_EmptyInput_ImplicatesNothing()
+    {
+        var svc = Svc();
+        var plan = svc.BuildPlan(PoolingModelKind.ThreeD, 30, 5, PlateKind.Plate96);
+        Assert.That(svc.Decode(plan, null).Implicated, Is.Empty);
     }
 }

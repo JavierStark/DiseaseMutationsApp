@@ -106,6 +106,74 @@ public class PoolingService
         }
     }
 
+    /// <summary>
+    /// Maps positive wells back to guides. Wells may be written as "A5" (plate 1), "Plate 2 - A5",
+    /// "P2-A5" or as a tube id ("#12" / "12"), separated by commas, semicolons or new lines.
+    /// </summary>
+    public DecodeOutcome Decode(PoolingPlanDto plan, string? positiveWells)
+    {
+        var ids = new List<int>();
+        var unrecognised = new List<string>();
+
+        var tokens = (positiveWells ?? "")
+            .Split(new[] { ',', ';', (char)10, (char)13 }, StringSplitOptions.RemoveEmptyEntries)
+            .Select(t => t.Trim())
+            .Where(t => t.Length > 0);
+
+        foreach (var token in tokens)
+        {
+            var tube = System.Text.RegularExpressions.Regex.Match(token, @"^#?(\d+)$");
+            if (tube.Success)
+            {
+                ids.Add(int.Parse(tube.Groups[1].Value));
+                continue;
+            }
+
+            var well = System.Text.RegularExpressions.Regex.Match(token,
+                @"^(?:(?:plate|p)\s*(\d+)\s*[-\s]\s*)?([A-Za-z])\s*(\d+)$",
+                System.Text.RegularExpressions.RegexOptions.IgnoreCase);
+            if (well.Success)
+            {
+                var plate = well.Groups[1].Success ? int.Parse(well.Groups[1].Value) : 1;
+                var row = char.ToUpperInvariant(well.Groups[2].Value[0]);
+                var column = int.Parse(well.Groups[3].Value);
+                var match = plan.Pools.FirstOrDefault(p => p.Plate == plate && p.Row == row && p.Column == column);
+                if (match is not null)
+                {
+                    ids.Add(match.Id);
+                    continue;
+                }
+            }
+
+            unrecognised.Add(token);
+        }
+
+        var model = ToFsharp(plan.Model);
+        var format = new Pooling.PlateFormat(plan.PlateRows, plan.PlateColumns);
+        var fsPlan = Pooling.buildPlan(model, format, plan.GuideCount, plan.WellCapacity);
+        var result = Pooling.decode(fsPlan, Microsoft.FSharp.Collections.ListModule.OfSeq(ids));
+
+        PoolingGuide ToGuide(int index)
+        {
+            var pools = plan.Pools.Where(p => p.GuideIndices.Contains(index)).Select(p => p.WellLabel).ToList();
+            var label = plan.Pools.SelectMany(p => p.GuideIndices.Zip(p.GuideLabels)).FirstOrDefault(x => x.First == index).Second
+                        ?? $"Guide {index}";
+            return new PoolingGuide { Index = index, Label = label, Wells = pools };
+        }
+
+        return new DecodeOutcome
+        {
+            Implicated = result.Implicated.Select(ToGuide).ToList(),
+            Definite = result.Definite.Select(ToGuide).ToList(),
+            Ambiguous = result.Ambiguous.Select(ToGuide).ToList(),
+            PartiallySupported = result.PartiallySupported.Select(ToGuide).ToList(),
+            UnexplainedPools = result.UnexplainedPools.Select(id => plan.Pools.First(p => p.Id == id).WellLabel).ToList(),
+            Unrecognised = unrecognised.Concat(result.UnknownPools.Select(i => $"#{i}")).ToList(),
+            IsAmbiguous = result.IsAmbiguous,
+            PositiveCount = result.PositivePools.Count()
+        };
+    }
+
     private static string LabelFor(IReadOnlyList<GuideEntry>? guides, int oneBasedIndex)
     {
         if (guides is not null && oneBasedIndex >= 1 && oneBasedIndex <= guides.Count)
@@ -200,4 +268,24 @@ public record PoolingPlanDto
     public int PlateRows { get; init; }
     public int PlateColumns { get; init; }
     public int PlateCount { get; init; }
+}
+
+
+public record PoolingGuide
+{
+    public int Index { get; init; }
+    public required string Label { get; init; }
+    public required List<string> Wells { get; init; }
+}
+
+public record DecodeOutcome
+{
+    public required List<PoolingGuide> Implicated { get; init; }
+    public required List<PoolingGuide> Definite { get; init; }
+    public required List<PoolingGuide> Ambiguous { get; init; }
+    public required List<PoolingGuide> PartiallySupported { get; init; }
+    public required List<string> UnexplainedPools { get; init; }
+    public required List<string> Unrecognised { get; init; }
+    public bool IsAmbiguous { get; init; }
+    public int PositiveCount { get; init; }
 }
