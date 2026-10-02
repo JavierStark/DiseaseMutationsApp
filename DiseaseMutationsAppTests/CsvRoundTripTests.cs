@@ -79,7 +79,7 @@ public class CsvRoundTripTests
         var url = svc.GetFornaUrl("GA CU", "((..))&x=1");
         Assert.Multiple(() =>
         {
-            Assert.That(url, Does.StartWith("https://"));
+            Assert.That(url, Does.StartWith("http://nibiru.tbi.univie.ac.at/"));
             Assert.That(url, Does.Not.Contain("&x=1"));
             Assert.That(url, Does.Contain("GA%20CU"));
         });

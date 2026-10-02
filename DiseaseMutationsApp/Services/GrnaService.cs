@@ -150,9 +150,13 @@ public class GrnaService : IGrnaAnalysis
         return new OffTargetReport(loci, loci.Count >= MaxLociHits);
     }
 
+    /// <summary>
+    /// The FORNA host does not accept HTTPS connections (verified: connection refused), so this is http with encoded parameters.
+    /// Browsers block it inside an https page, which is why the UI also offers an "Open in FORNA" link.
+    /// </summary>
     public string GetFornaUrl(string sequence, string structure)
     {
-        return $"https://nibiru.tbi.univie.ac.at/forna/forna.html?id=url/name&sequence={Uri.EscapeDataString(sequence)}&structure={Uri.EscapeDataString(structure)}";
+        return $"http://nibiru.tbi.univie.ac.at/forna/forna.html?id=url/name&sequence={Uri.EscapeDataString(sequence)}&structure={Uri.EscapeDataString(structure)}";
     }
 
     
