@@ -140,7 +140,7 @@ The key evaluation criteria are:
 
 **a) Guanine-Cytosine (GC) content:**
 * **Concept:** The stability of the gRNA-target DNA duplex is influenced by GC content. Too low a content can result in unstable binding, while too high a content can hinder Cas13 dissociation after cutting. The generally accepted optimal range is **40-60%**.
-* **Implementation:** `calculateGCScore` assigns a score of 1.0 when the GC content is strictly inside the ideal range (`lower < GC% < upper`). Outside that range — including exactly at the 40% or 60% boundary — the score falls back to a value proportional to the distance from the ideal.
+* **Implementation:** `calculateGCScore` assigns a score of 1.0 when the GC content is inside the ideal range, **boundaries included** (`lower <= GC% <= upper`). Outside that range the score falls back to a value proportional to the distance from the ideal (`gc/40` below, `(100-gc)/40` above), so it always stays within 0-1. (Earlier versions treated the bounds as exclusive, which made exactly 40% GC score 1.5 and outrank a perfect 50% candidate; fixed with boundary tests.)
 
 ```fsharp
 // In gRNA/SpacerFinder.fs
@@ -330,3 +330,44 @@ type ResultFromHGVS = {
 7. **Output:** returns the two ranked gRNA lists (mutated and original), both sequences, and the flanking-context length, so the UI can render the original-vs-mutated comparison and both result tables side by side.
 
 This modular, science-grounded approach lets the application design efficient, specific gRNAs for editing genes associated with disease.
+
+---
+
+## 9. Guide pooling (combinatorial screening)
+
+*Code: `gRNA/Pooling.fs`; UI: the `/pooling` page.*
+
+**Problem.** A disease panel can have hundreds of known variants; screening one guide per well is infeasible. Guides are produced
+in tandem (at most **K** per transcript, a biological limit because longer tandem arrays risk RNA conformations that block Cas13)
+and **pooled**: each guide is placed in **R** wells so that a positive readout still identifies it.
+
+**Models** (V guides, K per well; N = total wells):
+
+| Model | Layout | N | R |
+|---|---|---|---|
+| 2D fragmented | blocks of K x K guides; each block contributes its K rows then its K columns | `2K * ceil(V / K^2)` | 2 |
+| 2D matrix | one `s x s` square, `s = ceil(sqrt V)`; every row and column split into chunks of K | `2s * ceil(s / K)` | 2 |
+| 3D | a `c x c x c` cube, `c = ceil(cbrt V)`, sliced along three axes, slices split into chunks of K | `3c * ceil(c^2 / K)` | 3 |
+
+The binary model (`N = ceil(log2 V)`) is deliberately excluded: it needs `K = V/2`, which violates `K <= 5`. `compareModels`
+costs all three for a (V, K) and `bestModel` picks the cheapest (ties prefer the simpler layout).
+
+**Decoding.** After screening, the positive wells identify guides: a guide is *implicated* when all R of its wells are positive.
+With R = 2, two true hits can light up four wells and so also implicate two innocent guides at the intersections; `Pooling.decode`
+reports those as *ambiguous* (a guide is *definite* only if some positive well is explained by it alone), lists *partially
+supported* guides (some but not all wells positive: dropout or noise) and *unexplained* positive wells. Ambiguous guides need an
+individual confirmation round.
+
+**Specification source.** The well-count formulas were originally taken from a spreadsheet, `Combinatoria.xlsx`
+(sheets "Esquema_softwareCompuestos_(V)" and "Pruebas_manuales"), which is **not in this repository**; the table above is the
+written specification and `PoolingMathTests`/`PoolingInvariantTests` encode it. If the workbook is recovered it should be committed
+next to this report.
+
+## 10. Notes on the code excerpts in this report
+
+- Section 3's `SNP` excerpt is simplified: the real module is `module gRNA.SNP`, uses `task { }` (not `async { }`), and
+  `getHgvsNotationsAsync` now takes a `CancellationToken`, raises `GrnaUpstreamException` on HTTP failure and returns `[]` only for
+  "no `NG_` mapping".
+- Section 8's `rsFromOmim` excerpt describes the intended design; the actual signature in the excluded `Omim.fs` differs. The
+  feature is disabled (the file is not part of the build).
+- The FORNA link now uses `https` with URL-encoded sequence and structure and is shown only on request, inside a sandboxed frame.

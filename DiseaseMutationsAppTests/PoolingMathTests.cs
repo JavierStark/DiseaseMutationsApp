@@ -4,7 +4,7 @@ namespace DiseaseMutationsAppTests;
 
 /// <summary>
 /// Regression fixtures for the well-count formulas. Every expected value below is taken
-/// from Combinatoria.xlsx, which is the authoritative specification for this feature:
+/// from the Combinatoria.xlsx workbook (not in this repository; the written specification is section 9 of BIOLOGICAL_REPORT.md):
 /// sheet "Esquema_softwareCompuestos_(V)" cells D2:F2, and sheet "Pruebas_manuales" row 4.
 /// </summary>
 public class PoolingMathTests
