@@ -313,3 +313,67 @@ let buildPlan (model: PoolingModel) (format: PlateFormat) (guideCount: int) (wel
       TotalWells = List.length pools
       NonEmptyWells = pools |> List.filter (fun p -> not (List.isEmpty p.GuideIndices)) |> List.length
       MaxPoolSize = pools |> List.fold (fun acc p -> max acc (List.length p.GuideIndices)) 0 }
+
+
+/// Outcome of decoding a screen: which guides the positive pools implicate.
+type DecodeResult =
+    { /// Pool ids that were reported positive (deduplicated, known pools only).
+      PositivePools: int list
+      /// Every guide all of whose pools are positive: the guides consistent with the readout.
+      Implicated: int list
+      /// Implicated guides that are *required* to explain the readout, because at least one
+      /// positive pool is covered by no other implicated guide.
+      Definite: int list
+      /// Implicated guides that could be innocent: every positive pool they sit in is also
+      /// covered by another implicated guide (the multi-hit collision case).
+      Ambiguous: int list
+      /// Guides in some, but not all, of their pools positive (possible dropout/false positive).
+      PartiallySupported: int list
+      /// Positive pools that no guide is fully supported for (noise or a dropped partner pool).
+      UnexplainedPools: int list
+      /// Unknown pool ids supplied by the caller.
+      UnknownPools: int list
+      IsAmbiguous: bool }
+
+/// Maps positive wells back to guides. A guide is in exactly `repetitions model` pools, so it is
+/// implicated when all of them read positive. Two true hits can additionally implicate innocent
+/// guides at the intersections of their pools; those are reported as Ambiguous rather than hidden.
+let decode (plan: PoolingPlan) (positivePoolIds: int list) : DecodeResult =
+    let known = plan.Pools |> List.map _.Id |> Set.ofList
+    let positives = positivePoolIds |> List.filter known.Contains |> Set.ofList
+    let unknown = positivePoolIds |> List.filter (known.Contains >> not) |> List.distinct
+
+    let poolsByGuide =
+        plan.Pools
+        |> List.collect (fun p -> p.GuideIndices |> List.map (fun g -> g, p.Id))
+        |> List.groupBy fst
+        |> List.map (fun (g, xs) -> g, xs |> List.map snd |> Set.ofList)
+
+    let implicated =
+        poolsByGuide
+        |> List.filter (fun (_, ps) -> not ps.IsEmpty && Set.isSubset ps positives)
+
+    let partial =
+        poolsByGuide
+        |> List.filter (fun (_, ps) ->
+            let hit = Set.intersect ps positives
+            not hit.IsEmpty && hit.Count < ps.Count)
+        |> List.map fst
+        |> List.sort
+
+    let definite, ambiguous =
+        implicated
+        |> List.partition (fun (g, ps) ->
+            let others = implicated |> List.filter (fun (g2, _) -> g2 <> g) |> List.map snd
+            ps |> Set.exists (fun pool -> others |> List.forall (fun o -> not (o.Contains pool))))
+
+    let covered = implicated |> List.map snd |> Set.unionMany
+
+    { PositivePools = positives |> Set.toList
+      Implicated = implicated |> List.map fst |> List.sort
+      Definite = definite |> List.map fst |> List.sort
+      Ambiguous = ambiguous |> List.map fst |> List.sort
+      PartiallySupported = partial
+      UnexplainedPools = Set.difference positives covered |> Set.toList
+      UnknownPools = unknown
+      IsAmbiguous = not ambiguous.IsEmpty }
