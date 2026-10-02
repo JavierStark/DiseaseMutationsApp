@@ -1,4 +1,5 @@
 using System.Text;
+using DiseaseMutationsApp.Components;
 using DiseaseMutationsApp.Services;
 using Microsoft.AspNetCore.Components;
 using Microsoft.JSInterop;
@@ -94,6 +95,11 @@ namespace DiseaseMutationsApp.Pages
             set => StateService.PoolingErrorMessage = value;
         }
 
+        private string InputPanelId => TabStrip<PoolingInputMode>.PanelId("pool-input", _inputMode.ToString());
+        private string InputTabId => TabStrip<PoolingInputMode>.TabId("pool-input", _inputMode.ToString());
+
+        private static readonly PoolingInputMode[] InputModes = { PoolingInputMode.GuideCount, PoolingInputMode.GuideList };
+
         // Decode panel state (transient; not worth surviving navigation).
         private string? _decodeText;
         private DecodeOutcome? _decodeResult;
@@ -120,7 +126,7 @@ namespace DiseaseMutationsApp.Pages
 
         protected override void OnInitialized()
         {
-            StateService.OnStateChanged += StateHasChanged;
+            StateService.OnStateChanged += OnStateChanged;
         }
 
         // ===== Actions =====
@@ -269,9 +275,22 @@ namespace DiseaseMutationsApp.Pages
         /// </summary>
         private static string Csv(string value) => GrnaCsvSchema.Csv(value);
 
+        private bool _disposed;
+
+        private void OnStateChanged()
+        {
+            if (_disposed) return;
+            _ = InvokeAsync(() =>
+            {
+                if (_disposed) return;
+                StateHasChanged();
+            });
+        }
+
         public void Dispose()
         {
-            StateService.OnStateChanged -= StateHasChanged;
+            _disposed = true;
+            StateService.OnStateChanged -= OnStateChanged;
         }
     }
 }

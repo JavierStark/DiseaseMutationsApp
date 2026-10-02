@@ -1,7 +1,5 @@
-using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Threading.Tasks;
+using System.Text;
+using DiseaseMutationsApp.Components;
 using DiseaseMutationsApp.Services;
 using Microsoft.AspNetCore.Components;
 using Microsoft.JSInterop;
@@ -11,11 +9,29 @@ namespace DiseaseMutationsApp.Pages
     public partial class Index : ComponentBase, IDisposable
     {
         [Inject] private IJSRuntime JSRuntime { get; set; } = default!;
-        [Inject] private GrnaService GrnaService { get; set; } = default!;
         [Inject] private NavigationManager Nav { get; set; } = default!;
         [Inject] private AppStateService StateService { get; set; } = default!;
+        [Inject] private AnalysisRunner Runner { get; set; } = default!;
+        [Inject] private SessionStorageService Session { get; set; } = default!;
 
-        // Use properties that bind to the state service
+        // The single URL entry point: query parameters are claimed once, from OnParametersSetAsync only.
+        [SupplyParameterFromQuery(Name = "rs")] private string? RsQuery { get; set; }
+        [SupplyParameterFromQuery(Name = "hgvs")] private string? HgvsQuery { get; set; }
+        [SupplyParameterFromQuery(Name = "spacer")] private int? SpacerQuery { get; set; }
+        [SupplyParameterFromQuery(Name = "seed")] private string? SeedQuery { get; set; }
+
+        private readonly Func<Action, Task> _marshal;
+        private bool _disposed;
+        private bool _restoredBanner;
+        private bool _linkCopied;
+
+        public Index()
+        {
+            _marshal = action => InvokeAsync(action);
+        }
+
+        // ===== Input state proxies onto AppStateService =====
+
         private string? _hgvs
         {
             get => StateService.IndexHgvsInput;
@@ -40,407 +56,200 @@ namespace DiseaseMutationsApp.Pages
             set => StateService.IndexSeedEnd = value;
         }
 
-        private bool CanFetchData => !string.IsNullOrWhiteSpace(_hgvs) && _gRnaSize > 0 && SeedRangeValidationMessage == null;
+        private bool CanFetchData =>
+            !Runner.IsBusy && !string.IsNullOrWhiteSpace(_hgvs) && _gRnaSize > 0 && SeedRangeValidationMessage == null;
 
         private string? SeedRangeValidationMessage
         {
             get
             {
-                if (_gRnaSize <= 0)
-                {
-                    return "spacer size must be greater than 0.";
-                }
-
-                if (_seedStart < 0)
-                {
-                    return "Seed start must be between 0 and spacer size - 1.";
-                }
-
-                if (_seedEnd < 0)
-                {
-                    return "Seed end must be between 0 and spacer size - 1.";
-                }
-
-                if (_seedStart >= _gRnaSize || _seedEnd >= _gRnaSize)
-                {
-                    return $"Seed range must stay within 0 to {_gRnaSize - 1}.";
-                }
-
-                if (_seedStart > _seedEnd)
-                {
-                    return "Seed start must be less than or equal to seed end.";
-                }
-
+                if (_gRnaSize <= 0) return "Spacer size must be greater than 0.";
+                if (_seedStart < 0) return "Seed start must be between 0 and spacer size - 1.";
+                if (_seedEnd < 0) return "Seed end must be between 0 and spacer size - 1.";
+                if (_seedStart >= _gRnaSize || _seedEnd >= _gRnaSize) return $"Seed range must stay within 0 to {_gRnaSize - 1}.";
+                if (_seedStart > _seedEnd) return "Seed start must be less than or equal to seed end.";
                 return null;
             }
         }
 
-        private List<InputTabData> _inputTabs => StateService.IndexInputTabs;
+        private IReadOnlyList<InputTabData> _inputTabs => StateService.IndexInputTabs;
 
-        private int _activeTabIndex
+        private static string Key(InputTabData tab) => tab.Id.ToString("N");
+        private static string Key(HgvsData leaf) => leaf.Id.ToString("N");
+
+        private InputTabData? ActiveTab =>
+            _inputTabs.Count == 0 ? null : _inputTabs[Math.Clamp(StateService.IndexActiveTabIndex, 0, _inputTabs.Count - 1)];
+
+        private HgvsData? ActiveLeaf(InputTabData tab)
         {
-            get => StateService.IndexActiveTabIndex;
-            set => StateService.IndexActiveTabIndex = value;
+            var leaves = tab.ChildHgvsList;
+            if (leaves is null || leaves.Count == 0) return null;
+            // Re-keyed by id, with a fallback to the first leaf: a missing key must never mean a blank panel.
+            return StateService.IndexActiveLeafIds.TryGetValue(tab.Id, out var id)
+                ? leaves.FirstOrDefault(l => l.Id == id) ?? leaves[0]
+                : leaves[0];
         }
 
-        private Dictionary<int, int> _activeChildTabIndices => StateService.IndexActiveChildTabIndices;
+        private static string InputPrefix => "input";
+        private static string LeafPrefix(InputTabData tab) => $"leaf-{Key(tab)}";
+        private static string LeafLabel(InputTabData tab) => $"Variants of {tab.DisplayLabel}";
+        private static string InputPanelId(InputTabData tab) => TabStrip<InputTabData>.PanelId(InputPrefix, Key(tab));
+        private static string InputTabId(InputTabData tab) => TabStrip<InputTabData>.TabId(InputPrefix, Key(tab));
+        private static string LeafPanelId(InputTabData tab, HgvsData leaf) => TabStrip<HgvsData>.PanelId(LeafPrefix(tab), Key(leaf));
+        private static string LeafTabId(InputTabData tab, HgvsData leaf) => TabStrip<HgvsData>.TabId(LeafPrefix(tab), Key(leaf));
 
-        // Helper to sort a gRNA list by the given column/direction
-        private static IEnumerable<GRNAResult> SortGRNAs(List<GRNAResult>? grnas, GrnaSortColumn column, bool ascending)
+        private void SelectTab(string key)
         {
-            if (grnas == null || grnas.Count == 0)
-                return Enumerable.Empty<GRNAResult>();
-
-            return column switch
-            {
-                GrnaSortColumn.Sequence => ascending ? grnas.OrderBy(g => g.Sequence) : grnas.OrderByDescending(g => g.Sequence),
-                GrnaSortColumn.GCScore => ascending ? grnas.OrderBy(g => g.GCScore) : grnas.OrderByDescending(g => g.GCScore),
-                GrnaSortColumn.GCContent => ascending ? grnas.OrderBy(g => g.GCContent) : grnas.OrderByDescending(g => g.GCContent),
-                GrnaSortColumn.HomopolymerCount => ascending ? grnas.OrderBy(g => g.HomopolymerCount) : grnas.OrderByDescending(g => g.HomopolymerCount),
-                GrnaSortColumn.Alignments => ascending ? grnas.OrderBy(g => g.Allignments) : grnas.OrderByDescending(g => g.Allignments),
-                GrnaSortColumn.Energy => ascending ? grnas.OrderBy(g => g.RnaFoldResult.Energy) : grnas.OrderByDescending(g => g.RnaFoldResult.Energy),
-                GrnaSortColumn.Score => ascending ? grnas.OrderBy(g => g.Score) : grnas.OrderByDescending(g => g.Score),
-                _ => grnas
-            };
+            var index = _inputTabs.ToList().FindIndex(t => Key(t) == key);
+            if (index >= 0) StateService.IndexActiveTabIndex = index;
         }
 
-        // Helper to get sorted gRNA list for display (mutated sequence)
-        private IEnumerable<GRNAResult> GetSortedGRNAs(HgvsData hgvsData) =>
-            SortGRNAs(hgvsData.GRNAs, hgvsData.SortColumn, hgvsData.SortAscending);
-
-        // Helper to get sorted gRNA list for display (original sequence)
-        private IEnumerable<GRNAResult> GetSortedOriginalGRNAs(HgvsData hgvsData) =>
-            SortGRNAs(hgvsData.OriginalGRNAs, hgvsData.OriginalSortColumn, hgvsData.OriginalSortAscending);
-
-        // Toggle sort state (mutated sequence table)
-        private void SortBy(HgvsData hgvsData, GrnaSortColumn column)
+        private void SelectLeaf(InputTabData tab, string key)
         {
-            if (hgvsData.SortColumn == column)
-            {
-                hgvsData.SortAscending = !hgvsData.SortAscending;
-            }
-            else
-            {
-                hgvsData.SortColumn = column;
-                hgvsData.SortAscending = true;
-            }
+            var leaf = tab.ChildHgvsList?.FirstOrDefault(l => Key(l) == key);
+            if (leaf != null) StateService.IndexActiveLeafIds[tab.Id] = leaf.Id;
         }
 
-        // Toggle sort state (original sequence table)
-        private void SortByOriginal(HgvsData hgvsData, GrnaSortColumn column)
+        private static TabState StateOf(HgvsData leaf) => leaf.Status switch
         {
-            if (hgvsData.OriginalSortColumn == column)
-            {
-                hgvsData.OriginalSortAscending = !hgvsData.OriginalSortAscending;
-            }
-            else
-            {
-                hgvsData.OriginalSortColumn = column;
-                hgvsData.OriginalSortAscending = true;
-            }
+            LeafStatus.Queued => TabState.Queued,
+            LeafStatus.Running => TabState.Loading,
+            LeafStatus.Failed => TabState.Failed,
+            LeafStatus.Cancelled => TabState.Cancelled,
+            _ => TabState.Ready
+        };
+
+        private static TabState StateOf(InputTabData tab)
+        {
+            if (tab.ErrorMessage != null) return TabState.Failed;
+            if (tab.IsLoading) return TabState.Loading;
+            if (tab.DirectHgvs is { } leaf) return StateOf(leaf);
+            var leaves = tab.ChildHgvsList;
+            if (leaves is null) return TabState.Loading;
+            if (leaves.Any(l => l.IsLoading)) return TabState.Loading;
+            if (leaves.Count > 0 && leaves.All(l => l.Status == LeafStatus.Failed)) return TabState.Failed;
+            return TabState.Ready;
         }
 
-        private async Task FetchData()
-        {
-            if (CanFetchData)
-            {
-                _inputTabs.Clear();
-                _activeTabIndex = 0;
-                _activeChildTabIndices.Clear();
+        // ===== Lifecycle =====
 
-                try
+        protected override void OnInitialized()
+        {
+            Runner.Attach(_marshal);
+            Runner.Changed += OnRunnerChanged;
+            StateService.OnStateChanged += OnRunnerChanged;
+        }
+
+        protected override Task OnParametersSetAsync()
+        {
+            ClaimUrlOnce();
+            return Task.CompletedTask;
+        }
+
+        /// <summary>
+        /// Acts on the query string exactly once per distinct query. Prerendering is off, so this runs only in
+        /// the circuit; the claim lives in circuit-scoped state, so navigation back to "/" does not re-run it.
+        /// </summary>
+        private void ClaimUrlOnce()
+        {
+            var input = !string.IsNullOrWhiteSpace(HgvsQuery) ? HgvsQuery : RsQuery;
+            if (string.IsNullOrWhiteSpace(input)) return;
+
+            var claim = $"{input}|{SpacerQuery}|{SeedQuery}";
+            if (StateService.IndexClaimedQuery == claim) return;
+            StateService.IndexClaimedQuery = claim;
+
+            _hgvs = input.Trim();
+            if (SpacerQuery is > 0) _gRnaSize = SpacerQuery.Value;
+            if (!string.IsNullOrWhiteSpace(SeedQuery))
+            {
+                var parts = SeedQuery.Split('-', 2);
+                if (parts.Length == 2 && int.TryParse(parts[0], out var s) && int.TryParse(parts[1], out var e))
                 {
-                    var inputs = _hgvs.Split(',')
-                        .Select(h => h.Trim())
-                        .Where(h => !string.IsNullOrWhiteSpace(h))
-                        .Distinct(StringComparer.OrdinalIgnoreCase)
-                        .ToList();
-
-                    if (inputs.Count == 0) return;
-
-                    // Parse inputs and create tabs
-                    foreach (var input in inputs)
-                    {
-                        if (System.Text.RegularExpressions.Regex.IsMatch(input, @"^rs\d+$", System.Text.RegularExpressions.RegexOptions.IgnoreCase))
-                        {
-                            // RS code
-                            var rsIdStr = input[2..];
-                            _inputTabs.Add(new InputTabData
-                            {
-                                Type = InputType.RS,
-                                DisplayLabel = input.ToLower(),
-                                RsId = rsIdStr,
-                                IsLoading = true
-                            });
-                        }
-                        else
-                        {
-                            // HGVS code
-                            _inputTabs.Add(new InputTabData
-                            {
-                                Type = InputType.HGVS,
-                                DisplayLabel = input,
-                                IsLoading = true,
-                                DirectHgvs = new HgvsData
-                                {
-                                    Hgvs = input,
-                                    IsLoading = true
-                                }
-                            });
-                        }
-                    }
-
-                    StateHasChanged();
-
-                    // Fetch data for each tab
-                    for (var i = 0; i < _inputTabs.Count; i++)
-                    {
-                        await FetchInputTabDataAsync(_inputTabs[i], i);
-                    }
-
-                }
-                catch (Exception ex)
-                {
-                    if (_inputTabs.Any())
-                    {
-                        _inputTabs[0].ErrorMessage = $"Error: {ex.Message}";
-                        _inputTabs[0].IsLoading = false;
-                    }
+                    _seedStart = s;
+                    _seedEnd = e;
                 }
             }
+
+            if (CanFetchData) StartRun();
         }
 
-        private async Task FetchInputTabDataAsync(InputTabData tabData, int tabIndex)
+        protected override async Task OnAfterRenderAsync(bool firstRender)
         {
-            try
-            {
-                switch (tabData.Type)
-                {
-                    case InputType.RS when tabData.RsId != null:
-                        {
-                            // Fetch HGVS list from RS
-                            var hgvsList = await GrnaService.GetHgvsFromSnp(tabData.RsId);
-                            Console.WriteLine($"RS{tabData.RsId} returned {hgvsList.Count} HGVS variants.");
+            if (!firstRender) return;
 
-                            // Create child HGVS tabs with loading state (normal + complement)
-                            tabData.ChildHgvsList = [.. hgvsList.SelectMany(h => new[]
-                            {
-                                new HgvsData { Hgvs = h, IsLoading = true, IsComplement = false },
-                                new HgvsData { Hgvs = h, IsLoading = true, IsComplement = true }
-                            })];
+            // Live circuit state always beats storage; restoring never starts a run.
+            if (Runner.Phase != RunPhase.Idle || _inputTabs.Count > 0 || !string.IsNullOrWhiteSpace(_hgvs)) return;
 
-                            // Initialize active child tab for this parent
-                            if (tabData.ChildHgvsList.Any())
-                            {
-                                _activeChildTabIndices[tabIndex] = 0;
-                            }
+            var snapshot = await Session.TryLoadAsync();
+            if (snapshot is null || string.IsNullOrWhiteSpace(snapshot.Input)) return;
+            if (_disposed) return;
 
-                            // Mark parent as no longer loading so tabs appear immediately
-                            tabData.IsLoading = false;
-
-                            await InvokeAsync(StateHasChanged);
-
-                            // Fetch data for each child HGVS (normal and complement)
-                            foreach (var childHgvs in tabData.ChildHgvsList)
-                            {
-                                await FetchHgvsDataAsync(childHgvs, childHgvs.IsComplement);
-                            }
-
-                            break;
-                        }
-                    case InputType.HGVS when tabData.DirectHgvs != null:
-                        // Fetch data for direct HGVS
-                        await FetchHgvsDataAsync(tabData.DirectHgvs);
-
-                        // Sync parent tab status with child HGVS status
-                        if (tabData.DirectHgvs.ErrorMessage != null)
-                        {
-                            tabData.ErrorMessage = tabData.DirectHgvs.ErrorMessage;
-                        }
-                        break;
-                    default:
-                        throw new ArgumentOutOfRangeException();
-                }
-            }
-            catch (Exception ex)
-            {
-                tabData.ErrorMessage = $"Error fetching data: {ex.Message}";
-                Console.WriteLine($"Error for {tabData.DisplayLabel}: {ex}");
-            }
-            finally
-            {
-                tabData.IsLoading = false;
-                await InvokeAsync(StateHasChanged);
-            }
+            _hgvs = snapshot.Input;
+            if (snapshot.SpacerSize > 0) _gRnaSize = snapshot.SpacerSize;
+            _seedStart = snapshot.SeedStart;
+            _seedEnd = snapshot.SeedEnd;
+            _restoredBanner = true;
+            StateHasChanged();
         }
 
-        private async Task FetchHgvsDataAsync(HgvsData hgvsData, bool complement = false)
+        private void OnRunnerChanged()
         {
-            try
+            if (_disposed) return;
+            _ = InvokeAsync(() =>
             {
-                hgvsData.SourceUrl = GrnaService.GetNcbiNuccoreUrl(hgvsData.Hgvs);
-                var result = await GrnaService.GetBestgRNAFromHgvs(hgvsData.Hgvs, _gRnaSize, _seedStart, _seedEnd, complement);
-
-                hgvsData.Original = result.OriginalSequence;
-                hgvsData.Mutated = result.MutatedSequence;
-                hgvsData.GRNAs = result.gRNA;
-                hgvsData.OriginalGRNAs = result.OriginalGRNA;
-                var extraNucleotids = result.ExtraNucleotids;
-                hgvsData.ExtraNucleotids = extraNucleotids;
-
-
-                if (!string.IsNullOrEmpty(hgvsData.Original) && extraNucleotids >= 0 && extraNucleotids < hgvsData.Original.Length)
-                {
-                    hgvsData.Original = hgvsData.Original.Insert(extraNucleotids, "<u>");
-                    if (hgvsData.Original.Length > extraNucleotids)
-                    {
-                        hgvsData.Original = hgvsData.Original.Insert(hgvsData.Original.Length - extraNucleotids, "</u>");
-                    }
-                }
-
-                if (!string.IsNullOrEmpty(hgvsData.Mutated) && extraNucleotids >= 0 && extraNucleotids < hgvsData.Mutated.Length)
-                {
-                    hgvsData.Mutated = hgvsData.Mutated.Insert(extraNucleotids, "<u>");
-                    if (hgvsData.Mutated.Length > extraNucleotids)
-                    {
-                        hgvsData.Mutated = hgvsData.Mutated.Insert(hgvsData.Mutated.Length - extraNucleotids, "</u>");
-                    }
-                }
-            }
-            catch (Exception ex)
-            {
-                hgvsData.ErrorMessage = $"Error fetching data: {ex.Message}";
-                Console.WriteLine($"Error for {hgvsData.Hgvs}{(complement ? " (complement)" : "")}: {ex}");
-            }
-            finally
-            {
-                hgvsData.IsLoading = false;
-                await InvokeAsync(StateHasChanged);
-            }
-        }
-
-        private void HandlegRNACreationButton(string spacer, HgvsData hgvsData)
-        {
-            if (hgvsData == null) return;
-
-            hgvsData.SelectedSpacer = spacer;
-            hgvsData.CopiedToClipboard = false;
-        }
-
-        private async Task CopyCompleteGRNA(HgvsData hgvsData)
-        {
-            if (hgvsData?.SelectedSpacer != null)
-            {
-                hgvsData.CopiedToClipboard = true;
-                StateHasChanged();
-                var completeGRNA = GrnaService.Scaffold + hgvsData.SelectedSpacer;
-
-                await JSRuntime.InvokeVoidAsync("navigator.clipboard.writeText", completeGRNA);
-            }
-        }
-
-        private async Task GetRnaFolding(HgvsData hgvsData)
-        {
-            if (hgvsData?.SelectedSpacer == null) return;
-
-            try
-            {
-                hgvsData.IsLoadingRnaFold = true;
-                hgvsData.RnaFoldError = null;
-                hgvsData.RnaFoldResult = null;
-                hgvsData.FornaUrl = null;
-                StateHasChanged();
-
-                var completeGRNA = GrnaService.Scaffold + hgvsData.SelectedSpacer;
-                var result = await GrnaService.GetRnaFold(completeGRNA);
-
-                hgvsData.RnaFoldResult = result;
-
-                // Get the Forna URL
-                try
-                {
-                    hgvsData.FornaUrl = GrnaService.GetFornaUrl(completeGRNA, result.Structure);
-
-                }
-                catch (Exception urlEx)
-                {
-                    Console.WriteLine($"Error getting Forna URL: {urlEx}");
-                    // Continue even if URL fails - we still have the text structure
-                }
-            }
-            catch (Exception ex)
-            {
-                hgvsData.RnaFoldError = ex.Message;
-                Console.WriteLine($"Error getting RNA folding: {ex}");
-            }
-            finally
-            {
-                hgvsData.IsLoadingRnaFold = false;
-                await InvokeAsync(StateHasChanged);
-            }
-        }
-
-        protected override async Task OnInitializedAsync()
-        {
-            // Subscribe to state changes
-            StateService.OnStateChanged += StateHasChanged;
-
-            // Subscribe to navigation changes
-            Nav.LocationChanged += OnLocationChanged;
-
-            // Check for rs query parameter and auto-populate
-            await ProcessUrlParameters();
-        }
-
-        protected override async Task OnParametersSetAsync()
-        {
-            // Handle URL parameter changes
-            await ProcessUrlParameters();
-        }
-
-        private void OnLocationChanged(object? sender, Microsoft.AspNetCore.Components.Routing.LocationChangedEventArgs e)
-        {
-            // Handle navigation changes
-            InvokeAsync(async () =>
-            {
-                await ProcessUrlParameters();
-                StateHasChanged();
+                if (_disposed) return;
+                try { StateHasChanged(); }
+                catch (ObjectDisposedException) { }
             });
         }
 
-        private async Task ProcessUrlParameters()
+        // ===== Actions =====
+
+        private void StartRun()
         {
+            if (!CanFetchData) return;
+            _restoredBanner = false;
+            SaveSession();
+            Runner.TryStart(_hgvs, new RunParameters(_gRnaSize, _seedStart, _seedEnd));
+        }
+
+        private void SaveSession()
+        {
+            Session.SaveDebounced(new SessionSnapshot(
+                SessionSnapshot.CurrentVersion, _hgvs, _gRnaSize, _seedStart, _seedEnd, ActiveTab?.DisplayLabel, DateTimeOffset.UtcNow));
+        }
+
+        private void OnInputChanged() => SaveSession();
+
+        private void CancelRun() => Runner.Cancel();
+
+        private async Task CopyPermalink()
+        {
+            if (string.IsNullOrWhiteSpace(_hgvs)) return;
+            var url = Nav.GetUriWithQueryParameters(Nav.ToAbsoluteUri("").GetLeftPart(UriPartial.Path), new Dictionary<string, object?>
+            {
+                ["rs"] = null,
+                ["hgvs"] = _hgvs.Trim(),
+                ["spacer"] = _gRnaSize,
+                ["seed"] = $"{_seedStart}-{_seedEnd}"
+            });
             try
             {
-                var uri = new Uri(Nav.Uri);
-                var query = System.Web.HttpUtility.ParseQueryString(uri.Query);
-                var rsParam = query["rs"];
-
-                if (!string.IsNullOrWhiteSpace(rsParam))
-                {
-                    var trimmedParam = rsParam.Trim();
-                    // Update input field if parameter is different from current value
-                    if (_hgvs != trimmedParam)
-                    {
-                        _hgvs = trimmedParam;
-                        // Auto-fetch data when coming from navigation
-                        await FetchData();
-                    }
-                }
+                _linkCopied = await JSRuntime.InvokeAsync<bool>("grnaCopy", url);
             }
-            catch
-            {
-                // ignore parsing errors
-            }
+            catch (JSDisconnectedException) { }
         }
+
+        // ===== Export =====
 
         private async Task DownloadReport(InputTabData tabData)
         {
-            if (tabData == null || tabData.ChildHgvsList == null || !tabData.ChildHgvsList.Any()) return;
+            if (tabData.ChildHgvsList == null || !tabData.ChildHgvsList.Any()) return;
 
-            var sb = new System.Text.StringBuilder();
+            var sb = new StringBuilder();
+            AppendProvenance(sb);
             sb.AppendLine(GrnaCsvSchema.Header);
-
             foreach (var hgvs in tabData.ChildHgvsList)
             {
                 GrnaCsvSchema.AppendRows(sb, tabData.RsId, hgvs.Hgvs, hgvs.GRNAs, GrnaCsvSchema.MutatedType, hgvs.IsComplement);
@@ -456,9 +265,9 @@ namespace DiseaseMutationsApp.Pages
             var allRsTabs = _inputTabs.Where(t => t.Type == InputType.RS && t.ChildHgvsList != null).ToList();
             if (!allRsTabs.Any()) return;
 
-            var sb = new System.Text.StringBuilder();
+            var sb = new StringBuilder();
+            AppendProvenance(sb);
             sb.AppendLine(GrnaCsvSchema.Header);
-
             foreach (var tabData in allRsTabs)
             {
                 foreach (var hgvs in tabData.ChildHgvsList!)
@@ -472,12 +281,25 @@ namespace DiseaseMutationsApp.Pages
             await JSRuntime.InvokeVoidAsync("downloadFile", fileName, "text/csv;charset=utf-8", sb.ToString());
         }
 
+        /// <summary>Parameters go in the file so an exported report can be reproduced (leading # lines are ignored by the parser).</summary>
+        private void AppendProvenance(StringBuilder sb)
+        {
+            var p = Runner.Parameters ?? new RunParameters(_gRnaSize, _seedStart, _seedEnd);
+            sb.AppendLine(GrnaCsvSchema.ProvenanceLine(p.SpacerSize, p.SeedStart, p.SeedEnd));
+        }
+
+        private void SendShortlistToPooling()
+        {
+            StateService.SendShortlistToPooling();
+            Nav.NavigateTo("pooling");
+        }
+
         public void Dispose()
         {
-            // Unsubscribe from state changes to prevent memory leaks
-            StateService.OnStateChanged -= StateHasChanged;
-            Nav.LocationChanged -= OnLocationChanged;
+            _disposed = true;
+            Runner.Detach(_marshal);
+            Runner.Changed -= OnRunnerChanged;
+            StateService.OnStateChanged -= OnRunnerChanged;
         }
     }
 }
-

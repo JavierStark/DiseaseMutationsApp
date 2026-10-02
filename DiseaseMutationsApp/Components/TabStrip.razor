@@ -1,0 +1,47 @@
+@typeparam TItem
+@inject IJSRuntime JS
+
+<ul class="tabstrip @(Small ? "tabstrip-sm" : null)" role="tablist" aria-label="@AriaLabel" @ref="_list">
+    @foreach (var item in Items)
+    {
+        var key = KeyOf(item);
+        var selected = key == ActiveKey;
+        <li role="presentation" @key="key">
+            <button type="button"
+                    role="tab"
+                    id="@TabId(IdPrefix, key)"
+                    class="tabstrip-tab"
+                    aria-selected="@(selected ? "true" : "false")"
+                    aria-controls="@PanelId(IdPrefix, key)"
+                    tabindex="@(selected ? 0 : -1)"
+                    @onclick="() => Select(key)">
+                @ItemTemplate(item)
+            </button>
+        </li>
+    }
+</ul>
+
+@code {
+    [Parameter, EditorRequired] public IReadOnlyList<TItem> Items { get; set; } = Array.Empty<TItem>();
+    [Parameter, EditorRequired] public Func<TItem, string> KeyOf { get; set; } = default!;
+    [Parameter, EditorRequired] public RenderFragment<TItem> ItemTemplate { get; set; } = default!;
+    [Parameter] public string? ActiveKey { get; set; }
+    [Parameter] public EventCallback<string> ActiveKeyChanged { get; set; }
+    [Parameter] public string IdPrefix { get; set; } = "tabs";
+    [Parameter] public string? AriaLabel { get; set; }
+    [Parameter] public bool Small { get; set; }
+
+    private ElementReference _list;
+
+    public static string TabId(string prefix, string key) => $"{prefix}-tab-{key}";
+    public static string PanelId(string prefix, string key) => $"{prefix}-panel-{key}";
+
+    private Task Select(string key) => key == ActiveKey ? Task.CompletedTask : ActiveKeyChanged.InvokeAsync(key);
+
+    protected override async Task OnAfterRenderAsync(bool firstRender)
+    {
+        if (!firstRender) return;
+        try { await JS.InvokeVoidAsync("grnaTabs.attach", _list); }
+        catch (JSDisconnectedException) { }
+    }
+}

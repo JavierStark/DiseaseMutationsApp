@@ -1,13 +1,15 @@
 @using DiseaseMutationsApp.Services
+@inject IJSRuntime JS
 
 @if (Plan.PlateCount > 1)
 {
-    <div class="d-flex flex-wrap gap-2 mb-3">
+    <div class="d-flex flex-wrap gap-2 mb-3" role="group" aria-label="Plate">
         @for (var plate = 1; plate <= Plan.PlateCount; plate++)
         {
             var target = plate;
             <button type="button"
-                    class="btn btn-sm @(target == ActivePlate ? "btn-primary" : "btn-outline-primary")"
+                    class="btn btn-sm @(target == ActivePlate ? "btn-primary" : "btn-outline-secondary")"
+                    aria-pressed="@(target == ActivePlate ? "true" : "false")"
                     @onclick="() => OnShowPlate.InvokeAsync(target)">
                 Plate @target
             </button>
@@ -15,53 +17,79 @@
     </div>
 }
 
-<div class="pool-plate-scroll">
-    <table class="pool-plate">
-        <thead>
-            <tr>
-                <th class="pool-plate-corner"></th>
-                @for (var column = 1; column <= Plan.PlateColumns; column++)
-                {
-                    <th class="pool-plate-axis">@column</th>
-                }
-            </tr>
-        </thead>
-        <tbody>
-            @for (var row = 0; row < Plan.PlateRows; row++)
+<div class="plate-scroll" @ref="_grid">
+    <div class="plate-grid" role="grid" aria-label="@($"Plate {ActivePlate}, {Plan.PlateRows} rows by {Plan.PlateColumns} columns. Use the arrow keys to move between wells.")"
+         style="grid-template-columns: repeat(@(Plan.PlateColumns + 1), max-content);">
+        <span></span>
+        @for (var column = 1; column <= Plan.PlateColumns; column++)
+        {
+            <span class="plate-axis" aria-hidden="true">@column</span>
+        }
+        @for (var row = 0; row < Plan.PlateRows; row++)
+        {
+            var rowIndex = row;
+            var rowLetter = (char)('A' + row);
+            <span class="plate-axis" aria-hidden="true">@rowLetter</span>
+            @for (var column = 1; column <= Plan.PlateColumns; column++)
             {
-                var rowLetter = (char)('A' + row);
-                <tr>
-                    <th class="pool-plate-axis">@rowLetter</th>
-                    @for (var column = 1; column <= Plan.PlateColumns; column++)
-                    {
-                        var pool = PoolAt(rowLetter, column);
-                        <td class="pool-plate-cell-wrap">
-                            @if (pool is null)
-                            {
-                                <span class="pool-well pool-well-unused" title="@($"{rowLetter}{column} - not used")"></span>
-                            }
-                            else
-                            {
-                                var cell = pool;
-                                <button type="button"
-                                        class="pool-well @(cell.IsEmpty ? "pool-well-empty" : "pool-well-filled") @(cell.Id == SelectedPoolId ? "pool-well-selected" : null)"
-                                        title="@Tooltip(cell)"
-                                        @onclick="() => OnSelectPool.InvokeAsync(cell)">
-                                    @cell.Id
-                                </button>
-                            }
-                        </td>
-                    }
-                </tr>
+                var pool = PoolAt(rowLetter, column);
+                var colIndex = column - 1;
+                var isTabStop = rowIndex == _tabRow && colIndex == _tabCol;
+                if (pool is null)
+                {
+                    <span class="pool-well pool-well-unused" role="gridcell" aria-label="@($"{rowLetter}{column}, not used")"></span>
+                }
+                else
+                {
+                    var cell = pool;
+                    var cls = cell.IsEmpty ? "pool-well-empty" : "pool-well-filled";
+                    <button type="button"
+                            role="gridcell"
+                            data-r="@rowIndex" data-c="@colIndex"
+                            tabindex="@(isTabStop ? 0 : -1)"
+                            class="pool-well @cls @(cell.Id == SelectedPoolId ? "pool-well-selected" : null) @(PositiveIds.Contains(cell.Id) ? "pool-well-positive" : null)"
+                            aria-label="@Label(cell)"
+                            aria-pressed="@(cell.Id == SelectedPoolId ? "true" : "false")"
+                            @onfocus="() => _focused = cell"
+                            @onmouseenter="() => _focused = cell"
+                            @onclick="() => OnSelectPool.InvokeAsync(cell)">
+                        @cell.Id
+                    </button>
+                }
             }
-        </tbody>
-    </table>
+        }
+    </div>
+</div>
+
+<div class="pool-readout mt-3" aria-live="polite">
+    @if (_focused is { } f)
+    {
+        <strong>@f.WellLabel</strong> <span class="text-muted">&middot; tube @f.Id &middot; @f.Name</span>
+        <div class="mt-1">
+            @if (f.IsEmpty)
+            {
+                <span class="pool-empty-note">Empty &mdash; do not prepare</span>
+            }
+            else
+            {
+                @string.Join(", ", f.GuideLabels)
+            }
+        </div>
+    }
+    else
+    {
+        <span class="text-muted">Hover or focus a well to see what goes in it.</span>
+    }
 </div>
 
 <div class="d-flex flex-wrap gap-3 mt-3">
     <span class="pool-legend"><span class="pool-legend-swatch pool-well-filled"></span> Prepare this mix</span>
     <span class="pool-legend"><span class="pool-legend-swatch pool-well-empty"></span> Empty &mdash; do not prepare</span>
     <span class="pool-legend"><span class="pool-legend-swatch pool-well-unused"></span> Not used</span>
+    @if (PositiveIds.Count > 0)
+    {
+        <span class="pool-legend"><span class="pool-legend-swatch pool-well-positive"></span> Positive</span>
+    }
 </div>
 
 @code {
@@ -71,6 +99,9 @@
 
     [Parameter] public int? SelectedPoolId { get; set; }
 
+    /// <summary>Tube ids to mark as positive screening results.</summary>
+    [Parameter] public IReadOnlySet<int> PositiveIds { get; set; } = new HashSet<int>();
+
     [Parameter] public EventCallback<PoolWell> OnSelectPool { get; set; }
 
     [Parameter] public EventCallback<int> OnShowPlate { get; set; }
@@ -78,6 +109,10 @@
     private Dictionary<(char Row, int Column), PoolWell> _wellsOnPlate = new();
     private PoolingPlanDto? _indexedPlan;
     private int _indexedPlate = -1;
+    private ElementReference _grid;
+    private PoolWell? _focused;
+    private int _tabRow;
+    private int _tabCol;
 
     protected override void OnParametersSet()
     {
@@ -92,19 +127,28 @@
             .Where(p => p.Plate == ActivePlate)
             .ToDictionary(p => (p.Row, p.Column));
 
+        // The roving tab stop starts on the first usable well.
+        var first = _wellsOnPlate.Values.OrderBy(p => p.Row).ThenBy(p => p.Column).FirstOrDefault();
+        _tabRow = first is null ? 0 : first.Row - 'A';
+        _tabCol = first is null ? 0 : first.Column - 1;
+        _focused = null;
+
         _indexedPlan = Plan;
         _indexedPlate = ActivePlate;
+    }
+
+    protected override async Task OnAfterRenderAsync(bool firstRender)
+    {
+        if (!firstRender) return;
+        try { await JS.InvokeVoidAsync("grnaPlateNav.attach", _grid); }
+        catch (JSDisconnectedException) { }
     }
 
     private PoolWell? PoolAt(char row, int column) =>
         _wellsOnPlate.TryGetValue((row, column), out var pool) ? pool : null;
 
-    private static string Tooltip(PoolWell pool)
-    {
-        var contents = pool.IsEmpty
-            ? "Empty - do not prepare"
-            : string.Join(", ", pool.GuideLabels);
-
-        return $"{pool.WellLabel} | Tube {pool.Id} | {pool.Name}\n{contents}";
-    }
+    private static string Label(PoolWell pool) =>
+        pool.IsEmpty
+            ? $"{pool.WellLabel}, tube {pool.Id}, empty, do not prepare"
+            : $"{pool.WellLabel}, tube {pool.Id}, {pool.GuideLabels.Count} guides";
 }

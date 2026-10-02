@@ -32,6 +32,10 @@ public static class GrnaCsvSchema
     public const string NormalStrand = "Normal";
     public const string ComplementStrand = "Complement";
 
+    /// <summary>A leading comment line recording the parameters, so an exported report can be reproduced.</summary>
+    public static string ProvenanceLine(int spacerSize, int seedStart, int seedEnd) =>
+        $"# gRNA Builder report; spacer={spacerSize}; seed={seedStart}-{seedEnd}; generated={DateTime.UtcNow:yyyy-MM-ddTHH:mm:ssZ}";
+
     public static string Header => string.Join(",", Columns);
 
     public static string Strand(bool isComplement) => isComplement ? ComplementStrand : NormalStrand;

@@ -1,203 +1,287 @@
-﻿@using BlazorBootstrap
 @using DiseaseMutationsApp.Services
 @using DiseaseMutationsApp.Pages
+@inject GrnaService Grna
+@inject AppStateService State
+@inject AnalysisRunner Runner
+@inject IJSRuntime JS
 
 <div>
     @if (Data.IsLoading)
     {
-        <div class="text-center py-5">
-            <Spinner Type="SpinnerType.Dots" Color="SpinnerColor.Primary" />
-            <p class="mt-4 text-muted loading-description">Loading data for <span title="@Data.Hgvs">@Data.Hgvs</span>...</p>
+        <div role="status" aria-live="polite">
+            <div class="d-flex align-items-center justify-content-between mb-3">
+                <p class="mb-0 text-muted">
+                    @(Data.Status == LeafStatus.Queued ? "Queued" : "Analysing") <span class="font-monospace" title="@Data.Hgvs">@Data.Hgvs</span>@(Data.IsComplement ? " (complement strand)" : "")&hellip;
+                </p>
+                <button type="button" class="btn btn-sm btn-outline-secondary" @onclick="() => Runner.CancelLeaf(Data.Id)">
+                    <Icon Name="stop" />Cancel this variant
+                </button>
+            </div>
+            <div class="skeleton skeleton-block" aria-hidden="true"></div>
+            @for (var i = 0; i < 6; i++)
+            {
+                <div class="skeleton skeleton-row" aria-hidden="true"></div>
+            }
         </div>
     }
-    else if (Data.ErrorMessage != null)
+    else if (Data.Status == LeafStatus.Failed)
     {
         <div class="alert alert-danger" role="alert">
-            <strong class="alert-heading">⚠️ Error loading data for <span title="@Data.Hgvs">@Data.Hgvs</span>:</strong><br/>
-            <span class="alert-detail">@Data.ErrorMessage</span>
+            <div class="alert-heading"><Icon Name="alert" />Could not analyse <span class="font-monospace" title="@Data.Hgvs">@Data.Hgvs</span></div>
+            <div>@Data.ErrorMessage</div>
+            <button type="button" class="btn btn-sm btn-outline-secondary mt-3" disabled="@Runner.IsBusy" @onclick="() => Runner.TryRetryLeaf(Data)">
+                <Icon Name="retry" />Retry this variant
+            </button>
+        </div>
+    }
+    else if (Data.Status == LeafStatus.Cancelled)
+    {
+        <div class="alert alert-info" role="status">
+            <div class="alert-heading"><Icon Name="info" />Cancelled</div>
+            <div><span class="font-monospace">@Data.Hgvs</span> was not analysed.</div>
+            <button type="button" class="btn btn-sm btn-outline-secondary mt-3" disabled="@Runner.IsBusy" @onclick="() => Runner.TryRetryLeaf(Data)">
+                <Icon Name="retry" />Run this variant
+            </button>
         </div>
     }
     else if (Data is { Original: not null, Mutated: not null })
     {
-        <div class="row mb-5">
-            <div class="col">
-                <div class="card shadow-sm mb-4">
+        var extra = Data.ExtraNucleotids ?? 0;
+        var mutLenOriginal = Data.Original.Length - 2 * extra;
+        var mutLenMutated = Data.Mutated.Length - 2 * extra;
+
+        <div class="row g-4 mb-4">
+            <div class="col-12">
+                <div class="card seq-card-original">
                     <div class="card-body">
-                        <div class="d-flex justify-content-between align-items-center gap-3 mb-3">
-                            <h5 class="card-title mb-0 sequence-title-original">
-                                <span class="oi oi-document me-2"></span>@(Data.IsComplement ? "Complement Original Sequence" : "Original Sequence")
-                            </h5>
+                        <div class="d-flex justify-content-between align-items-center gap-3 mb-2">
+                            <h2 class="card-title section-title section-title-reference mb-0 seq-title-original">
+                                <Icon Name="dna" />@(Data.IsComplement ? "Complement original sequence" : "Original sequence")
+                            </h2>
                             @if (!string.IsNullOrWhiteSpace(Data.SourceUrl))
                             {
-                                <a class="btn btn-sm btn-outline-secondary source-link-btn"
-                                   href="@Data.SourceUrl"
-                                   target="_blank"
-                                   rel="noopener noreferrer"
-                                   title="Open source sequence in NCBI">
-                                    <span class="oi oi-link-intact"></span>
+                                <a class="btn btn-sm btn-outline-secondary" href="@Data.SourceUrl" target="_blank" rel="noopener noreferrer">
+                                    <Icon Name="external" />Open in NCBI
                                 </a>
                             }
                         </div>
-                        <div class="font-monospace p-3 rounded sequence-block">
-                            <span class="text-muted me-1">5'</span>
-                            @((MarkupString)Data.Original)
-                            <span class="text-muted ms-1">3'</span>
-                        </div>
+                        <SequenceView Sequence="@Data.Original" MutationStart="@extra" MutationLength="@mutLenOriginal"
+                                      Title="@($"{Data.Hgvs} original{(Data.IsComplement ? " (complement)" : "")}")" />
                     </div>
                 </div>
-                <div class="card shadow-sm">
+            </div>
+            <div class="col-12">
+                <div class="card seq-card-mutated">
                     <div class="card-body">
-                        <h5 class="card-title mb-3 sequence-title-mutated">
-                            <span class="oi oi-target me-2"></span>@(Data.IsComplement ? "Complement Mutated Sequence" : "Mutated Sequence")
-                        </h5>
-                        <div class="font-monospace p-3 rounded sequence-block">
-                            <span class="text-muted me-1">5'</span>
-                            @((MarkupString)Data.Mutated)
-                            <span class="text-muted ms-1">3'</span>
-                        </div>
+                        <h2 class="card-title section-title mb-2 seq-title-mutated">
+                            <Icon Name="dna" />@(Data.IsComplement ? "Complement mutated sequence" : "Mutated sequence")
+                        </h2>
+                        <SequenceView Sequence="@Data.Mutated" MutationStart="@extra" MutationLength="@mutLenMutated"
+                                      Title="@($"{Data.Hgvs} mutated{(Data.IsComplement ? " (complement)" : "")}")" />
                     </div>
                 </div>
             </div>
         </div>
 
-        @if (Data.GRNAs != null && Data.GRNAs.Any())
+        @if (Data.GRNAs is { Count: > 0 })
         {
-            <div class="row mb-5">
-                <div class="col">
-                    <GrnaResultsTable Title="gRNA Spacer Results — Mutated Sequence"
-                                      GRNAs="GetSorted?.Invoke(Data)"
-                                      SortColumn="Data.SortColumn"
-                                      SortAscending="Data.SortAscending"
-                                      OnSortRequested="col => OnSort?.Invoke(Data, col)"
-                                      OnCreateGrna="seq => OnCreateGrna?.Invoke(seq, Data)"
-                                      SeedStart="SeedStart"
-                                      SeedEnd="SeedEnd" />
-                </div>
+            <div class="mb-4">
+                <GrnaResultsTable Title="gRNA spacer results: mutated sequence"
+                                  GRNAs="Sorted(Data.GRNAs, Data.SortColumn, Data.SortAscending)"
+                                  SortColumn="Data.SortColumn" SortAscending="Data.SortAscending"
+                                  OnSortRequested="col => Sort(col, original: false)"
+                                  OnCreateGrna="SelectSpacer"
+                                  SelectedSpacer="@Data.SelectedSpacer"
+                                  Filter="Data.Filter"
+                                  SeedStart="SeedStart" SeedEnd="SeedEnd" />
             </div>
         }
 
-        @if (Data.OriginalGRNAs != null && Data.OriginalGRNAs.Any())
+        @if (Data.OriginalGRNAs is { Count: > 0 })
         {
-            <div class="row mb-5">
-                <div class="col">
-                    <GrnaResultsTable Title="gRNA Spacer Results — Original Sequence"
-                                      GRNAs="GetSortedOriginal?.Invoke(Data)"
-                                      SortColumn="Data.OriginalSortColumn"
-                                      SortAscending="Data.OriginalSortAscending"
-                                      OnSortRequested="col => OnSortOriginal?.Invoke(Data, col)"
-                                      OnCreateGrna="seq => OnCreateGrna?.Invoke(seq, Data)"
-                                      SeedStart="SeedStart"
-                                      SeedEnd="SeedEnd" />
-                </div>
+            <div class="mb-4">
+                <GrnaResultsTable Title="gRNA spacer results: original sequence"
+                                  GRNAs="Sorted(Data.OriginalGRNAs, Data.OriginalSortColumn, Data.OriginalSortAscending)"
+                                  SortColumn="Data.OriginalSortColumn" SortAscending="Data.OriginalSortAscending"
+                                  OnSortRequested="col => Sort(col, original: true)"
+                                  OnCreateGrna="SelectSpacer"
+                                  SelectedSpacer="@Data.SelectedSpacer"
+                                  Filter="Data.OriginalFilter"
+                                  SeedStart="SeedStart" SeedEnd="SeedEnd" />
             </div>
         }
 
-        <div class="row">
-            <div class="col">
-                <div class="card shadow-sm complete-grna-card">
-                    <div class="card-body">
-                        <div class="d-flex justify-content-between align-items-center mb-4">
-                            <h5 class="card-title mb-0 complete-grna-title">
-                                <span class="oi oi-beaker me-2"></span>Complete gRNA
-                            </h5>
-                            @if (Data.SelectedSpacer != null)
+        <div class="card complete-grna-card">
+            <div class="card-body">
+                <div class="d-flex flex-wrap justify-content-between align-items-center gap-2 mb-3">
+                    <h2 class="card-title section-title mb-0"><Icon Name="flask" />Complete gRNA</h2>
+                    @if (Data.SelectedSpacer != null)
+                    {
+                        <div class="d-flex flex-wrap gap-2">
+                            <button type="button" class="btn btn-sm btn-success" @onclick="CopyComplete">
+                                <Icon Name="@(Data.CopiedToClipboard ? "check" : "copy")" />@(Data.CopiedToClipboard ? "Copied" : "Copy")
+                            </button>
+                            <button type="button" class="btn btn-sm btn-primary" @onclick="GetStructure" disabled="@Data.IsLoadingRnaFold">
+                                <Icon Name="chart" />@(Data.IsLoadingRnaFold ? "Folding..." : "Get structure")
+                            </button>
+                            <button type="button" class="btn btn-sm btn-outline-secondary" @onclick="ToggleShortlist">
+                                <Icon Name="@(Shortlisted ? "check" : "list")" />@(Shortlisted ? "In shortlist (remove)" : "Add to shortlist")
+                            </button>
+                        </div>
+                    }
+                </div>
+                <div class="complete-grna-sequence">
+                    <span class="text-muted">5'</span>
+                    <span class="scaffold-seq">@GrnaService.Scaffold</span>@if (Data.SelectedSpacer != null){<span class="spacer-seq">@Data.SelectedSpacer</span>}
+                    <span class="text-muted">3'</span>
+                </div>
+                @if (Data.SelectedSpacer == null)
+                {
+                    <p class="helper-note mt-3 mb-0"><Icon Name="info" />Press "Use" on a spacer above to add it here.</p>
+                }
+
+                @if (Data.RnaFoldResult != null)
+                {
+                    <div class="mt-4 pt-3 border-top">
+                        <h3 class="h6 mb-3">RNA secondary structure</h3>
+                        <div class="mb-3">
+                            <strong class="form-label">Dot-bracket notation</strong>
+                            <div class="structure-block mt-2">@Data.RnaFoldResult.Structure</div>
+                        </div>
+                        <p class="mb-3">
+                            <strong>Minimum free energy:</strong>
+                            <span class="energy-value">@Data.RnaFoldResult.Energy.ToString("F2") kcal/mol</span>
+                        </p>
+
+                        @if (!string.IsNullOrEmpty(Data.FornaUrl))
+                        {
+                            <div class="d-flex flex-wrap gap-2 mb-3">
+                                <button type="button" class="btn btn-sm btn-outline-secondary" aria-expanded="@(Data.ShowStructure ? "true" : "false")"
+                                        @onclick="() => Data.ShowStructure = !Data.ShowStructure">
+                                    @(Data.ShowStructure ? "Hide diagram" : "Show diagram")
+                                </button>
+                                <a class="btn btn-sm btn-outline-secondary" href="@Data.FornaUrl" target="_blank" rel="noopener noreferrer">
+                                    <Icon Name="external" />Open in FORNA
+                                </a>
+                            </div>
+                            @if (Data.ShowStructure)
                             {
-                                <div class="d-flex gap-2">
-                                    <button class="btn btn-sm btn-success" @onclick="() => OnCopyComplete?.Invoke(Data)" title="Copy complete gRNA">
-                                        @if (Data.CopiedToClipboard)
-                                        {
-                                            <span class="oi oi-check me-1"></span>
-                                            <span>Copied!</span>
-                                        }
-                                        else
-                                        {
-                                            <span class="oi oi-clipboard me-1"></span>
-                                            <span>Copy</span>
-                                        }
-                                    </button>
-                                    <button class="btn btn-sm btn-primary" @onclick="() => OnGetRnaFold?.Invoke(Data)" disabled="@Data.IsLoadingRnaFold" title="Get RNA secondary structure">
-                                        @if (Data.IsLoadingRnaFold)
-                                        {
-                                            <span>⏳ Loading...</span>
-                                        }
-                                        else
-                                        {
-                                            <span>🧬 Get Structure</span>
-                                        }
-                                    </button>
+                                <div class="forna-frame">
+                                    <iframe src="@Data.FornaUrl" title="RNA secondary structure (FORNA)" sandbox="allow-scripts allow-same-origin" referrerpolicy="no-referrer"></iframe>
                                 </div>
+                                <p class="helper-note mt-2 mb-0">The diagram is loaded from nibiru.tbi.univie.ac.at only while shown. If it stays blank, your network or browser blocked it: use the link instead.</p>
                             }
-                        </div>
-                        <div class="font-monospace p-3 rounded complete-grna-sequence">
-                            <span class="text-muted me-1">5'</span>
-                            <span class="scaffold-seq">@DiseaseMutationsApp.Services.GrnaService.Scaffold</span>
-                            @if (Data.SelectedSpacer != null)
-                            {<span class="spacer-seq">@Data.SelectedSpacer</span>}
-                            <span class="text-muted ms-1">3'</span>
-                        </div>
-                        @if (Data.SelectedSpacer == null)
-                        {
-                            <p class="text-muted mt-3 mb-0 d-flex align-items-center helper-note">
-                                <span class="oi oi-info me-2 helper-note-icon"></span>
-                                <span>Click the 🔨 button on a gRNA spacer to add it here</span>
-                            </p>
-                        }
-                                               
-                        @if (Data.RnaFoldResult != null)
-                        {
-                            <div class="mt-4 pt-4 structure-section">
-                                <h6 class="mb-4 structure-title">
-                                    <span class="oi oi-graph me-2"></span>RNA Secondary Structure
-                                </h6>
-                                
-                                @if (!string.IsNullOrEmpty(Data.FornaUrl))
-                                {
-                                    <div class="mb-4 forna-frame">
-                                        <iframe src=@Data.FornaUrl
-                                                title="RNA Secondary Structure Visualization">
-                                        </iframe>
-                                    </div>
-                                }
-                                
-                                <div class="mb-4">
-                                    <strong class="structure-label">Dot-Bracket Notation:</strong>
-                                    <div class="font-monospace p-3 rounded mt-2 structure-block">
-                                        @Data.RnaFoldResult.Structure
-                                    </div>
-                                </div>
-                                
-                                <div class="energy-summary">
-                                    <strong class="alert-heading">Minimum Free Energy:</strong>
-                                    <span class="energy-value">
-                                        @Data.RnaFoldResult.Energy.ToString("F2") kcal/mol
-                                    </span>
-                                </div>
-                            </div>
-                        }
-                        
-                        @if (Data.RnaFoldError != null)
-                        {
-                            <div class="alert alert-danger mt-4 mb-0" role="alert">
-                                <strong class="alert-heading">⚠️ Error getting RNA structure:</strong><br/>
-                                <span class="alert-detail">@Data.RnaFoldError</span>
-                            </div>
                         }
                     </div>
-                </div>
+                }
+
+                @if (Data.RnaFoldError != null)
+                {
+                    <div class="alert alert-danger mt-4 mb-0" role="alert">
+                        <div class="alert-heading"><Icon Name="alert" />Could not fold the gRNA</div>
+                        <div>@Data.RnaFoldError</div>
+                    </div>
+                }
             </div>
         </div>
     }
 </div>
 
 @code {
-    [Parameter] public HgvsData Data { get; set; } = null!;
-    [Parameter] public Action<HgvsData, GrnaSortColumn>? OnSort { get; set; }
-    [Parameter] public Func<HgvsData, IEnumerable<GRNAResult>>? GetSorted { get; set; }
-    [Parameter] public Func<HgvsData, IEnumerable<GRNAResult>>? GetSortedOriginal { get; set; }
-    [Parameter] public Action<string, HgvsData>? OnCreateGrna { get; set; }
-    [Parameter] public Action<HgvsData, GrnaSortColumn>? OnSortOriginal { get; set; }
-    [Parameter] public Func<HgvsData, Task>? OnCopyComplete { get; set; }
-    [Parameter] public Func<HgvsData, Task>? OnGetRnaFold { get; set; }
+    [Parameter, EditorRequired] public HgvsData Data { get; set; } = null!;
+    [Parameter] public string? RsId { get; set; }
     [Parameter] public int SeedStart { get; set; }
     [Parameter] public int SeedEnd { get; set; }
+
+    private bool Shortlisted => Data.SelectedSpacer != null && State.IsShortlisted(Data.Hgvs, Data.IsComplement);
+
+    /// <summary>Sorts a candidate list by the given column (pure; unit-tested).</summary>
+    public static IReadOnlyList<GRNAResult> Sorted(List<GRNAResult>? list, GrnaSortColumn column, bool ascending)
+    {
+        if (list == null || list.Count == 0) return Array.Empty<GRNAResult>();
+        IEnumerable<GRNAResult> q = column switch
+        {
+            GrnaSortColumn.Sequence => ascending ? list.OrderBy(g => g.Sequence, StringComparer.Ordinal) : list.OrderByDescending(g => g.Sequence, StringComparer.Ordinal),
+            GrnaSortColumn.GCScore => ascending ? list.OrderBy(g => g.GCScore) : list.OrderByDescending(g => g.GCScore),
+            GrnaSortColumn.GCContent => ascending ? list.OrderBy(g => g.GCContent) : list.OrderByDescending(g => g.GCContent),
+            GrnaSortColumn.HomopolymerCount => ascending ? list.OrderBy(g => g.HomopolymerCount) : list.OrderByDescending(g => g.HomopolymerCount),
+            GrnaSortColumn.Alignments => ascending ? list.OrderBy(g => g.Allignments) : list.OrderByDescending(g => g.Allignments),
+            GrnaSortColumn.Energy => ascending ? list.OrderBy(g => g.RnaFoldResult?.Energy ?? double.MaxValue) : list.OrderByDescending(g => g.RnaFoldResult?.Energy ?? double.MinValue),
+            GrnaSortColumn.Score => ascending ? list.OrderBy(g => g.Score) : list.OrderByDescending(g => g.Score),
+            _ => list
+        };
+        return q.ToList();
+    }
+
+    private void Sort(GrnaSortColumn column, bool original)
+    {
+        if (original)
+        {
+            if (Data.OriginalSortColumn == column) Data.OriginalSortAscending = !Data.OriginalSortAscending;
+            else { Data.OriginalSortColumn = column; Data.OriginalSortAscending = true; }
+        }
+        else
+        {
+            if (Data.SortColumn == column) Data.SortAscending = !Data.SortAscending;
+            else { Data.SortColumn = column; Data.SortAscending = true; }
+        }
+    }
+
+    private void SelectSpacer(string spacer)
+    {
+        Data.SelectedSpacer = spacer;
+        Data.CopiedToClipboard = false;
+        Data.RnaFoldResult = null;
+        Data.RnaFoldError = null;
+        Data.FornaUrl = null;
+        Data.ShowStructure = false;
+    }
+
+    private async Task CopyComplete()
+    {
+        if (Data.SelectedSpacer == null) return;
+        try
+        {
+            Data.CopiedToClipboard = await JS.InvokeAsync<bool>("grnaCopy", GrnaService.Scaffold + Data.SelectedSpacer);
+        }
+        catch (JSDisconnectedException) { }
+    }
+
+    private async Task GetStructure()
+    {
+        if (Data.SelectedSpacer == null) return;
+        var leaf = Data;
+        try
+        {
+            leaf.IsLoadingRnaFold = true;
+            leaf.RnaFoldError = null;
+            leaf.RnaFoldResult = null;
+            leaf.FornaUrl = null;
+            var complete = GrnaService.Scaffold + leaf.SelectedSpacer;
+            var result = await Grna.GetRnaFold(complete);
+            leaf.RnaFoldResult = result;
+            leaf.FornaUrl = Grna.GetFornaUrl(complete, result.Structure);
+        }
+        catch (Exception ex)
+        {
+            leaf.RnaFoldError = ex.Message;
+        }
+        finally
+        {
+            leaf.IsLoadingRnaFold = false;
+        }
+    }
+
+    private void ToggleShortlist()
+    {
+        if (Data.SelectedSpacer == null) return;
+        if (Shortlisted)
+        {
+            State.RemoveFromShortlist(Data.Hgvs, Data.IsComplement);
+            return;
+        }
+
+        var candidate = (Data.GRNAs ?? new()).Concat(Data.OriginalGRNAs ?? new()).FirstOrDefault(g => g.Sequence == Data.SelectedSpacer);
+        State.AddToShortlist(new ShortlistItem(Data.Hgvs, Data.IsComplement, Data.SelectedSpacer, RsId, candidate?.Score ?? 0, candidate?.Allignments ?? 0));
+    }
 }

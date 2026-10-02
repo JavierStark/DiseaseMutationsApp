@@ -1,41 +1,18 @@
-﻿<div class="top-row ps-3 navbar navbar-dark">
-    <div class="container-fluid">
-        <a class="navbar-brand" href="">DiseaseMutationsApp</a>
-        <button title="Navigation menu" class="navbar-toggler" @onclick="ToggleNavMenu">
-            <span class="navbar-toggler-icon"></span>
-        </button>
-    </div>
-</div>
+<a class="app-brand" href="" aria-label="gRNA Builder home">
+    <BrandMark />
+    <span class="app-brand-text">gRNA Builder</span>
+</a>
 
-<div class="@NavMenuCssClass nav-scrollable" @onclick="ToggleNavMenu">
-    <nav class="flex-column">
-        <div class="nav-item px-3">
-            <NavLink class="nav-link" href="/" Match="NavLinkMatch.All">
-                <span class="oi oi-home" aria-hidden="true"></span> gRNA Builder
-            </NavLink>
-        </div>
-        <div class="nav-item px-3">
-            <NavLink class="nav-link" href="/pooling" Match="NavLinkMatch.Prefix">
-                <span class="oi oi-grid-three-up" aria-hidden="true"></span> Guide Pooling
-            </NavLink>
-        </div>
-        @* Omim to RS feature deactivated *@
-        @* <div class="nav-item px-3">
-            <NavLink class="nav-link" href="/omim-to-rs" Match="NavLinkMatch.Prefix">
-                <span class="oi oi-list-rich" aria-hidden="true"></span> Omim to RS
-            </NavLink>
-        </div> *@
-    </nav>
-</div>
+<nav class="app-nav" aria-label="Primary">
+    <NavLink class="app-nav-link" href="" Match="NavLinkMatch.All" title="gRNA Builder">
+        <Icon Name="dna" /><span class="app-nav-text">gRNA Builder</span>
+    </NavLink>
+    <NavLink class="app-nav-link" href="pooling" Match="NavLinkMatch.Prefix" title="Guide Pooling">
+        <Icon Name="grid" /><span class="app-nav-text">Guide Pooling</span>
+    </NavLink>
+    <NavLink class="app-nav-link" href="diagnostics" Match="NavLinkMatch.Prefix" title="Diagnostics">
+        <Icon Name="pulse" /><span class="app-nav-text">Diagnostics</span>
+    </NavLink>
+</nav>
 
-@code {
-    private bool collapseNavMenu = true;
-
-    private string? NavMenuCssClass => collapseNavMenu ? "collapse" : null;
-
-    private void ToggleNavMenu()
-    {
-        collapseNavMenu = !collapseNavMenu;
-    }
-
-}
+<div class="app-sidebar-foot">MIT licensed &middot; <a href="https://github.com/JavierStark/DiseaseMutationsApp" rel="noopener noreferrer">source</a></div>

@@ -1,0 +1,5 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 32 32" role="img" aria-label="gRNA Builder">
+  <rect width="32" height="32" rx="7" fill="#1A1218"/>
+  <path d="M9 5c0 8 14 8 14 14s-14 6-14 6" fill="none" stroke="#E68DD8" stroke-width="3.2" stroke-linecap="round" transform="translate(0 1)"/>
+  <path d="M23 5c0 8-14 8-14 14" fill="none" stroke="#A1EEC6" stroke-width="3.2" stroke-linecap="round" transform="translate(0 1)"/>
+</svg>

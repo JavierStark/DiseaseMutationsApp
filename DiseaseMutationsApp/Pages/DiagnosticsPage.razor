@@ -1,0 +1,58 @@
+@page "/diagnostics"
+@using DiseaseMutationsApp.Services
+@inject DiagnosticsService Service
+
+<PageTitle>Diagnostics</PageTitle>
+
+<div class="container-max-xl">
+    <header class="page-header">
+        <h1 class="page-title" tabindex="-1">Diagnostics</h1>
+        <div class="page-rail" aria-hidden="true"></div>
+        <p class="page-lede">Checks that the native tools and network access the pipeline depends on are working. The same checks run as <code>grna doctor</code> and at <code>/healthz</code>.</p>
+    </header>
+
+    <div class="mb-3 d-flex gap-2">
+        <button type="button" class="btn btn-primary" @onclick="RunAsync" disabled="@_running">
+            <Icon Name="retry" />@(_running ? "Checking..." : "Run checks")
+        </button>
+    </div>
+
+    @if (_report is { } report)
+    {
+        <div class="alert @(report.Healthy ? "alert-success" : "alert-danger")" role="status">
+            <Icon Name="@(report.Healthy ? "check" : "alert")" />@(report.Healthy ? "All required checks passed." : "One or more required checks failed.")
+            <span class="text-muted ms-2">@report.CheckedAt.ToLocalTime().ToString("T")</span>
+        </div>
+        <div class="grna-table-wrap">
+            <table class="table grna-table">
+                <caption class="visually-hidden">Diagnostic checks</caption>
+                <thead><tr><th scope="col">Check</th><th scope="col">Result</th><th scope="col">Detail</th><th scope="col">What to do</th></tr></thead>
+                <tbody>
+                @foreach (var c in report.Checks)
+                {
+                    <tr>
+                        <td>@c.Name</td>
+                        <td><span class="check-@c.Status"><Icon Name="@(c.Status == "pass" ? "check" : c.Status == "warn" ? "info" : "alert")" />@c.Status.ToUpperInvariant()</span></td>
+                        <td class="font-monospace small">@c.Detail</td>
+                        <td>@c.Remedy</td>
+                    </tr>
+                }
+                </tbody>
+            </table>
+        </div>
+    }
+</div>
+
+@code {
+    private DiagnosticsReport? _report;
+    private bool _running;
+
+    protected override Task OnInitializedAsync() => RunAsync();
+
+    private async Task RunAsync()
+    {
+        _running = true;
+        try { _report = await Service.GetReportAsync(includeNetwork: true, forceRefresh: true); }
+        finally { _running = false; }
+    }
+}

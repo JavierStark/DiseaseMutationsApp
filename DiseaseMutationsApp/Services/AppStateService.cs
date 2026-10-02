@@ -1,5 +1,6 @@
-﻿using System;
+using System;
 using System.Collections.Generic;
+using System.Linq;
 using DiseaseMutationsApp.Pages;
 
 namespace DiseaseMutationsApp.Services
@@ -15,9 +16,17 @@ namespace DiseaseMutationsApp.Services
         public int IndexGRnaSize { get; set; } = 28;
         public int IndexSeedStart { get; set; } = 10;
         public int IndexSeedEnd { get; set; } = 17;
+        /// <summary>Replaced wholesale (never mutated in place) so a render never sees a half-built list.</summary>
         public List<InputTabData> IndexInputTabs { get; set; } = new();
         public int IndexActiveTabIndex { get; set; }
-        public Dictionary<int, int> IndexActiveChildTabIndices { get; set; } = new();
+        /// <summary>Active leaf per RS tab, keyed by tab id then leaf id.</summary>
+        public Dictionary<Guid, Guid> IndexActiveLeafIds { get; set; } = new();
+
+        /// <summary>The query string the Builder page last acted on, so a URL is claimed only once.</summary>
+        public string? IndexClaimedQuery { get; set; }
+
+        /// <summary>Guides picked across variants, ready to send to the Pooling page.</summary>
+        public List<ShortlistItem> Shortlist { get; set; } = new();
 
         // ===== Guide Pooling Page State =====
         public PoolingInputMode PoolingInputMode { get; set; } = PoolingInputMode.GuideCount;
@@ -59,9 +68,10 @@ namespace DiseaseMutationsApp.Services
             IndexGRnaSize = 28;
             IndexSeedStart = 10;
             IndexSeedEnd = 17;
-            IndexInputTabs.Clear();
+            IndexInputTabs = new();
             IndexActiveTabIndex = 0;
-            IndexActiveChildTabIndices.Clear();
+            IndexActiveLeafIds = new();
+            IndexClaimedQuery = null;
 
             // Clear Guide Pooling state
             ResetPoolingState();
@@ -84,9 +94,10 @@ namespace DiseaseMutationsApp.Services
             IndexGRnaSize = 28;
             IndexSeedStart = 10;
             IndexSeedEnd = 17;
-            IndexInputTabs.Clear();
+            IndexInputTabs = new();
             IndexActiveTabIndex = 0;
-            IndexActiveChildTabIndices.Clear();
+            IndexActiveLeafIds = new();
+            IndexClaimedQuery = null;
             NotifyStateChanged();
         }
 
@@ -128,6 +139,49 @@ namespace DiseaseMutationsApp.Services
         //     OmimErrorMessage = null;
         //     NotifyStateChanged();
         // }
+
+        // ===== Shortlist (cross-variant basket) =====
+
+        public bool IsShortlisted(string hgvs, bool isComplement) =>
+            Shortlist.Any(i => i.Hgvs == hgvs && i.IsComplement == isComplement);
+
+        public void AddToShortlist(ShortlistItem item)
+        {
+            Shortlist = Shortlist
+                .Where(i => !(i.Hgvs == item.Hgvs && i.IsComplement == item.IsComplement))
+                .Append(item)
+                .ToList();
+            NotifyStateChanged();
+        }
+
+        public void RemoveFromShortlist(string hgvs, bool isComplement)
+        {
+            Shortlist = Shortlist.Where(i => !(i.Hgvs == hgvs && i.IsComplement == isComplement)).ToList();
+            NotifyStateChanged();
+        }
+
+        public void ClearShortlist()
+        {
+            Shortlist = new();
+            NotifyStateChanged();
+        }
+
+        /// <summary>Hands the shortlist to the Pooling page as typed guide entries (no CSV round trip).</summary>
+        public void SendShortlistToPooling()
+        {
+            var guides = Shortlist
+                .Select(i => new GuideEntry { Label = i.Hgvs, Sequence = i.Spacer, RsId = i.RsId })
+                .ToList();
+            ResetPoolingState();
+            PoolingInputMode = PoolingInputMode.GuideList;
+            PoolingParsedGuides = guides;
+            PoolingGuideListSource = GuideListSource.PlainList;
+            PoolingGuideListText = string.Join(Environment.NewLine, guides.Select(g => g.Label));
+            NotifyStateChanged();
+        }
     }
+
+    /// <summary>One chosen spacer for one variant strand.</summary>
+    public record ShortlistItem(string Hgvs, bool IsComplement, string Spacer, string? RsId, double Score, int Alignments);
 }
 

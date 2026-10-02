@@ -1,4 +1,6 @@
-﻿@rendermode @(new InteractiveServerRenderMode())
+@* The render mode is declared once, here, with prerendering off: the page's static content is an
+   empty form, and prerendering would run the whole pipeline in the HTTP request and again in the circuit. *@
+@rendermode @(new InteractiveServerRenderMode(prerender: false))
 
 <Router AppAssembly="@typeof(Program).Assembly">
     <Found Context="routeData">
@@ -8,7 +10,8 @@
     <NotFound>
         <PageTitle>Not found</PageTitle>
         <LayoutView Layout="@typeof(MainLayout)">
-            <p role="alert">Sorry, there's nothing at this address.</p>
+            <h1>Not found</h1>
+            <p role="alert">There is nothing at this address. <a href="">Back to the gRNA Builder</a>.</p>
         </LayoutView>
     </NotFound>
 </Router>

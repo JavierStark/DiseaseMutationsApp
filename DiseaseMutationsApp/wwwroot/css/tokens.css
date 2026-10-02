@@ -1,0 +1,159 @@
+/*
+ * Design tokens. See docs/design-system.md.
+ *
+ * Palette semantics (not decoration):
+ *   pink  = variant / mutated        mint = reference / original
+ *   crimson = critical state only (error, destructive, off-target risk)
+ */
+:root {
+    /* Brand palette (fixed hues) */
+    --pink-100: #F6D8F1;
+    --pink-500: #E68DD8;
+    --pink-600: #C55CB4;
+    --pink-800: #8E2E7E;
+    --mint-100: #D5F9E6;
+    --mint-500: #A1EEC6;
+    --mint-600: #5FBE8E;
+    --mint-800: #1E5B3F;
+    --crimson-500: #B31237;
+    --crimson-800: #600B1E;
+
+    /* Surfaces */
+    --bg: #FFF9FD;
+    --surface: #FFFFFF;
+    --surface-sunken: #FBF3F9;
+    --surface-hover: #FDF1FA;
+    --border: #E7D3E2;
+    --border-strong: #CDB0C6;
+    --divider: #EFE0EA;
+
+    /* Text */
+    --text-primary: #2A1A26;
+    --text-secondary: #4F3A4A;
+    --text-muted: #6B5565;
+    --text-on-accent: #1D0F1A;
+
+    /* Semantic roles */
+    --variant: var(--pink-500);
+    --variant-strong: var(--pink-600);
+    --variant-text: var(--pink-800);
+    --variant-bg: #FCEFF9;
+    --reference: var(--mint-500);
+    --reference-strong: var(--mint-600);
+    --reference-text: var(--mint-800);
+    --reference-bg: #EAFBF2;
+    --critical: var(--crimson-500);
+    --critical-text: var(--crimson-500);
+
+    --link: var(--pink-800);
+    --link-hover: var(--crimson-500);
+
+    /* State */
+    --state-info: #2F5E8E;
+    --state-info-bg: #EAF2FB;
+    --state-info-border: #B7CFE8;
+    --state-success: var(--mint-800);
+    --state-success-bg: var(--reference-bg);
+    --state-success-border: var(--mint-600);
+    --state-warning: #7A4B00;
+    --state-warning-bg: #FFF4DB;
+    --state-warning-border: #E5B84B;
+    --state-danger: var(--crimson-500);
+    --state-danger-bg: #FDECEF;
+    --state-danger-border: #E8A3B1;
+
+    /* Focus */
+    --focus-ring: #1F5FBF;
+    --focus-ring-offset: 2px;
+
+    /* Elevation: three steps only, for genuinely floating things */
+    --elev-0: none;
+    --elev-1: 0 1px 2px rgba(42, 26, 38, 0.10);
+    --elev-2: 0 6px 18px rgba(42, 26, 38, 0.14);
+
+    /* Type */
+    --font-sans: "IBM Plex Sans", system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
+    --font-mono: "JetBrains Mono", ui-monospace, "SFMono-Regular", Menlo, Consolas, monospace;
+    --text-xs: 0.75rem;
+    --text-sm: 0.875rem;
+    --text-base: 1rem;
+    --text-lg: 1.125rem;
+    --text-xl: 1.375rem;
+    --text-2xl: 1.75rem;
+    --text-3xl: 2.25rem;
+    --weight-regular: 400;
+    --weight-strong: 600;
+    --tracking-tight: -0.02em;
+    --tracking-wide: 0.04em;
+
+    /* Spacing and shape */
+    --space-1: 0.25rem;
+    --space-2: 0.5rem;
+    --space-3: 0.75rem;
+    --space-4: 1rem;
+    --space-5: 1.5rem;
+    --space-6: 2rem;
+    --space-7: 3rem;
+    --radius-sm: 4px;
+    --radius-md: 6px;
+    --radius-lg: 10px;
+
+    /* Motion: only these properties are ever transitioned */
+    --transition: 120ms ease-out;
+
+    /* Sequence annotation */
+    --seq-seed-bg: #FBE3F6;
+    --seq-seed-border: var(--pink-600);
+    --seq-mutation: var(--crimson-500);
+}
+
+[data-bs-theme="dark"] {
+    --bg: #1A1218;
+    --surface: #241A22;
+    --surface-sunken: #1F161D;
+    --surface-hover: #2E212B;
+    --border: #3F2E3B;
+    --border-strong: #5A4455;
+    --divider: #33242F;
+
+    --text-primary: #F3E8F0;
+    --text-secondary: #D8C5D2;
+    --text-muted: #B49DAE;
+    --text-on-accent: #1A1218;
+
+    --variant: #D9A4CF;
+    --variant-strong: #E3B4DA;
+    --variant-text: #E8BFE0;
+    --variant-bg: #33232F;
+    --reference: #8FD9B4;
+    --reference-strong: #A7E6C6;
+    --reference-text: #A7E6C6;
+    --reference-bg: #1F2E27;
+    --critical: #FF8FA6;
+    --critical-text: #FF9FB2;
+
+    --link: #E8BFE0;
+    --link-hover: #FFB3C2;
+
+    --state-info: #9CC4F0;
+    --state-info-bg: #1B2733;
+    --state-info-border: #34506E;
+    --state-success: #A7E6C6;
+    --state-success-bg: #1F2E27;
+    --state-success-border: #3B6B53;
+    --state-warning: #F2CB78;
+    --state-warning-bg: #32280F;
+    --state-warning-border: #7A5E1B;
+    --state-danger: #FF9FB2;
+    --state-danger-bg: #351A22;
+    --state-danger-border: #7A3346;
+
+    --focus-ring: #8DB8FF;
+
+    --elev-1: 0 1px 2px rgba(0, 0, 0, 0.5);
+    --elev-2: 0 8px 22px rgba(0, 0, 0, 0.55);
+
+    --seq-seed-bg: #3E2638;
+    --seq-seed-border: #D9A4CF;
+    --seq-mutation: #FF9FB2;
+}

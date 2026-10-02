@@ -1,0 +1,35 @@
+@* Status is conveyed by shape + text + aria-label, never by colour alone. *@
+<span class="tab-status status-@StateClass" aria-label="@AriaLabel" title="@Title">
+    <span class="status-shape" aria-hidden="true"></span>
+    <span class="tab-status-text">@Label</span>
+    @if (IsComplement)
+    {
+        <span class="tab-strand" aria-hidden="true">C</span>
+    }
+    <span class="visually-hidden">@StateText</span>
+</span>
+
+@code {
+    [Parameter, EditorRequired] public string Label { get; set; } = "";
+    [Parameter] public TabState State { get; set; } = TabState.Ready;
+    [Parameter] public bool IsComplement { get; set; }
+
+    private string StateClass => State.ToString().ToLowerInvariant() switch
+    {
+        "failed" => "error",
+        var s => s
+    };
+
+    private string StateText => State switch
+    {
+        TabState.Queued => "queued",
+        TabState.Loading => "loading",
+        TabState.Ready => "ready",
+        TabState.Failed => "failed",
+        TabState.Cancelled => "cancelled",
+        _ => ""
+    };
+
+    private string AriaLabel => $"{Label}{(IsComplement ? ", complement strand" : "")}: {StateText}";
+    private string Title => $"{Label}{(IsComplement ? " (complement)" : "")} - {StateText}";
+}

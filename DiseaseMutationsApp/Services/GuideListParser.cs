@@ -77,7 +77,7 @@ public static class GuideListParser
         return raw
             .Split(new[] { "\r\n", "\r", "\n" }, StringSplitOptions.None)
             .Select(line => line.Trim())
-            .Where(line => line.Length > 0)
+            .Where(line => line.Length > 0 && !line.StartsWith('#'))
             .ToList();
     }
 

@@ -74,3 +74,5 @@ module GrnaEnvironment =
 module GrnaLog =
     let mutable sink: string -> unit = ignore
     let log (message: string) = sink message
+    /// For hosts written in C#: install a delegate as the log sink.
+    let setSink (f: System.Action<string>) = sink <- (fun m -> f.Invoke m)

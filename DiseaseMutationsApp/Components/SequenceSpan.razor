@@ -1,0 +1,71 @@
+@* Inline sequence with seed and mutation highlighting. Segments are rendered as encoded text nodes,
+   so no MarkupString is involved. *@
+<span class="@Class">
+    @foreach (var seg in Highlight(Sequence, SeedStart, SeedEnd, MutationStart, MutationLength))
+    {
+        if (seg.Seed || seg.Mutation)
+        {
+            <span class="@(seg.Seed ? "seq-seed" : null) @(seg.Mutation ? "seq-mut" : null)">@seg.Text</span>
+        }
+        else
+        {
+            @seg.Text
+        }
+    }
+</span>
+
+@code {
+    [Parameter] public string Sequence { get; set; } = "";
+    [Parameter] public int? SeedStart { get; set; }
+    [Parameter] public int? SeedEnd { get; set; }
+    [Parameter] public int? MutationStart { get; set; }
+    [Parameter] public int? MutationLength { get; set; }
+    [Parameter] public string? Class { get; set; }
+
+    public readonly record struct Segment(string Text, bool Seed, bool Mutation);
+
+    /// <summary>Splits a sequence into runs sharing the same seed/mutation flags (pure, unit-tested).</summary>
+    public static List<Segment> Highlight(string? sequence, int? seedStart, int? seedEnd, int? mutationStart, int? mutationLength)
+    {
+        var result = new List<Segment>();
+        if (string.IsNullOrEmpty(sequence)) return result;
+
+        var hasSeed = false;
+        int s0 = 0, s1 = 0;
+        if (seedStart.HasValue && seedEnd.HasValue)
+        {
+            s0 = Math.Clamp(seedStart.Value, 0, sequence.Length - 1);
+            s1 = Math.Clamp(seedEnd.Value, 0, sequence.Length - 1);
+            hasSeed = s0 <= s1;
+        }
+
+        var hasMutation = false;
+        int m0 = 0, m1 = 0;
+        if (mutationStart.HasValue && mutationLength.HasValue)
+        {
+            var start = mutationStart.Value;
+            var length = mutationLength.Value;
+            hasMutation = start >= 0 && length > 0 && start < sequence.Length && start + length <= sequence.Length;
+            if (hasMutation) { m0 = start; m1 = start + length - 1; }
+        }
+
+        static bool In(int i, int a, int b) => i >= a && i <= b;
+
+        var segStart = 0;
+        var curSeed = hasSeed && In(0, s0, s1);
+        var curMut = hasMutation && In(0, m0, m1);
+        for (var i = 1; i < sequence.Length; i++)
+        {
+            var seed = hasSeed && In(i, s0, s1);
+            var mut = hasMutation && In(i, m0, m1);
+            if (seed == curSeed && mut == curMut) continue;
+            result.Add(new Segment(sequence[segStart..i], curSeed, curMut));
+            segStart = i;
+            curSeed = seed;
+            curMut = mut;
+        }
+
+        result.Add(new Segment(sequence[segStart..], curSeed, curMut));
+        return result;
+    }
+}

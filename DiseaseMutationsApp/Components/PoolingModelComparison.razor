@@ -1,8 +1,8 @@
 @using DiseaseMutationsApp.Services
 
-<div class="grna-table-wrapper">
-    <table class="table table-hover mb-0 align-middle">
-        <thead class="grna-table-head">
+<div class="grna-table-wrap">
+    <table class="table table-hover mb-0 align-middle grna-table"><caption class="visually-hidden">Pooling model comparison</caption>
+        <thead>
             <tr>
                 <th scope="col">Model</th>
                 <th scope="col" class="table-cell-center">Wells (N)</th>
@@ -17,20 +17,20 @@
                 var isActive = estimate.Model == ActiveModel;
                 <tr class="@(isActive ? "pool-model-row-active" : null)">
                     <td>
-                        <span class="metric-accent-primary">@estimate.Name</span>
+                        <span class="metric-variant">@estimate.Name</span>
                         @if (estimate.IsOptimal)
                         {
                             <span class="badge pool-badge-optimal ms-2">Optimal</span>
                         }
                     </td>
-                    <td class="table-cell-center metric-accent-secondary">@estimate.Wells</td>
-                    <td class="table-cell-center metric-default">@estimate.Repetitions</td>
+                    <td class="table-cell-center metric-reference">@estimate.Wells</td>
+                    <td class="table-cell-center metric-plain">@estimate.Repetitions</td>
                     <td><code class="pool-formula">@estimate.Formula</code></td>
                     <td class="table-cell-center">
                         @if (isActive)
                         {
-                            <span class="metric-accent-success">
-                                <span class="oi oi-check me-1" aria-hidden="true"></span>Showing
+                            <span class="metric-reference">
+                                <Icon Name="check" />Showing
                             </span>
                         }
                         else
@@ -50,8 +50,8 @@
 @if (IsOverridden)
 {
     <div class="d-flex align-items-center justify-content-between mt-3">
-        <small class="helper-hint text-muted">
-            <span class="oi oi-info helper-hint-icon me-1" aria-hidden="true"></span>
+        <small class="helper-note">
+            <Icon Name="info" />
             You are overriding the automatic choice.
         </small>
         <button type="button" class="btn btn-sm btn-outline-secondary" @onclick="OnUseOptimal">

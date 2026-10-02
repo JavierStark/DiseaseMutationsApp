@@ -1,0 +1,96 @@
+@inject IJSRuntime JS
+
+<div class="seq-toolbar">
+    <span class="helper-note">@Sequence.Length nt</span>
+    <button type="button" class="btn btn-sm btn-outline-secondary" @onclick="CopyFastaAsync">
+        <Icon Name="@(_copied ? "check" : "copy")" />@(_copied ? "Copied" : "Copy FASTA")
+    </button>
+</div>
+
+<div class="seq-view" role="group" aria-label="@Title">
+    @foreach (var row in Rows())
+    {
+        <div class="seq-row">
+            <span class="seq-gutter" aria-hidden="true">@row.Start</span>
+            <span>
+                @foreach (var block in row.Blocks)
+                {
+                    <span class="seq-block"><SequenceSpan Sequence="@block.Text"
+                                                          MutationStart="@block.MutationStart"
+                                                          MutationLength="@block.MutationLength" /></span>
+                }
+            </span>
+        </div>
+    }
+</div>
+
+@if (HiddenRows > 0)
+{
+    <button type="button" class="btn btn-sm btn-outline-secondary mt-2" @onclick="() => _expanded = !_expanded">
+        @(_expanded ? "Show fewer rows" : $"Show all {TotalRows} rows")
+    </button>
+}
+
+<div class="seq-legend">
+    <span><span class="seq-mut">ACG</span> mutation site</span>
+    <span>Rows of @RowLength nt in blocks of @BlockSize; left numbers are 1-based coordinates</span>
+</div>
+
+@code {
+    private const int RowLength = 60;
+    private const int BlockSize = 10;
+    private const int CollapsedRows = 6;
+
+    [Parameter, EditorRequired] public string Sequence { get; set; } = "";
+    [Parameter] public int MutationStart { get; set; } = -1;
+    [Parameter] public int MutationLength { get; set; }
+    [Parameter] public string Title { get; set; } = "Sequence";
+
+    private bool _expanded;
+    private bool _copied;
+
+    private record Block(string Text, int? MutationStart, int? MutationLength);
+    private record Row(int Start, List<Block> Blocks);
+
+    private int TotalRows => (Sequence.Length + RowLength - 1) / RowLength;
+    private int HiddenRows => Math.Max(0, TotalRows - CollapsedRows);
+
+    private IEnumerable<Row> Rows()
+    {
+        var limit = _expanded ? TotalRows : Math.Min(TotalRows, CollapsedRows);
+        for (var r = 0; r < limit; r++)
+        {
+            var rowStart = r * RowLength;
+            var blocks = new List<Block>();
+            for (var b = rowStart; b < Math.Min(rowStart + RowLength, Sequence.Length); b += BlockSize)
+            {
+                var text = Sequence.Substring(b, Math.Min(BlockSize, Sequence.Length - b));
+                // Overlap of the mutation span with this block, in block-local coordinates.
+                int? ms = null, ml = null;
+                if (MutationLength > 0)
+                {
+                    var from = Math.Max(MutationStart, b);
+                    var to = Math.Min(MutationStart + MutationLength, b + text.Length);
+                    if (to > from) { ms = from - b; ml = to - from; }
+                }
+
+                blocks.Add(new Block(text, ms, ml));
+            }
+
+            yield return new Row(rowStart + 1, blocks);
+        }
+    }
+
+    private async Task CopyFastaAsync()
+    {
+        var sb = new System.Text.StringBuilder();
+        sb.Append('>').AppendLine(Title);
+        for (var i = 0; i < Sequence.Length; i += 70)
+            sb.AppendLine(Sequence.Substring(i, Math.Min(70, Sequence.Length - i)));
+        try
+        {
+            _copied = await JS.InvokeAsync<bool>("grnaCopy", sb.ToString());
+        }
+        catch (JSDisconnectedException) { }
+    }
+}

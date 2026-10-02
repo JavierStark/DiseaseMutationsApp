@@ -1,17 +1,112 @@
-﻿@inherits LayoutComponentBase
+@using DiseaseMutationsApp.Services
+@inherits LayoutComponentBase
+@implements IDisposable
+@inject AnalysisRunner Runner
+@inject AppStateService State
+@inject NavigationManager Nav
+@inject IJSRuntime JS
 
-<div class="page">
-    <div class="sidebar">
+<a class="skip-link" href="@(Nav.Uri)#main-content">Skip to content</a>
+
+<div class="app-shell">
+    <aside class="app-sidebar">
         <NavMenu />
+    </aside>
+
+    <div class="app-main">
+        <header class="app-bar">
+            <p class="app-bar-title">gRNA Builder</p>
+            <div class="app-bar-spacer"></div>
+
+            @if (Runner.IsBusy)
+            {
+                var p = Runner.GetProgress();
+                <a class="app-bar-run" href="" title="Analysis in progress - open the Builder" role="status">
+                    <span class="tab-status status-loading"><span class="status-shape" aria-hidden="true"></span></span>
+                    Analysing @p.Finished / @p.Total
+                </a>
+            }
+
+            @if (State.Shortlist.Count > 0)
+            {
+                <span class="shortlist-count" title="Spacers shortlisted for pooling">
+                    <Icon Name="list" />
+                    <span class="shortlist-badge">@State.Shortlist.Count</span>
+                    <span class="visually-hidden">spacers shortlisted</span>
+                </span>
+            }
+
+            <button type="button" class="btn btn-sm btn-outline-secondary btn-icon-only" @onclick="ToggleTheme"
+                    aria-label="@(_dark ? "Switch to light theme" : "Switch to dark theme")">
+                <Icon Name="@(_dark ? "sun" : "moon")" />
+            </button>
+        </header>
+
+        <main id="main-content" class="app-content" tabindex="-1">
+            <ErrorBoundary @ref="_boundary">
+                <ChildContent>@Body</ChildContent>
+                <ErrorContent Context="ex">
+                    <div class="error-boundary" role="alert">
+                        <h3>This page hit an error</h3>
+                        <p class="mb-3">The rest of the app is still working. You can retry this page or use the navigation.</p>
+                        <button type="button" class="btn btn-sm btn-outline-secondary" @onclick="() => _boundary?.Recover()">Retry</button>
+                    </div>
+                </ErrorContent>
+            </ErrorBoundary>
+        </main>
     </div>
-
-    <main>
-        <div class="top-row px-4">
-            <a href="https://docs.microsoft.com/aspnet/" target="_blank">About</a>
-        </div>
-
-        <article class="content px-4">
-            @Body
-        </article>
-    </main>
 </div>
+
+@code {
+    private ErrorBoundary? _boundary;
+    private bool _dark;
+    private bool _disposed;
+
+    protected override void OnInitialized()
+    {
+        Runner.Changed += OnChanged;
+        State.OnStateChanged += OnChanged;
+        Nav.LocationChanged += OnLocationChanged;
+    }
+
+    protected override async Task OnAfterRenderAsync(bool firstRender)
+    {
+        if (!firstRender) return;
+        try
+        {
+            _dark = await JS.InvokeAsync<string>("grnaTheme.current") == "dark";
+            StateHasChanged();
+        }
+        catch (JSDisconnectedException) { }
+    }
+
+    private async Task ToggleTheme()
+    {
+        try
+        {
+            _dark = await JS.InvokeAsync<string>("grnaTheme.toggle") == "dark";
+        }
+        catch (JSDisconnectedException) { }
+    }
+
+    private void OnLocationChanged(object? sender, Microsoft.AspNetCore.Components.Routing.LocationChangedEventArgs e) =>
+        _boundary?.Recover();
+
+    private void OnChanged()
+    {
+        if (_disposed) return;
+        _ = InvokeAsync(() =>
+        {
+            if (_disposed) return;
+            StateHasChanged();
+        });
+    }
+
+    public void Dispose()
+    {
+        _disposed = true;
+        Runner.Changed -= OnChanged;
+        State.OnStateChanged -= OnChanged;
+        Nav.LocationChanged -= OnLocationChanged;
+    }
+}

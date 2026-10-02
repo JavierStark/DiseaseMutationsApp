@@ -1,280 +1,242 @@
-﻿@page "/"
-@using BlazorBootstrap
-@rendermode @(new InteractiveServerRenderMode())
+@page "/"
+@using DiseaseMutationsApp.Services
 
 <PageTitle>gRNA Builder</PageTitle>
 
-<div class="container-fluid px-4 py-4 fade-in-up container-max-xl">
-    <div class="row mb-5">
-        <div class="col">
-            <h1 class="mb-2 page-title">
-                🧬 gRNA Builder
-            </h1>
-            <p class="text-muted mb-0">Design and analyze guide RNA sequences for CRISPR applications</p>
-        </div>
-    </div>
+<div class="container-max-xl">
+    <header class="page-header">
+        <h1 class="page-title" tabindex="-1">gRNA Builder</h1>
+        <div class="page-rail" aria-hidden="true"></div>
+        <p class="page-lede">Design and rank Cas13 guide RNA spacers for disease variants, with off-target and structure checks.</p>
+    </header>
 
-    <div class="row mb-5">
+    <div class="row mb-4">
         <div class="col-lg-9 col-xl-7">
-            <div class="card shadow-sm">
+            <div class="card">
                 <div class="card-body">
-                    <h5 class="card-title mb-4 section-title-accent">
-                        <span class="oi oi-cog me-2"></span>Input Parameters
-                    </h5>
+                    <h2 class="card-title section-title"><Icon Name="settings" />Input parameters</h2>
+
+                    @if (_restoredBanner)
+                    {
+                        <div class="alert alert-info" role="status">
+                            <Icon Name="info" />Your previous inputs were restored. Results are not stored in the browser: press <strong>Run analysis</strong>
+                            to recompute them, and download the CSV report to keep them.
+                        </div>
+                    }
+
                     <div class="mb-4">
-                        <label for="hgvs" class="form-label">HGVS or RS codes (comma-separated for multiple)</label>
-                        <textarea id="hgvs" class="form-control" @bind="_hgvs" rows="5" placeholder="e.g., NG_008690.2:g.123012G>T, rs12345, . You can enter multiple HGVS or RS codes separated by commas"></textarea>
-                        <small class="text-muted mt-2 d-block">Enter one or more genetic variants to analyze</small>
+                        <label for="hgvs" class="form-label">HGVS or rs codes (comma-separated for several)</label>
+                        <textarea id="hgvs" class="form-control" @bind="_hgvs" @bind:event="oninput" @bind:after="OnInputChanged" rows="4"
+                                  placeholder="NG_008690.2:g.123012G>T, rs12345"></textarea>
+                        <small class="helper-note mt-2 d-block">One or more variants. An rsID is resolved to its HGVS notations and analysed on both strands.</small>
                     </div>
-                    <div class="mb-4">
-                        <label class="form-label">gRNA and Seed Region</label>
+
+                    <fieldset class="mb-4">
+                        <legend class="form-label">Spacer and seed region</legend>
                         <div class="row g-3">
                             <div class="col-sm-4">
                                 <label for="grna-size" class="form-label">Spacer size</label>
-                                <input id="grna-size" type="number" class="form-control" @bind="_gRnaSize" min="1" />
+                                <input id="grna-size" type="number" class="form-control" @bind="_gRnaSize" @bind:after="OnInputChanged" min="1" />
                             </div>
                             <div class="col-sm-4">
                                 <label for="seed-start" class="form-label">Seed start (inclusive)</label>
-                                <input id="seed-start" type="number" class="form-control" @bind="_seedStart" min="0" max="@(_gRnaSize > 0 ? _gRnaSize - 1 : 0)" />
+                                <input id="seed-start" type="number" class="form-control" @bind="_seedStart" @bind:after="OnInputChanged" min="0" max="@(_gRnaSize > 0 ? _gRnaSize - 1 : 0)" />
                             </div>
                             <div class="col-sm-4">
                                 <label for="seed-end" class="form-label">Seed end (inclusive)</label>
-                                <input id="seed-end" type="number" class="form-control" @bind="_seedEnd" min="0" max="@(_gRnaSize > 0 ? _gRnaSize - 1 : 0)" />
+                                <input id="seed-end" type="number" class="form-control" @bind="_seedEnd" @bind:after="OnInputChanged" min="0" max="@(_gRnaSize > 0 ? _gRnaSize - 1 : 0)" />
                             </div>
                         </div>
                         @if (SeedRangeValidationMessage != null)
                         {
-                            <small class="text-danger mt-2 d-block">@SeedRangeValidationMessage</small>
+                            <small class="text-danger mt-2 d-block" role="alert">@SeedRangeValidationMessage</small>
                         }
+                    </fieldset>
+
+                    <div class="d-flex flex-wrap gap-2">
+                        <button type="button" class="btn btn-primary btn-lg" @onclick="StartRun" disabled="@(!CanFetchData)">
+                            <Icon Name="play" />Run analysis
+                        </button>
+                        @if (Runner.IsBusy)
+                        {
+                            <button type="button" class="btn btn-outline-secondary btn-lg" @onclick="CancelRun">
+                                <Icon Name="stop" />Cancel run
+                            </button>
+                        }
+                        <button type="button" class="btn btn-outline-secondary btn-lg" @onclick="CopyPermalink" disabled="@string.IsNullOrWhiteSpace(_hgvs)">
+                            <Icon Name="@(_linkCopied ? "check" : "link")" />@(_linkCopied ? "Link copied" : "Copy link to this design")
+                        </button>
                     </div>
-                    <button class="btn btn-primary btn-lg mt-2" @onclick="FetchData" disabled="@(!CanFetchData)">
-                        <span class="oi oi-data-transfer-download me-2"></span>
-                        <span>Fetch Data</span>
-                    </button>
                 </div>
             </div>
         </div>
     </div>
 
-    @if (_inputTabs.Any())
+    @if (StateService.Shortlist.Count > 0)
     {
-        <div class="row mb-5 fade-in-up">
-            <div class="col">
-                @{
-                    var allRsTabs = _inputTabs.Where(t => t.Type == InputType.RS && t.ChildHgvsList != null).ToList();
-                    var allRsReady = allRsTabs.Any() && allRsTabs.All(t => !t.IsLoading && t.ChildHgvsList!.All(h => !h.IsLoading));
-                    var anyRsHasResults = allRsTabs.Any(t => t.ChildHgvsList!.Any(h => h.GRNAs != null && h.GRNAs.Any()));
-                }
-                @if (allRsTabs.Count > 0)
-                {
-                    <div class="d-flex justify-content-end mb-2">
-                        <button class="btn btn-outline-primary shadow-sm"
-                                disabled="@(!allRsReady || !anyRsHasResults)"
-                                @onclick="DownloadAllRsReports"
-                                title="@(allRsReady ? "Download Combined CSV Report for All RS Codes" : "Waiting for analysis...")">
-                            @if (!allRsReady)
-                            {
-                                <span class="spinner-border spinner-border-sm me-2" role="status" aria-hidden="true"></span>
-                                <span>Analyzing...</span>
-                            }
-                            else
-                            {
-                                <span class="oi oi-data-transfer-download me-2"></span>
-                                <span>Download All Reports</span>
-                            }
-                        </button>
+        <div class="card mb-4">
+            <div class="card-body">
+                <div class="d-flex flex-wrap justify-content-between align-items-center gap-2 mb-3">
+                    <h2 class="card-title section-title mb-0"><Icon Name="list" />Shortlist <span class="shortlist-badge">@StateService.Shortlist.Count</span></h2>
+                    <div class="d-flex gap-2">
+                        <button type="button" class="btn btn-sm btn-primary" @onclick="SendShortlistToPooling"><Icon Name="send" />Send to Pooling</button>
+                        <button type="button" class="btn btn-sm btn-outline-secondary" @onclick="StateService.ClearShortlist"><Icon Name="trash" />Clear</button>
                     </div>
-                }
-                <ul class="nav nav-tabs" role="tablist">
-                    @for (var i = 0; i < _inputTabs.Count; i++)
-                    {
-                        var tabIndex = i; // Capture loop variable for closure
-                        var tab = _inputTabs[i];
-                        <li class="nav-item" role="presentation">
-                            <button class="nav-link @(tabIndex == _activeTabIndex ? "active" : "")" 
-                                    type="button" 
-                                    title="@tab.DisplayLabel"
-                                    @onclick="() => _activeTabIndex = tabIndex">
-                                @{
-                                    var isLoading = tab.IsLoading || tab is { Type: InputType.HGVS, DirectHgvs.IsLoading: true };
-                                    var hasError = tab.ErrorMessage != null || tab is { Type: InputType.HGVS, DirectHgvs.ErrorMessage: not null };
-                                }
-                                @if (isLoading)
-                                {
-                                    <span>⏳ @tab.DisplayLabel</span>
-                                }
-                                else if (hasError)
-                                {
-                                    <span class="tab-state-error">⚠️ @tab.DisplayLabel</span>
-                                }
-                                else
-                                {
-                                    <span class="tab-state-success">✓ @tab.DisplayLabel</span>
-                                }
-                            </button>
-                        </li>
-                    }
-                </ul>
-
-                <div class="tab-content-container">
-                    @for (var i = 0; i < _inputTabs.Count; i++)
-                    {
-                        var tabIndex = i; // Capture loop variable for closure
-                        var tab = _inputTabs[tabIndex];
-                        
-                        <div class="@(tabIndex == _activeTabIndex ? "d-block fade-in-up" : "d-none")">
-                            @if (tab.IsLoading)
-                            {
-                                <div class="text-center py-5">
-                                    <Spinner Type="SpinnerType.Dots" Color="SpinnerColor.Primary" />
-                                    <p class="mt-4 text-muted loading-description">Loading data for @tab.DisplayLabel...</p>
-                                </div>
-                            }
-                            else if (tab.ErrorMessage != null)
-                            {
-                                <div class="alert alert-danger" role="alert">
-                                    <strong class="alert-heading">⚠️ Error loading data for @tab.DisplayLabel:</strong><br/>
-                                    <span class="alert-detail">@tab.ErrorMessage</span>
-                                </div>
-                            }
-                            else if (tab.Type == InputType.HGVS && tab.DirectHgvs != null)
-                            {
-                                <HgvsDetailPanel 
-                                    Data="tab.DirectHgvs" 
-                                    OnSort="SortBy"
-                                    GetSorted="GetSortedGRNAs"
-                                    OnSortOriginal="SortByOriginal"
-                                    GetSortedOriginal="GetSortedOriginalGRNAs"
-                                    OnCreateGrna="HandlegRNACreationButton"
-                                    OnCopyComplete="CopyCompleteGRNA"
-                                    OnGetRnaFold="GetRnaFolding"
-                                    SeedStart="_seedStart"
-                                    SeedEnd="_seedEnd" />
-                            }
-                            else if (tab.Type == InputType.RS && tab.ChildHgvsList != null)
-                            {
-                                @if (tab.ChildHgvsList.Any())
-                                {
-                                    <div class="d-flex justify-content-end mb-2 fade-in-up">
-                                        @{
-                                            var isReady = tab.ChildHgvsList.All(h => !h.IsLoading);
-                                            var hasResults = tab.ChildHgvsList.Any(h => h.GRNAs != null && h.GRNAs.Any());
-                                        }
-                                        <button class="btn btn-outline-primary shadow-sm"
-                                                disabled="@(!isReady || !hasResults)"
-                                                @onclick="() => DownloadReport(tab)"
-                                                title="@(isReady ? "Download CSV Report" : "Waiting for analysis...")">
-                                            @if (!isReady)
-                                            {
-                                                <span class="spinner-border spinner-border-sm me-2" role="status" aria-hidden="true"></span>
-                                                <span>Analyzing...</span>
-                                            }
-                                            else
-                                            {
-                                                <span class="oi oi-data-transfer-download me-2"></span>
-                                                <span>Download Report</span>
-                                            }
-                                        </button>
-                                    </div>
-
-                                    <!-- Second level tabs for RS child HGVS -->
-                                    <ul class="nav nav-tabs nav-tabs-sm" role="tablist">
-                                        @for (int j = 0; j < tab.ChildHgvsList.Count; j++)
-                                        {
-                                            var childIndex = j;
-                                            var childHgvs = tab.ChildHgvsList[j];
-                                            var isActiveChild = _activeChildTabIndices.TryGetValue(tabIndex, out var activeChild) && activeChild == childIndex;
-                                            
-                                            <li class="nav-item" role="presentation">
-                                                <button class="nav-link @(isActiveChild ? "active" : "")" 
-                                                        type="button"
-                                                        title="@childHgvs.Hgvs"
-                                                        @onclick="() => _activeChildTabIndices[tabIndex] = childIndex">
-                                                    @if (childHgvs.IsLoading)
-                                                    {
-                                                        @if (childHgvs.IsComplement)
-                                                        {
-                                                            var maxLen = 16;
-                                                            var label = childHgvs.Hgvs.Length > maxLen ? childHgvs.Hgvs[..maxLen] + "..." : childHgvs.Hgvs;
-                                                            <span>⏳ @label (C)</span>
-                                                        }
-                                                        else
-                                                        {
-                                                            var maxLen = 18;
-                                                            var label = childHgvs.Hgvs.Length > maxLen ? childHgvs.Hgvs[..maxLen] + "..." : childHgvs.Hgvs;
-                                                            <span>⏳ @label</span>
-                                                        }
-                                                    }
-                                                    else if (childHgvs.ErrorMessage != null)
-                                                    {
-                                                        @if (childHgvs.IsComplement)
-                                                        {
-                                                            var maxLen = 16;
-                                                            var label = childHgvs.Hgvs.Length > maxLen ? childHgvs.Hgvs[..maxLen] + "..." : childHgvs.Hgvs;
-                                                            <span class="tab-state-error">⚠️ @label (C)</span>
-                                                        }
-                                                        else
-                                                        {
-                                                            var maxLen = 18;
-                                                            var label = childHgvs.Hgvs.Length > maxLen ? childHgvs.Hgvs[..maxLen] + "..." : childHgvs.Hgvs;
-                                                            <span class="tab-state-error">⚠️ @label</span>
-                                                        }
-                                                    }
-                                                    else if (childHgvs.IsComplement)
-                                                    {
-                                                        var maxLen = 16;
-                                                        var label = childHgvs.Hgvs.Length > maxLen ? childHgvs.Hgvs[..maxLen] + "..." : childHgvs.Hgvs;
-                                                        <span class="tab-state-complement">↕ @label (C)</span>
-                                                    }
-                                                    else
-                                                    {
-                                                        var maxLen = 18;
-                                                        var label = childHgvs.Hgvs.Length > maxLen ? childHgvs.Hgvs[..maxLen] + "..." : childHgvs.Hgvs;
-                                                        <span class="tab-state-success">✓ @label</span>
-                                                    }
-                                                </button>
-                                            </li>
-                                        }
-                                    </ul>
-                                    
-                                    <div class="tab-content-container tab-content-container-nested">
-                                        @for (int j = 0; j < tab.ChildHgvsList.Count; j++)
-                                        {
-                                            var childIndex = j;
-                                            var childHgvs = tab.ChildHgvsList[j];
-                                            var isActiveChild = _activeChildTabIndices.TryGetValue(tabIndex, out var activeChild) && activeChild == childIndex;
-                                            
-                                            <div class="@(isActiveChild ? "d-block fade-in-up" : "d-none")">
-                                                <HgvsDetailPanel
-                                                    Data="childHgvs"
-                                                    OnSort="SortBy"
-                                                    GetSorted="GetSortedGRNAs"
-                                                    OnSortOriginal="SortByOriginal"
-                                                    GetSortedOriginal="GetSortedOriginalGRNAs"
-                                                    OnCreateGrna="HandlegRNACreationButton"
-                                                    OnCopyComplete="CopyCompleteGRNA"
-                                                    OnGetRnaFold="GetRnaFolding"
-                                                    SeedStart="_seedStart"
-                                                    SeedEnd="_seedEnd" />
-                                            </div>
-                                        }
-                                    </div>
-                                }
-                                else
-                                {
-                                    <div class="alert alert-info" role="alert">
-                                        <strong class="alert-heading">ℹ️ No HGVS variants found for @tab.DisplayLabel</strong>
-                                    </div>
-                                }
-                            }
-                        </div>
-                    }
+                </div>
+                <div class="grna-table-wrap">
+                    <table class="table table-sm grna-table">
+                        <caption class="visually-hidden">Shortlisted spacers</caption>
+                        <thead>
+                        <tr>
+                            <th scope="col">Variant</th>
+                            <th scope="col">Strand</th>
+                            <th scope="col">Spacer</th>
+                            <th scope="col" class="num">Score</th>
+                            <th scope="col">Alignments</th>
+                            <th scope="col"><span class="visually-hidden">Remove</span></th>
+                        </tr>
+                        </thead>
+                        <tbody>
+                        @foreach (var item in StateService.Shortlist)
+                        {
+                            var risk = AlignmentRisk.Describe(item.Alignments);
+                            <tr @key="@($"{item.Hgvs}|{item.IsComplement}")">
+                                <td class="font-monospace">@item.Hgvs</td>
+                                <td>@(item.IsComplement ? "Complement" : "Normal")</td>
+                                <td class="seq-cell">@item.Spacer</td>
+                                <td class="num">@item.Score.ToString("P0")</td>
+                                <td><span class="risk-chip @risk.CssClass"><span class="risk-glyph" aria-hidden="true"></span>@risk.Label</span></td>
+                                <td>
+                                    <button type="button" class="btn btn-sm btn-outline-secondary btn-icon-only" aria-label="Remove @item.Hgvs from shortlist"
+                                            @onclick="() => StateService.RemoveFromShortlist(item.Hgvs, item.IsComplement)"><Icon Name="close" /></button>
+                                </td>
+                            </tr>
+                        }
+                        </tbody>
+                    </table>
                 </div>
             </div>
         </div>
     }
-</div>
 
-@code {
-    // Logic moved to Index.razor.cs
-}
+    <ErrorBoundary>
+        <ChildContent>
+            @if (_inputTabs.Count > 0)
+            {
+                var progress = Runner.GetProgress();
+                var allRsTabs = _inputTabs.Where(t => t.Type == InputType.RS && t.ChildHgvsList != null).ToList();
+                var allRsReady = allRsTabs.Count > 0 && !Runner.IsBusy;
+                var anyRsHasResults = allRsTabs.Any(t => t.ChildHgvsList!.Any(h => h.GRNAs is { Count: > 0 }));
+
+                <div class="run-bar" role="status" aria-live="polite">
+                    <span class="run-bar-text">
+                        @switch (Runner.Phase)
+                        {
+                            case RunPhase.Discovering: <text>Resolving rsIDs&hellip;</text> break;
+                            case RunPhase.Analyzing: <text>Analysing @progress.Finished of @progress.Total variants</text> break;
+                            case RunPhase.Cancelled: <text>Run cancelled: @progress.Done of @progress.Total variants finished</text> break;
+                            default: <text>Done: @progress.Done of @progress.Total variants analysed@(progress.Failed > 0 ? $", {progress.Failed} failed" : "")</text> break;
+                        }
+                    </span>
+                    @if (progress.Total > 0)
+                    {
+                        <progress max="@progress.Total" value="@progress.Finished" aria-label="Analysis progress"></progress>
+                    }
+                    @if (allRsTabs.Count > 0)
+                    {
+                        <button type="button" class="btn btn-sm btn-outline-secondary" disabled="@(!allRsReady || !anyRsHasResults)" @onclick="DownloadAllRsReports">
+                            <Icon Name="download" />Download all reports
+                        </button>
+                    }
+                </div>
+
+                <TabStrip TItem="InputTabData" Items="_inputTabs" KeyOf="Key" ActiveKey="@(ActiveTab is null ? null : Key(ActiveTab))"
+                          ActiveKeyChanged="SelectTab" IdPrefix="input" AriaLabel="Analysed inputs">
+                    <ItemTemplate Context="tab">
+                        <TabStatusLabel Label="@tab.DisplayLabel" State="StateOf(tab)" />
+                    </ItemTemplate>
+                </TabStrip>
+
+                @if (ActiveTab is { } tab)
+                {
+                    <div class="tab-panel fade-in" role="tabpanel" id="@InputPanelId(tab)"
+                         aria-labelledby="@InputTabId(tab)" @key="tab.Id">
+                        @if (tab.IsLoading)
+                        {
+                            <div role="status" aria-live="polite">
+                                <p class="text-muted">Looking up <span class="font-monospace">@tab.DisplayLabel</span>&hellip;</p>
+                                <div class="skeleton skeleton-block" aria-hidden="true"></div>
+                                <div class="skeleton skeleton-row" aria-hidden="true"></div>
+                            </div>
+                        }
+                        else if (tab.ErrorMessage != null)
+                        {
+                            <div class="alert alert-danger" role="alert">
+                                <div class="alert-heading"><Icon Name="alert" />Could not load <span class="font-monospace">@tab.DisplayLabel</span></div>
+                                <div>@tab.ErrorMessage</div>
+                            </div>
+                        }
+                        else if (tab.Type == InputType.HGVS && tab.DirectHgvs != null)
+                        {
+                            <ErrorBoundary @key="tab.DirectHgvs.Id" MaxErrorCount="3">
+                                <ChildContent>
+                                    <HgvsDetailPanel @key="tab.DirectHgvs.Id" Data="tab.DirectHgvs" SeedStart="_seedStart" SeedEnd="_seedEnd" />
+                                </ChildContent>
+                                <ErrorContent>
+                                    <div class="error-boundary" role="alert"><h3>Could not display this variant</h3><p class="mb-0">Switch tabs to continue; the other variants are unaffected.</p></div>
+                                </ErrorContent>
+                            </ErrorBoundary>
+                        }
+                        else if (tab.Type == InputType.RS && tab.ChildHgvsList != null)
+                        {
+                            @if (tab.ChildHgvsList.Count > 0)
+                            {
+                                var activeLeaf = ActiveLeaf(tab)!;
+                                var tabReady = tab.ChildHgvsList.All(h => !h.IsLoading);
+                                var tabHasResults = tab.ChildHgvsList.Any(h => h.GRNAs is { Count: > 0 });
+
+                                <div class="d-flex justify-content-end mb-2">
+                                    <button type="button" class="btn btn-sm btn-outline-secondary" disabled="@(!tabReady || !tabHasResults)" @onclick="() => DownloadReport(tab)">
+                                        <Icon Name="download" />Download report
+                                    </button>
+                                </div>
+
+                                <TabStrip TItem="HgvsData" Items="tab.ChildHgvsList" KeyOf="Key" ActiveKey="@Key(activeLeaf)"
+                                          ActiveKeyChanged="k => SelectLeaf(tab, k)" IdPrefix="@LeafPrefix(tab)" AriaLabel="@LeafLabel(tab)" Small="true">
+                                    <ItemTemplate Context="leaf">
+                                        <TabStatusLabel Label="@leaf.Hgvs" State="StateOf(leaf)" IsComplement="leaf.IsComplement" />
+                                    </ItemTemplate>
+                                </TabStrip>
+
+                                <div class="tab-panel" role="tabpanel" id="@LeafPanelId(tab, activeLeaf)"
+                                     aria-labelledby="@LeafTabId(tab, activeLeaf)" @key="activeLeaf.Id">
+                                    <ErrorBoundary @key="activeLeaf.Id" MaxErrorCount="3">
+                                        <ChildContent>
+                                            <HgvsDetailPanel @key="activeLeaf.Id" Data="activeLeaf" RsId="@tab.RsId" SeedStart="_seedStart" SeedEnd="_seedEnd" />
+                                        </ChildContent>
+                                        <ErrorContent>
+                                            <div class="error-boundary" role="alert"><h3>Could not display this variant</h3><p class="mb-0">Switch tabs to continue; the other variants are unaffected.</p></div>
+                                        </ErrorContent>
+                                    </ErrorBoundary>
+                                </div>
+                            }
+                            else
+                            {
+                                <div class="alert alert-info" role="status">
+                                    <div class="alert-heading"><Icon Name="info" />No HGVS notations found for @tab.DisplayLabel</div>
+                                    <div>dbSNP returned no gene-level (NG_) mapping for this rsID. This is different from a failed lookup, which would be reported as an error.</div>
+                                </div>
+                            }
+                        }
+                    </div>
+                }
+            }
+        </ChildContent>
+        <ErrorContent>
+            <div class="error-boundary" role="alert">
+                <h3>The results area hit an error</h3>
+                <p class="mb-0">The input form above still works. Run the analysis again to rebuild the results.</p>
+            </div>
+        </ErrorContent>
+    </ErrorBoundary>
+</div>

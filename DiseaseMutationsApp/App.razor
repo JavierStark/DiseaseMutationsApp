@@ -1,21 +1,76 @@
-﻿<!DOCTYPE html>
+<!DOCTYPE html>
 <html lang="en">
 
 <head>
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <meta name="color-scheme" content="light dark" />
     <base href="/" />
+    <script>
+        // Apply the saved (or OS) theme before first paint to avoid a flash.
+        (function () {
+            try {
+                var t = localStorage.getItem('grna.theme');
+                if (!t) t = window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light';
+                document.documentElement.setAttribute('data-bs-theme', t);
+            } catch (e) { }
+        })();
+    </script>
     <link href="css/bootstrap/bootstrap.min.css" rel="stylesheet" />
-    <link href="css/app.css" rel="stylesheet" />
-    <link rel="icon" type="image/png" href="favicon.png" />
+    <link href="css/tokens.css" rel="stylesheet" />
+    <link href="css/base.css" rel="stylesheet" />
+    <link href="css/components.css" rel="stylesheet" />
+    <link rel="icon" type="image/svg+xml" href="favicon.svg" />
     <link href="DiseaseMutationsApp.styles.css" rel="stylesheet" />
     <HeadOutlet />
 </head>
 
 <body>
     <Routes />
+
+    <div id="blazor-error-ui" role="alert">
+        An unexpected error occurred. Your inputs are kept in this browser.
+        <a href="" class="reload">Reload</a>
+        <button class="dismiss" aria-label="Dismiss">&times;</button>
+    </div>
+
+    <div id="components-reconnect-modal" role="alertdialog" aria-live="assertive" aria-labelledby="reconnect-title">
+        <div class="reconnect-box">
+            <div class="reconnect-show">
+                <h2 id="reconnect-title" class="h5">Connection lost</h2>
+                <p class="mb-0">Trying to reconnect. A running analysis keeps going on the server and will be restored when the connection returns.</p>
+            </div>
+            <div class="reconnect-failed">
+                <h2 class="h5">Still disconnected</h2>
+                <p>Could not reach the server. Check your network, then retry.</p>
+                <button class="btn btn-primary" onclick="Blazor.reconnect()">Retry</button>
+            </div>
+            <div class="reconnect-rejected">
+                <h2 class="h5">Session expired</h2>
+                <p>The server no longer has this session (it may have restarted). Reload to start fresh; your inputs are restored from this browser.</p>
+                <button class="btn btn-primary" onclick="location.reload()">Reload</button>
+            </div>
+        </div>
+    </div>
+
+    <script src="js/app.js"></script>
     <script src="js/file-download.js"></script>
-    <script src="_framework/blazor.web.js"></script>
+    <script src="_framework/blazor.web.js" autostart="false"></script>
+    <script>
+        // Keep this trivial: a JS error here leaves the app permanently dead.
+        // A successful reconnect restores an in-flight run, so retry generously (about 10 minutes).
+        Blazor.start({
+            circuit: {
+                reconnectionOptions: {
+                    maxRetries: 100,
+                    retryIntervalMilliseconds: function (attempt) { return attempt < 5 ? 1500 : 6000; }
+                }
+            }
+        });
+        document.querySelector('#blazor-error-ui .dismiss').addEventListener('click', function () {
+            document.getElementById('blazor-error-ui').style.display = 'none';
+        });
+    </script>
 </body>
 
 </html>

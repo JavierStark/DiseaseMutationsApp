@@ -4,6 +4,7 @@
         <Nullable>enable</Nullable>
         <ImplicitUsings>enable</ImplicitUsings>
         <DockerDefaultTargetOS>Linux</DockerDefaultTargetOS>
+        <PackageLicenseExpression>MIT</PackageLicenseExpression>
     </PropertyGroup>
 
     <PropertyGroup>
@@ -12,19 +13,14 @@
     </PropertyGroup>
 
     <ItemGroup>
-        <PackageReference Include="Blazor.Bootstrap" Version="3.5.0" />
-        <PackageReference Include="Microsoft.AspNetCore.Components.Web" Version="9.0.*"/>
-    </ItemGroup>
-    
-    <ItemGroup>
         <ProjectReference Include="..\gRNA\gRNA.fsproj" />
     </ItemGroup>
 
 
     <ItemGroup>
-      <Content Include="..\.dockerignore">
+      <None Include="..\.dockerignore">
         <Link>.dockerignore</Link>
-      </Content>
+      </None>
     </ItemGroup>
 
     

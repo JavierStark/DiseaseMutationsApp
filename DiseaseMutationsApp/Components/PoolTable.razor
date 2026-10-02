@@ -1,8 +1,8 @@
 @using DiseaseMutationsApp.Services
 
-<div class="grna-table-wrapper grna-table-wrapper-scrollable">
-    <table class="table table-hover table-sm mb-0 align-middle">
-        <thead class="grna-table-head">
+<div class="grna-table-wrap pool-table-scroll">
+    <table class="table table-hover table-sm mb-0 align-middle grna-table"><caption class="visually-hidden">Mixtures to prepare</caption>
+        <thead>
             <tr>
                 <th scope="col" class="pool-col-id">Tube ID</th>
                 <th scope="col" class="pool-col-name">Mixture name</th>
@@ -16,8 +16,11 @@
                 var current = pool;
                 <tr class="pool-row @(current.Id == SelectedPoolId ? "pool-row-selected" : null)"
                     @onclick="() => OnSelectPool.InvokeAsync(current)">
-                    <td class="metric-accent-primary">@current.Id</td>
-                    <td class="metric-default">@current.Name</td>
+                    <td class="metric-variant">
+                        <button type="button" class="sort-btn" aria-pressed="@(current.Id == SelectedPoolId ? "true" : "false")"
+                                aria-label="Select tube @current.Id" @onclick="() => OnSelectPool.InvokeAsync(current)" @onclick:stopPropagation="true">@current.Id</button>
+                    </td>
+                    <td class="metric-plain">@current.Name</td>
                     <td>
                         @if (current.IsEmpty)
                         {
@@ -28,7 +31,7 @@
                             <span class="pool-guide-list">@string.Join(", ", current.GuideLabels)</span>
                         }
                     </td>
-                    <td class="metric-accent-secondary">@current.WellLabel</td>
+                    <td class="metric-reference">@current.WellLabel</td>
                 </tr>
             }
         </tbody>

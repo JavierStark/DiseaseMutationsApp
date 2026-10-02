@@ -1,0 +1,17 @@
+@* Thin wrapper over the SVG sprite. Decorative unless a Label is given. *@
+@if (string.IsNullOrEmpty(Label))
+{
+    <svg class="icon @Class" aria-hidden="true" focusable="false"><use href="@Href" /></svg>
+}
+else
+{
+    <svg class="icon @Class" role="img" aria-label="@Label" focusable="false"><title>@Label</title><use href="@Href" /></svg>
+}
+
+@code {
+    [Parameter, EditorRequired] public string Name { get; set; } = "";
+    [Parameter] public string? Label { get; set; }
+    [Parameter] public string? Class { get; set; }
+
+    private string Href => $"icons.svg#{Name}";
+}
