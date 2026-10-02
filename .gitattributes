@@ -1,0 +1,7 @@
+# Scripts and container files are executed on Linux: always LF.
+*.sh text eol=lf
+Dockerfile* text eol=lf
+*.yml text eol=lf
+.dockerignore text eol=lf
+bowtie/bowtie-align-s binary
+*.woff2 binary
