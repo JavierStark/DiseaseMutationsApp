@@ -151,7 +151,7 @@ public class GrnaService : IGrnaAnalysis
     }
 
     private static readonly System.Text.RegularExpressions.Regex FornaSequence = new("^[ACGUTacgut]+$");
-    private static readonly System.Text.RegularExpressions.Regex FornaStructure = new(@"^[.()\[\]{}<>]+$");
+    private static readonly System.Text.RegularExpressions.Regex FornaStructure = new(@"^[.()\[\]]+$");
 
     /// <summary>
     /// FORNA link. Two quirks of that host, both verified: it refuses HTTPS (connection refused), and its page script splits
