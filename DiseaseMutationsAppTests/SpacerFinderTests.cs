@@ -76,15 +76,33 @@ public class SpacerFinderTests
     }
 
     [Test]
-    public void CalculateGCScore_AtBoundaries_TreatedAsOutOfRange()
+    public void CalculateGCScore_AtBoundaries_IsIdeal()
     {
-        // The comparison is strict (< upper && > lower), so the boundaries themselves
-        // fall through to the proportional branches rather than the "ideal" 1.0 branch.
+        // Boundaries are inclusive: exactly 40% or 60% GC scores a perfect 1.0.
+        // (Previously 40.0 fell through to (100-40)/(100-60) = 1.5, outranking a 50% candidate.)
         Assert.Multiple(() =>
         {
-            Assert.That(SpacerFinder.calculateGCScore(40.0, 40.0, 60.0), Is.EqualTo((100.0 - 40.0) / (100.0 - 60.0)));
-            Assert.That(SpacerFinder.calculateGCScore(60.0, 40.0, 60.0), Is.EqualTo((100.0 - 60.0) / (100.0 - 60.0)));
+            Assert.That(SpacerFinder.calculateGCScore(40.0, 40.0, 60.0), Is.EqualTo(1.0));
+            Assert.That(SpacerFinder.calculateGCScore(60.0, 40.0, 60.0), Is.EqualTo(1.0));
         });
+    }
+
+    [TestCase(39.99, 39.99 / 40.0)]
+    [TestCase(40.00, 1.0)]
+    [TestCase(40.01, 1.0)]
+    [TestCase(59.99, 1.0)]
+    [TestCase(60.00, 1.0)]
+    [TestCase(60.01, (100.0 - 60.01) / 40.0)]
+    public void CalculateGCScore_BoundaryNeighbourhood(double gc, double expected)
+    {
+        Assert.That(SpacerFinder.calculateGCScore(gc, 40.0, 60.0), Is.EqualTo(expected).Within(1e-9));
+    }
+
+    [Test]
+    public void CalculateGCScore_NeverExceedsOne()
+    {
+        for (var gc = 0.0; gc <= 100.0; gc += 0.25)
+            Assert.That(SpacerFinder.calculateGCScore(gc, 40.0, 60.0), Is.InRange(0.0, 1.0), $"gc={gc}");
     }
 
     // ===== countHomopolymers =====

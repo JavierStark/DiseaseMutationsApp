@@ -25,7 +25,7 @@ let calculateGCContent (sequence: string) =
         System.Math.Round((float gcCount / float totalCount) * 100.0, 2)
 
 let calculateGCScore (gcContent: float) (lowerThreshold: float, upperThreshold: float) =
-    if gcContent < upperThreshold && gcContent > lowerThreshold then
+    if gcContent <= upperThreshold && gcContent >= lowerThreshold then
         1.0
     else if gcContent < lowerThreshold then
         gcContent / lowerThreshold
