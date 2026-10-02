@@ -75,6 +75,26 @@ public class BowtieOutputParsingTests
         });
     }
 
+    // Captured from the real Bowtie 1.3.1 bowtie-align-s (same binary as bowtie/bowtie-align-s) run with
+    // `-c <3 reads> -v 2 -k 6 --threads 2 --mm` against a toy index: alignments on stdout, `#` summary on stderr.
+    private const string RealOutput =
+        "# reads processed: 3\n# reads with at least one alignment: 2 (66.67%)\n# reads that failed to align: 1 (33.33%)\nReported 4 alignments\n" +
+        "0\t+\tchrToy\t5000\tAGTAGTTTGTCTTCGCGCGGCCAATCAA\tIIIIIIIIIIIIIIIIIIIIIIIIIIII\t2\t\n" +
+        "0\t+\tchrToy\t1000\tAGTAGTTTGTCTTCGCGCGGCCAATCAA\tIIIIIIIIIIIIIIIIIIIIIIIIIIII\t2\t\n" +
+        "0\t+\tchrToy\t12000\tAGTAGTTTGTCTTCGCGCGGCCAATCAA\tIIIIIIIIIIIIIIIIIIIIIIIIIIII\t2\t\n" +
+        "1\t+\tchrToy\t3000\tACGGCGTGGTATTTTTGAGCTCCTGGTG\tIIIIIIIIIIIIIIIIIIIIIIIIIIII\t0\t\n";
+
+    [Test]
+    public void RealBowtieOutput_CountsPerRead()
+    {
+        var parsed = Parsing.parseBowtieAlignments(RealOutput);
+        Assert.Multiple(() =>
+        {
+            Assert.That(parsed.Count(), Is.EqualTo(4));
+            Assert.That(Parsing.countAlignments(3, parsed).ToArray(), Is.EqualTo(new[] { 3, 1, 0 }));
+        });
+    }
+
     [TestCase("genome.1.bt2", "genome")]
     [TestCase("genome.rev.2.bt2l", "genome")]
     [TestCase("GRCh38_noalt_as.rev.1.ebwt", "GRCh38_noalt_as")]

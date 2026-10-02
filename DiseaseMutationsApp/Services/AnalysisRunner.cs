@@ -154,7 +154,6 @@ public sealed partial class AnalysisRunner : IAsyncDisposable
             {
                 Type = InputType.HGVS,
                 DisplayLabel = input,
-                IsLoading = true,
                 DirectHgvs = new HgvsData { Hgvs = input }
             };
 

@@ -178,7 +178,7 @@
                         }
                         else if (tab.Type == InputType.HGVS && tab.DirectHgvs != null)
                         {
-                            <ErrorBoundary @key="tab.DirectHgvs.Id" MaxErrorCount="3">
+                            <ErrorBoundary @key="tab.DirectHgvs.Id">
                                 <ChildContent>
                                     <HgvsDetailPanel @key="tab.DirectHgvs.Id" Data="tab.DirectHgvs" SeedStart="_seedStart" SeedEnd="_seedEnd" />
                                 </ChildContent>
@@ -210,7 +210,7 @@
 
                                 <div class="tab-panel" role="tabpanel" id="@LeafPanelId(tab, activeLeaf)"
                                      aria-labelledby="@LeafTabId(tab, activeLeaf)" @key="activeLeaf.Id">
-                                    <ErrorBoundary @key="activeLeaf.Id" MaxErrorCount="3">
+                                    <ErrorBoundary @key="activeLeaf.Id">
                                         <ChildContent>
                                             <HgvsDetailPanel @key="activeLeaf.Id" Data="activeLeaf" RsId="@tab.RsId" SeedStart="_seedStart" SeedEnd="_seedEnd" />
                                         </ChildContent>
