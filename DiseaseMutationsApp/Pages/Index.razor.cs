@@ -2,6 +2,7 @@ using System.Text;
 using DiseaseMutationsApp.Components;
 using DiseaseMutationsApp.Services;
 using Microsoft.AspNetCore.Components;
+using Microsoft.AspNetCore.Components.Forms;
 using Microsoft.JSInterop;
 
 namespace DiseaseMutationsApp.Pages
@@ -286,6 +287,57 @@ namespace DiseaseMutationsApp.Pages
         {
             var p = Runner.Parameters ?? new RunParameters(_gRnaSize, _seedStart, _seedEnd);
             sb.AppendLine(GrnaCsvSchema.ProvenanceLine(p.SpacerSize, p.SeedStart, p.SeedEnd));
+        }
+
+        private bool _oligoT7 = true;
+        private bool _oligoPairs = true;
+
+        private async Task DownloadOligos()
+        {
+            if (StateService.Shortlist.Count == 0) return;
+            var csv = OligoExport.ShortlistCsv(StateService.Shortlist, _oligoT7, _oligoPairs, PlateKind.Plate96);
+            await JSRuntime.InvokeVoidAsync("downloadFile", $"Oligos_{DateTime.Now:yyyyMMdd_HHmmss}.csv", "text/csv;charset=utf-8", csv);
+        }
+
+        private string? _uploadMessage;
+
+        private async Task OnFileSelected(InputFileChangeEventArgs e)
+        {
+            _uploadMessage = null;
+            try
+            {
+                using var reader = new StreamReader(e.File.OpenReadStream(maxAllowedSize: 1024 * 1024));
+                var text = await reader.ReadToEndAsync();
+                var session = SessionDocument.TryParse(text);
+                var input = SessionDocument.InputFromUpload(text);
+                if (string.IsNullOrWhiteSpace(input))
+                {
+                    _uploadMessage = "No variants could be read from that file.";
+                    return;
+                }
+
+                _hgvs = input;
+                if (session is not null)
+                {
+                    if (session.Spacer > 0) _gRnaSize = session.Spacer;
+                    var parts = session.Seed.Split('-', 2);
+                    if (parts.Length == 2 && int.TryParse(parts[0], out var s) && int.TryParse(parts[1], out var en)) { _seedStart = s; _seedEnd = en; }
+                    StateService.Shortlist = session.Shortlist;
+                }
+
+                _uploadMessage = $"Loaded {AnalysisRunner.ParseInputs(input).Count} input(s) from {e.File.Name}. Press Run analysis.";
+                SaveSession();
+            }
+            catch (Exception ex)
+            {
+                _uploadMessage = $"Could not read the file: {ex.Message}";
+            }
+        }
+
+        private async Task DownloadSession()
+        {
+            var doc = new SessionDocument(SessionDocument.CurrentVersion, _hgvs ?? "", _gRnaSize, $"{_seedStart}-{_seedEnd}", StateService.Shortlist);
+            await JSRuntime.InvokeVoidAsync("downloadFile", $"Session_{DateTime.Now:yyyyMMdd_HHmmss}.json", "application/json;charset=utf-8", SessionDocument.Serialize(doc));
         }
 
         private void SendShortlistToPooling()

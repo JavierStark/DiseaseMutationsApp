@@ -1,5 +1,6 @@
 @using DiseaseMutationsApp.Services
 @using DiseaseMutationsApp.Pages
+@inject GrnaService Grna
 
 <div class="card">
     <div class="card-body">
@@ -81,6 +82,10 @@
                                     aria-label="Copy spacer @spacer" title="Copy spacer">
                                 <Icon Name="copy" />
                             </button>
+                            <button type="button" class="btn btn-sm btn-outline-secondary btn-icon-only" @onclick="() => ToggleLoci(spacer)"
+                                    aria-expanded="@(_loci.ContainsKey(spacer) ? "true" : "false")" aria-label="Show genomic loci of @spacer" title="Show genomic loci">
+                                <Icon Name="@(_loci.ContainsKey(spacer) ? "sort-up" : "chevron")" />
+                            </button>
                         </td>
                         <td class="seq-cell">
                             <span class="text-muted">5'</span>
@@ -95,6 +100,38 @@
                         <td class="num">@(g.RnaFoldResult is null ? "n/a" : g.RnaFoldResult.Energy.ToString("F2"))</td>
                         <td class="num bar-cell" style="--w:@Pct(g.Score)"><span>@g.Score.ToString("P0")</span></td>
                     </tr>
+                    @if (_loci.TryGetValue(spacer, out var state))
+                    {
+                        <tr class="loci-row" @key="@($"{spacer}-loci")">
+                            <td></td>
+                            <td colspan="7">
+                                @if (state.Loading)
+                                {
+                                    <span class="helper-note" role="status">Looking up genomic loci&hellip;</span>
+                                }
+                                else if (state.Error != null)
+                                {
+                                    <span class="text-danger" role="alert">@state.Error</span>
+                                }
+                                else if (state.Report is { } report)
+                                {
+                                    <div class="helper-note mb-1" role="status">
+                                        @(report.Truncated ? $"{report.Loci.Count}+ alignments (capped at {GrnaService.MaxLociHits})" : $"{report.Loci.Count} alignment{(report.Loci.Count == 1 ? "" : "s")}") with up to 2 mismatches.
+                                    </div>
+                                    <table class="table table-sm mb-0 loci-table">
+                                        <caption class="visually-hidden">Genomic loci of @spacer</caption>
+                                        <thead><tr><th scope="col">Locus</th><th scope="col">Strand</th><th scope="col" class="num">Mismatches</th><th scope="col">Detail</th></tr></thead>
+                                        <tbody>
+                                        @foreach (var l in report.Loci)
+                                        {
+                                            <tr><td class="font-monospace">@l.Reference:@l.Position</td><td>@l.Strand</td><td class="num">@l.Mismatches</td><td class="font-monospace">@l.Detail</td></tr>
+                                        }
+                                        </tbody>
+                                    </table>
+                                }
+                            </td>
+                        </tr>
+                    }
                 }
                 </tbody>
             </table>
@@ -142,6 +179,34 @@
 
     private string Id(string name) => $"grna-{_uid}-{name}";
     private static string Pct(double v) => $"{Math.Clamp(v, 0, 1) * 100:0}%".Replace(',', '.');
+
+    private sealed class LociState
+    {
+        public bool Loading { get; set; } = true;
+        public string? Error { get; set; }
+        public OffTargetReport? Report { get; set; }
+    }
+
+    private readonly Dictionary<string, LociState> _loci = new();
+
+    private async Task ToggleLoci(string spacer)
+    {
+        if (_loci.Remove(spacer)) return;
+        var state = new LociState();
+        _loci[spacer] = state;
+        try
+        {
+            state.Report = await Grna.GetOffTargets(spacer);
+        }
+        catch (Exception ex)
+        {
+            state.Error = ex.Message;
+        }
+        finally
+        {
+            state.Loading = false;
+        }
+    }
 
     private void FilterChanged() => Filter.Page = 0;
 

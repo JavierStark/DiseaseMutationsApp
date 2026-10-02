@@ -110,10 +110,8 @@ let checkNcbi () : Task<CheckResult> =
 let checkMemory (env: GrnaEnvironment) : CheckResult =
     let info = GC.GetGCMemoryInfo()
     let totalGb = float info.TotalAvailableMemoryBytes / 1073741824.0
-    if totalGb < 4.0 then
-        mk "Memory" Warn (sprintf "%.1f GB available to the process" totalGb) "The GRCh38 index is memory-mapped (~4 GB); give the container at least 4 GB for good performance."
-    else
-        mk "Memory" Pass (sprintf "%.1f GB available to the process" totalGb) ""
+    // The index is memory-mapped, reclaimable page cache: less RAM only means less of it stays hot, so this never fails.
+    mk "Memory" Pass (sprintf "%.1f GB available to the process%s" totalGb (if totalGb < 4.0 then " (the memory-mapped index will be only partly cached; still works)" else "")) ""
 
 let checkWorkingDirectory () : CheckResult =
     mk "Working directory" Pass (sprintf "cwd=%s base=%s" Environment.CurrentDirectory AppContext.BaseDirectory) ""

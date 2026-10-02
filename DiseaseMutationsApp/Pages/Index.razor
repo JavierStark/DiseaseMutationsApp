@@ -53,6 +53,16 @@
                         }
                     </fieldset>
 
+                    <div class="mb-4">
+                        <label for="upload" class="form-label">Load inputs from a file</label>
+                        <InputFile id="upload" class="form-control" accept=".txt,.csv,.tsv,.json" OnChange="OnFileSelected" />
+                        <small class="helper-note mt-2 d-block">A plain list of HGVS/rsIDs, a Builder CSV report, or a saved session (.json).</small>
+                        @if (_uploadMessage != null)
+                        {
+                            <small class="d-block mt-1" role="status">@_uploadMessage</small>
+                        }
+                    </div>
+
                     <div class="d-flex flex-wrap gap-2">
                         <button type="button" class="btn btn-primary btn-lg" @onclick="StartRun" disabled="@(!CanFetchData)">
                             <Icon Name="play" />Run analysis
@@ -63,6 +73,9 @@
                                 <Icon Name="stop" />Cancel run
                             </button>
                         }
+                        <button type="button" class="btn btn-outline-secondary btn-lg" @onclick="DownloadSession" disabled="@string.IsNullOrWhiteSpace(_hgvs)">
+                            <Icon Name="download" />Save session
+                        </button>
                         <button type="button" class="btn btn-outline-secondary btn-lg" @onclick="CopyPermalink" disabled="@string.IsNullOrWhiteSpace(_hgvs)">
                             <Icon Name="@(_linkCopied ? "check" : "link")" />@(_linkCopied ? "Link copied" : "Copy link to this design")
                         </button>
@@ -78,7 +91,10 @@
             <div class="card-body">
                 <div class="d-flex flex-wrap justify-content-between align-items-center gap-2 mb-3">
                     <h2 class="card-title section-title mb-0"><Icon Name="list" />Shortlist <span class="shortlist-badge">@StateService.Shortlist.Count</span></h2>
-                    <div class="d-flex gap-2">
+                    <div class="d-flex flex-wrap align-items-center gap-3">
+                        <div class="form-check mb-0"><input id="oligo-t7" class="form-check-input" type="checkbox" @bind="_oligoT7" /><label class="form-check-label" for="oligo-t7">T7 promoter</label></div>
+                        <div class="form-check mb-0"><input id="oligo-pairs" class="form-check-input" type="checkbox" @bind="_oligoPairs" /><label class="form-check-label" for="oligo-pairs">Top and bottom oligos</label></div>
+                        <button type="button" class="btn btn-sm btn-outline-secondary" @onclick="DownloadOligos"><Icon Name="download" />Order CSV (DNA)</button>
                         <button type="button" class="btn btn-sm btn-primary" @onclick="SendShortlistToPooling"><Icon Name="send" />Send to Pooling</button>
                         <button type="button" class="btn btn-sm btn-outline-secondary" @onclick="StateService.ClearShortlist"><Icon Name="trash" />Clear</button>
                     </div>

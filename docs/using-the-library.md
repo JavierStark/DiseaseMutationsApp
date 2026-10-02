@@ -86,7 +86,8 @@ interpreters per process; sequences go as `ArgumentList` items, never through st
 
 ### `BowtieWrapper` / `Services.BowtieService`
 `BowtieService.ProcessMultipleSequencesAsync(sequences, mismatches, threads, ct)` returns one alignment count per read.
-It implements `IBowtieRunner`, the seam for substituting a stub. Counts saturate at `-k 6`: **6 means "6 or more"**.
+It implements `IBowtieRunner`, the seam for substituting a stub. `FindOffTargetsAsync(window, mismatches, maxHits, ct)` returns the
+alignments with loci (`Parsing.BowtieAlignment`: reference, 0-based offset, strand, mismatch count and detail) for one DNA window. Counts saturate at `-k 6`: **6 means "6 or more"**.
 
 ### `Parsing`
 Pure, unit-tested parsers: `parseFoldLine`, `parseFoldBatch`, `tryParseBowtieLine`, `parseBowtieAlignments` (records with

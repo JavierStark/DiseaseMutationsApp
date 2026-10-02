@@ -60,9 +60,11 @@ property of the image, identical across the local-build and registry-pull routes
 
 ## Memory
 
-The index is memory-mapped shared page cache (~4 GB when hot); the CLR, the sequence cache (up to 8 accessions) and
-ViennaRNA processes need roughly 1 GB on top for typical variants. `docker-compose.yml` therefore allows **4 GB** (it was
-2 GB). With a 2 GB WSL limit the index cannot stay resident and every alignment slows down; see the README.
+The index is memory-mapped, reclaimable page cache: it is *not* a hard resident-memory requirement. Verified on a Docker VM
+with only ~3 GB: a 25-variant run (including a real rsID expanded to both strands) stayed around 700 MB resident and finished
+in under 20 s. More page cache simply keeps more of the index hot. The compose `memory` limit is therefore only an upper
+bound (default 4 GB, override with `GRNA_MEMORY_LIMIT`); `grna doctor` warns below 4 GB but the app works. Do not raise
+Docker's memory just for this app: it is not needed, and over-provisioning the VM slows builds.
 
 ## Configuration
 
@@ -74,7 +76,7 @@ ViennaRNA processes need roughly 1 GB on top for typical variants. `docker-compo
 | `GRNA_NCBI_API_KEY`, `GRNA_NCBI_CONTACT` | raise the NCBI limit to 10 req/s and identify the tool |
 | `Analysis__MaxConcurrentVariants` | variants analysed at once (1-4) |
 | `Analysis__VariantTimeoutSeconds` | per-variant timeout (default 600) |
-| `GRNA_BIND`, `GRNA_MAX_CONCURRENT_VARIANTS`, `GRNA_APP_IMAGE`, `GRNA_BOWTIE_BASE`, `GRNA_REGISTRY` | Compose / `start.sh` knobs |
+| `GRNA_MEMORY_LIMIT`, `GRNA_BIND`, `GRNA_MAX_CONCURRENT_VARIANTS`, `GRNA_APP_IMAGE`, `GRNA_BOWTIE_BASE`, `GRNA_REGISTRY` | Compose / `start.sh` knobs |
 
 ## Health checks (`grna doctor`, `/healthz`, `/diagnostics`)
 

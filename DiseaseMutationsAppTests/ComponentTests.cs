@@ -1,3 +1,4 @@
+using Microsoft.Extensions.DependencyInjection;
 using Bunit;
 using DiseaseMutationsApp.Components;
 using DiseaseMutationsApp.Pages;
@@ -60,6 +61,7 @@ public class ComponentTests : BunitContext
     public ComponentTests()
     {
         JSInterop.Mode = JSRuntimeMode.Loose;
+        Services.AddSingleton(new GrnaService(Microsoft.Extensions.Logging.Abstractions.NullLogger<GrnaService>.Instance, new gRNA.Services.BowtieService()));
     }
 
     [Test]
@@ -287,6 +289,35 @@ public class StateAndSessionTests
             Assert.That(new GrnaFilter { MaxGc = 45 }.Matches(g), Is.False);
             Assert.That(new GrnaFilter { Contains = "cgua" }.Matches(g), Is.True);
             Assert.That(new GrnaFilter { Contains = "zzz" }.Matches(g), Is.False);
+        });
+    }
+}
+
+public class OffTargetTests
+{
+    [TestCase("ACGTACGTACGTACGTACGTACGTACGT")]
+    [TestCase("TTTTGGGGCCCCAAAATTGGCCAA")]
+    public void WindowFromSpacer_InvertsTheSpacerDerivation(string window)
+    {
+        // Same derivation as SpacerFinder.getOrderedgRna: complement, reverse, T to U.
+        var spacer = new string(gRNA.Sequence.complementary(window).Reverse().ToArray()).Replace('T', 'U');
+        Assert.That(GrnaService.WindowFromSpacer(spacer), Is.EqualTo(window));
+    }
+
+    [Test]
+    public void ParseBowtieAlignments_ReadsMismatchColumnFromRealOutput()
+    {
+        // Captured from the real image: bowtie-align-s 1.3.1 against the GRCh38 .bt2 index.
+        var t = ((char)9).ToString();
+        var nl = ((char)10).ToString();
+        var output =
+            "0" + t + "+" + t + "chr22" + t + "34065972" + t + "ACGTACGTACGTACGTACGTACGTACGT" + t + "IIII" + t + "0" + t + nl +
+            "0" + t + "-" + t + "chr22" + t + "34065964" + t + "ACGTACGTACGTACGTACGTACGTACGT" + t + "IIII" + t + "1" + t + "21:A>G,25:A>G" + nl;
+        var parsed = gRNA.Parsing.parseBowtieAlignments(output).ToList();
+        Assert.Multiple(() =>
+        {
+            Assert.That(parsed.Select(p => p.MismatchCount), Is.EqualTo(new[] { 0, 2 }));
+            Assert.That(parsed[1].MismatchDetail, Is.EqualTo("21:A>G,25:A>G"));
         });
     }
 }

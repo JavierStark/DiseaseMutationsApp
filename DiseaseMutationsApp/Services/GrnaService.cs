@@ -132,6 +132,24 @@ public class GrnaService : IGrnaAnalysis
         }
     }
 
+    /// <summary>Maximum alignments requested when listing off-target loci (the batch path caps at 6).</summary>
+    public const int MaxLociHits = 50;
+
+    /// <summary>The DNA window a spacer was derived from: spacer = reverse(complement(window)) with T to U.</summary>
+    public static string WindowFromSpacer(string spacer) =>
+        gRNA.Sequence.complementary(new string(spacer.Replace('U', 'T').Reverse().ToArray()));
+
+    /// <summary>Lists where a spacer's target window aligns in the genome (chromosome, position, strand, mismatches).</summary>
+    public async Task<OffTargetReport> GetOffTargets(string spacer, CancellationToken cancellationToken = default)
+    {
+        var hits = await _bowtieService.FindOffTargetsAsync(WindowFromSpacer(spacer), 2, MaxLociHits, cancellationToken);
+        var loci = hits
+            .Select(h => new OffTargetLocus(h.Reference, h.Offset + 1, h.Strand == '-' ? "-" : "+", h.MismatchCount, h.MismatchDetail))
+            .OrderBy(l => l.Mismatches).ThenBy(l => l.Reference, StringComparer.Ordinal).ThenBy(l => l.Position)
+            .ToList();
+        return new OffTargetReport(loci, loci.Count >= MaxLociHits);
+    }
+
     public string GetFornaUrl(string sequence, string structure)
     {
         return $"https://nibiru.tbi.univie.ac.at/forna/forna.html?id=url/name&sequence={Uri.EscapeDataString(sequence)}&structure={Uri.EscapeDataString(structure)}";
@@ -186,3 +204,9 @@ public record RNAFoldResult
     public required string Structure { get; init; }
     public double Energy { get; init; }
 }
+
+/// <summary>One genomic alignment of a spacer's target window (1-based position).</summary>
+public record OffTargetLocus(string Reference, long Position, string Strand, int Mismatches, string Detail);
+
+/// <summary>Loci for one spacer; <see cref="Truncated"/> means the cap was reached and more may exist.</summary>
+public record OffTargetReport(List<OffTargetLocus> Loci, bool Truncated);

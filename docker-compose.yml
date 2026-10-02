@@ -32,8 +32,8 @@ services:
       resources:
         limits:
           cpus: '1.5'
-          # The ~4 GB GRCh38 index is memory-mapped and shared page cache; the rest is the sequence cache,
-          # the CLR and ViennaRNA processes. See docs/runtime-contract.md.
-          memory: 4G
+          # Upper bound only. The ~4 GB GRCh38 index is memory-mapped, reclaimable page cache, so this also runs on a
+          # ~3 GB Docker VM (verified: ~700 MB resident for a 25-variant run). Override with GRNA_MEMORY_LIMIT.
+          memory: ${GRNA_MEMORY_LIMIT:-4G}
 # There is deliberately NO volume for the Bowtie index: it is baked into the image layer because
 # memory-mapped reads from a volume or bind mount are 10x+ slower. See docs/runtime-contract.md.

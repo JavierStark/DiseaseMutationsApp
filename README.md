@@ -16,7 +16,12 @@ original (wild-type) sequence.
   structure and a FORNA diagram link.
 - **Runs**: cancellable (whole run or one variant), bounded-parallel, and they survive navigating to another page. A refresh
   restores your inputs (never results: download the CSV report to keep them).
-- **Shortlist**: pick spacers across variants and send them to the Pooling page without a CSV round trip.
+- **Off-target loci**: expand any spacer to see where its target window aligns in the genome (chromosome, position, strand,
+  mismatches; up to 50 alignments). The table's alignment chip still saturates at "6+", honestly labelled.
+- **Shortlist**: pick spacers across variants, send them to the Pooling page without a CSV round trip, or download an
+  order-ready **oligo CSV** (DNA, optional T7 promoter, top/bottom pairs, plate wells addressed like the pooling plan).
+- **Files and sessions**: load inputs from a plain list, a Builder CSV report or a saved session; *Save session* downloads a
+  JSON document (inputs, spacer/seed, shortlist) that `grna design --input session.json` reads too.
 - **Permalinks**: *Copy link to this design* encodes `?hgvs=...&spacer=28&seed=10-17`; opening it starts the run.
 - **CSV report**: per rsID or all at once, with the spacer/seed parameters in a leading `#` line and a `Strand` column.
 
@@ -39,7 +44,7 @@ The same preflight as `grna doctor`: Bowtie binary and index, Python and ViennaR
 grna doctor [--network]
 grna resolve rs334
 grna design --hgvs NC_000017.11:g.7674220C>T --spacer 28 --seed 10-17 [--complement] [--format csv|json|tsv]
-grna design --input variants.txt --out report.csv        # batch, resumable, bounded concurrency
+grna design --input variants.txt|session.json --out report.csv   # batch, resumable, bounded concurrency
 grna fold "GAUUUAGACUACCCC..."
 grna pool --guides report.csv --capacity 5 --plate 96 --model auto --out plan.csv
 ```
@@ -69,8 +74,7 @@ memory-mapped, and a volume or bind mount would make alignment 10x+ slower
 ## Installation
 
 Requirements: Docker with Compose v2, about **10 GB free disk** for the first build (the ~3.7 GB index zip and the unpacked
-index coexist), and **4 GB RAM available to Docker** (on Windows/WSL set `memory=4GB` or more in `.wslconfig`; with 2 GB the
-index cannot stay resident and alignments slow down).
+index coexist), and about **3 GB RAM available to Docker** (the index is memory-mapped reclaimable cache, so more RAM only keeps more of it hot; no need to raise Docker's memory).
 
 ### Route 1: one command (default)
 
@@ -183,7 +187,7 @@ Start with `/diagnostics` or `grna doctor`: each failing check names its remedy.
 - **ViennaRNA / Python errors**: `pip install viennarna==2.7.2`; check `GRNA_PYTHON`.
 - **"No HGVS notations found" for an rsID**: dbSNP returned no `NG_` mapping (different from a lookup error).
 - **Connection lost banner**: the server keeps the run going for about 10 minutes and the page rejoins automatically.
-- **Slow alignments**: give Docker at least 4 GB; never move the index to a volume.
+- **Slow alignments**: never move the index to a volume (it must stay in the image layer).
 - **NCBI rate limits**: set `GRNA_NCBI_API_KEY` and `GRNA_NCBI_CONTACT`.
 
 ## Security
@@ -225,9 +229,9 @@ community. Licenses for these components are stated in [THIRD-PARTY-NOTICES.md](
 ## Future enhancements
 
 - Re-enable OMIM to rsID conversion if a CAPTCHA-resistant approach appears (blocked upstream; `gRNA/Omim.fs` is excluded from the build).
-- Per-alignment off-target loci (Bowtie already reports chromosome, position and strand; today only the count is kept).
-- Saved/shared design sessions as a JSON document shared by the UI and the CLI; run history and design comparison.
-- Order-ready oligo export (DNA/T7 template, plate-format CSV) and enzyme presets with a configurable scaffold.
+- Run history and design comparison (reopen or diff earlier runs with different spacer/seed).
+- Enzyme presets with a configurable scaffold: today the 36 nt Cas13 scaffold and the 28 / 10-17 defaults are fixed, and
+  presets for other Cas variants need their scaffolds and seed windows verified against the literature first.
 
 Not planned: additional genome assemblies (each adds ~4 GB to the image), authentication, ClinVar integration.
 

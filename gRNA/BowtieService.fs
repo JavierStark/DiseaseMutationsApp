@@ -21,5 +21,15 @@ type BowtieService() =
                 semaphore.Release() |> ignore
         }
 
+    /// Alignments (with loci) of one DNA window, up to `maxHits`. Same single-slot semaphore as the batch path.
+    member this.FindOffTargetsAsync(window: string, mismatches: int, maxHits: int, cancellationToken: CancellationToken) =
+        task {
+            do! semaphore.WaitAsync(cancellationToken)
+            try
+                return! runBowtieK (gRNA.GrnaEnvironment.getCurrent ()) maxHits mismatches 2 [ window ] cancellationToken
+            finally
+                semaphore.Release() |> ignore
+        }
+
     interface IBowtieRunner with
         member this.ProcessMultipleSequencesAsync(s, m, t, c) = this.ProcessMultipleSequencesAsync(s, m, t, c)

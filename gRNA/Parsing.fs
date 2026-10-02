@@ -9,7 +9,11 @@ type BowtieAlignment =
       Strand: char
       Reference: string
       Offset: int64
-      Sequence: string }
+      Sequence: string
+      /// Number of mismatches against the reference (0 when Bowtie prints no mismatch column).
+      MismatchCount: int
+      /// Bowtie's mismatch descriptor, e.g. "21:A>G,25:A>G", or "".
+      MismatchDetail: string }
 
 let private unquote (s: string) =
     let t = s.Trim()
@@ -68,7 +72,10 @@ let tryParseBowtieLine (line: string) : BowtieAlignment option =
         else
             match Int32.TryParse f[0], Int64.TryParse f[3] with
             | (true, idx), (true, off) when f[1].Length = 1 ->
-                Some { ReadIndex = idx; Strand = f[1].[0]; Reference = f[2]; Offset = off; Sequence = f[4] }
+                let detail = if f.Length > 7 then f[7].Trim() else ""
+                let mismatches = if detail = "" then 0 else detail.Split(',').Length
+                Some { ReadIndex = idx; Strand = f[1].[0]; Reference = f[2]; Offset = off; Sequence = f[4]
+                       MismatchCount = mismatches; MismatchDetail = detail }
             | _ -> None
 
 /// Parses Bowtie output (stdout, optionally followed by stderr summary) into alignments.

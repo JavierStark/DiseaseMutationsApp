@@ -27,7 +27,7 @@ Usage:
   grna doctor [--network]
   grna resolve <rsID> [<rsID> ...]
   grna design --hgvs <HGVS> [--spacer 28] [--seed 10-17] [--complement] [--format csv|json|tsv] [--out file]
-  grna design --input <file> --out <report.csv> [--spacer 28] [--seed 10-17] [--complement] [--concurrency 2]
+  grna design --input <list.txt|session.json> --out <report.csv> [--spacer 28] [--seed 10-17] [--complement] [--concurrency 2]
   grna fold <RNA sequence>
   grna pool --guides <report.csv> [--capacity 5] [--plate 96|384] [--model auto|2df|2dm|3d] [--out plan.csv]
   grna pool --count <V>          [--capacity 5] [--plate 96|384] [--model auto|2df|2dm|3d] [--out plan.csv]
@@ -161,10 +161,28 @@ let private tsvOf (rows: DesignRow list) =
     |> String.concat "\n"
     |> fun s -> ReportSchema.header.Replace(',', '\t') + "\n" + s + "\n"
 
+/// A web-app session document (.json) carries the inputs and the spacer/seed used; see SessionDocument in the app.
+let private readSession (file: string) =
+    if not (File.Exists file) then raise (BadArgs(sprintf "Input file '%s' not found." file))
+    let text = File.ReadAllText file
+    if text.TrimStart().StartsWith "{" then
+        try
+            use doc = JsonDocument.Parse text
+            let root = doc.RootElement
+            let str (n: string) = match root.TryGetProperty n with | true, v when v.ValueKind = JsonValueKind.String -> Some(v.GetString()) | _ -> None
+            let num (n: string) = match root.TryGetProperty n with | true, v when v.ValueKind = JsonValueKind.Number -> Some(v.GetInt32()) | _ -> None
+            Some(defaultArg (str "input") "", num "spacer", str "seed")
+        with :? JsonException -> raise (BadArgs(sprintf "'%s' is not a valid session file." file))
+    else
+        None
+
 let design (args: Args) (ct: CancellationToken) : Task<int> =
     task {
-        let spacer = intOpt args "spacer" 28
-        let seedS, seedE = parseSeed (defaultArg (opt args "seed") "10-17")
+        let session = opt args "input" |> Option.bind (fun f -> if f.EndsWith(".json", StringComparison.OrdinalIgnoreCase) then readSession f else None)
+        let sessionSpacer = session |> Option.bind (fun (_, sp, _) -> sp)
+        let sessionSeed = session |> Option.bind (fun (_, _, sd) -> sd)
+        let spacer = intOpt args "spacer" (defaultArg sessionSpacer 28)
+        let seedS, seedE = parseSeed (defaultArg (opt args "seed") (defaultArg sessionSeed "10-17"))
         if spacer <= 0 || seedS < 0 || seedE >= spacer || seedS > seedE then
             raise (BadArgs "Seed must satisfy 0 <= start <= end < spacer.")
         let complement = args.Flags.Contains "complement"
@@ -176,6 +194,13 @@ let design (args: Args) (ct: CancellationToken) : Task<int> =
         let inputs =
             match opt args "hgvs", opt args "input" with
             | Some h, None -> [ h ]
+            | None, Some file when session.IsSome ->
+                let (input, _, _) = session.Value
+                input.Split([| ','; ';'; '\n'; '\r' |], StringSplitOptions.RemoveEmptyEntries)
+                |> Array.map _.Trim()
+                |> Array.filter (fun l -> l <> "")
+                |> Array.distinct
+                |> List.ofArray
             | None, Some file ->
                 if not (File.Exists file) then raise (BadArgs(sprintf "Input file '%s' not found." file))
                 File.ReadAllLines file

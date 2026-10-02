@@ -51,12 +51,12 @@ let private indexBaseFor (env: GrnaEnvironment) =
             v)
 
 /// Runs Bowtie for the given reads and returns the parsed alignments.
-let runBowtieWith (env: GrnaEnvironment) (mismatches: int) (threads: int) (sequences: string list) (cancellationToken: CancellationToken) : Task<BowtieAlignment list> = task {
+let runBowtieK (env: GrnaEnvironment) (maxHits: int) (mismatches: int) (threads: int) (sequences: string list) (cancellationToken: CancellationToken) : Task<BowtieAlignment list> = task {
     let binary = GrnaEnvironment.resolvePath env.BowtieBinary
     let indexBase = indexBaseFor env
     let startInfo = ProcessStartInfo()
     startInfo.FileName <- binary
-    for a in [ "-x"; indexBase; "-c"; String.concat "," sequences; "-v"; string mismatches; "-k"; "6"; "--threads"; string threads; "--mm" ] do
+    for a in [ "-x"; indexBase; "-c"; String.concat "," sequences; "-v"; string mismatches; "-k"; string maxHits; "--threads"; string threads; "--mm" ] do
         startInfo.ArgumentList.Add a
     startInfo.RedirectStandardOutput <- true
     startInfo.RedirectStandardError <- true
@@ -99,6 +99,13 @@ let runBowtieWith (env: GrnaEnvironment) (mismatches: int) (threads: int) (seque
     finally
         try if not proc.HasExited then proc.Kill(entireProcessTree = true) with _ -> ()
 }
+
+/// Default alignment cap: counts saturate here, which is why the UI labels 6 as "6+".
+[<Literal>]
+let DefaultMaxHits = 6
+
+let runBowtieWith (env: GrnaEnvironment) (mismatches: int) (threads: int) (sequences: string list) (cancellationToken: CancellationToken) =
+    runBowtieK env DefaultMaxHits mismatches threads sequences cancellationToken
 
 let runBowtieForMultipleSequencesWith (env: GrnaEnvironment) (sequences: string list) (mismatches: int) (threads: int) (cancellationToken: CancellationToken) : Task<int list> = task {
     let! alignments = runBowtieWith env mismatches threads sequences cancellationToken
