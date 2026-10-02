@@ -74,8 +74,10 @@ let checkBowtieIndex (env: GrnaEnvironment) : CheckResult =
         let b = BowtieWrapper.resolveBowtieIndexBase env
         let dir = Path.GetDirectoryName b
         let kind =
-            if Directory.Exists dir && Directory.GetFiles(dir, "*.ebwt*").Length > 0 then "Bowtie 1 (.ebwt)"
-            else "Bowtie 2 (.bt2)"
+            if not (Directory.Exists dir) then "explicit base"
+            elif Directory.GetFiles(dir, "*.ebwt*").Length > 0 then "Bowtie 1 (.ebwt)"
+            elif Directory.GetFiles(dir, "*.bt2*").Length > 0 then "Bowtie 2 (.bt2)"
+            else "explicit base"
         mk "Bowtie index" Pass (sprintf "%s [%s]" b kind) ""
     with ex ->
         mk "Bowtie index" Fail ex.Message "Rebuild the image (./start.sh --rebuild-bowtie) or set GRNA_BOWTIE_INDEX to an index base path."
