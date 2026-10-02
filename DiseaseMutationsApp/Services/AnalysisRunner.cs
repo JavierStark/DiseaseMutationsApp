@@ -279,8 +279,8 @@ public sealed partial class AnalysisRunner : IAsyncDisposable
 
     private async Task AnalyzeLeafAsync(HgvsData leaf, RunParameters p, int runId, CancellationToken runToken)
     {
-        using var leafCts = CancellationTokenSource.CreateLinkedTokenSource(runToken);
-        leafCts.CancelAfter(TimeSpan.FromSeconds(_options.VariantTimeoutSeconds));
+        using var timeoutCts = new CancellationTokenSource(TimeSpan.FromSeconds(_options.VariantTimeoutSeconds));
+        using var leafCts = CancellationTokenSource.CreateLinkedTokenSource(runToken, timeoutCts.Token);
         lock (_gate) _leafCts[leaf.Id] = leafCts;
 
         try
@@ -305,7 +305,7 @@ public sealed partial class AnalysisRunner : IAsyncDisposable
         }
         catch (OperationCanceledException)
         {
-            var timedOut = !runToken.IsCancellationRequested && leafCts.IsCancellationRequested;
+            var timedOut = timeoutCts.IsCancellationRequested && !runToken.IsCancellationRequested;
             Apply(runId, () =>
             {
                 leaf.Status = timedOut ? LeafStatus.Failed : LeafStatus.Cancelled;
