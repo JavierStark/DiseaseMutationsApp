@@ -2,6 +2,7 @@
 
 open System
 open System.Text.RegularExpressions
+open gRNA
 
 type MutationType =
     | Substitution
@@ -41,7 +42,7 @@ type HGVS(code: string) =
             let repeatCount = int repeatCountStr
             (MutationType.Repeat, "", sequence, repeatCount)
         else
-            raise (Exception("Invalid HGVS format: Unknown mutation method"))
+            raise (GrnaInputException("Invalid HGVS format: Unknown mutation method"))
     
     let parse () =
         let parts = code.Split(':')
@@ -53,7 +54,7 @@ type HGVS(code: string) =
         
         let positionMatch = positionRangeRegex.Match(positionAndMethod)
         if not positionMatch.Success then
-            raise (Exception("Invalid HGVS format: Position not found"))
+            raise (GrnaInputException("Invalid HGVS format: Position not found"))
         
         let positions = positionMatch.Value.Split('_')
         let position =

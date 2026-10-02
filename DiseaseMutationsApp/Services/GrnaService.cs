@@ -1,4 +1,4 @@
-﻿using gRNA;
+using gRNA;
 
 namespace DiseaseMutationsApp.Services;
 
@@ -70,13 +70,13 @@ public class GrnaService
             .ToList();
     }
 
-    public async Task<List<string>> GetHgvsFromSnp(string rsid)
+    public async Task<List<string>> GetHgvsFromSnp(string rsid, CancellationToken cancellationToken = default)
     {
         try
         {
             _logger.LogInformation("Getting HGVS notations from SNP: {RsId}", rsid);
 
-            var fsharpList = await SNP.getHgvsNotationsAsync(rsid);
+            var fsharpList = await SNP.getHgvsNotationsAsync(rsid, cancellationToken);
             return new List<string>(fsharpList);
         }
         catch (Exception ex)
@@ -103,13 +103,13 @@ public class GrnaService
     //     }
     // }
 
-    public async Task<RNAFoldResult> GetRnaFold(string sequence)
+    public async Task<RNAFoldResult> GetRnaFold(string sequence, CancellationToken cancellationToken = default)
     {
         try
         {
             _logger.LogInformation("Getting RNA fold for sequence of length: {Length}", sequence.Length);
 
-            var fsharpResult = await RNAFoldWrapper.fold(sequence);
+            var fsharpResult = await RNAFoldWrapper.fold(sequence, cancellationToken);
 
             return new RNAFoldResult
             {
@@ -126,7 +126,7 @@ public class GrnaService
 
     public string GetFornaUrl(string sequence, string structure)
     {
-        return $"http://nibiru.tbi.univie.ac.at/forna/forna.html?id=url/name&sequence={sequence}&structure={structure}";
+        return $"https://nibiru.tbi.univie.ac.at/forna/forna.html?id=url/name&sequence={Uri.EscapeDataString(sequence)}&structure={Uri.EscapeDataString(structure)}";
     }
 
     

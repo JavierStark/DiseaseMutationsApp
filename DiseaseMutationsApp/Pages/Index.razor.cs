@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
@@ -434,31 +434,17 @@ namespace DiseaseMutationsApp.Pages
             }
         }
 
-        private static void AppendGrnaRows(System.Text.StringBuilder sb, string? rsId, string hgvsStr, List<GRNAResult>? grnas, string sequenceType)
-        {
-            if (grnas == null) return;
-
-            foreach (var gRNA in grnas)
-            {
-                var energy = gRNA.RnaFoldResult?.Energy.ToString(System.Globalization.CultureInfo.InvariantCulture) ?? "N/A";
-                var score = gRNA.Score.ToString(System.Globalization.CultureInfo.InvariantCulture);
-                var gcContent = gRNA.GCContent.ToString(System.Globalization.CultureInfo.InvariantCulture);
-
-                sb.AppendLine($"{rsId},{hgvsStr},{sequenceType},{gRNA.Rank},{gRNA.Sequence},{score},{gcContent},{gRNA.Allignments},{gRNA.SeedRegion},{gRNA.HomopolymerCount},{energy}");
-            }
-        }
-
         private async Task DownloadReport(InputTabData tabData)
         {
             if (tabData == null || tabData.ChildHgvsList == null || !tabData.ChildHgvsList.Any()) return;
 
             var sb = new System.Text.StringBuilder();
-            sb.AppendLine("RS ID,HGVS,Sequence Type,Rank,Sequence,Score,GC Content,Alignments,Seed Region,Homopolymers,Fold Energy");
+            sb.AppendLine(GrnaCsvSchema.Header);
 
             foreach (var hgvs in tabData.ChildHgvsList)
             {
-                AppendGrnaRows(sb, tabData.RsId, hgvs.Hgvs, hgvs.GRNAs, "Mutated");
-                AppendGrnaRows(sb, tabData.RsId, hgvs.Hgvs, hgvs.OriginalGRNAs, "Original");
+                GrnaCsvSchema.AppendRows(sb, tabData.RsId, hgvs.Hgvs, hgvs.GRNAs, GrnaCsvSchema.MutatedType, hgvs.IsComplement);
+                GrnaCsvSchema.AppendRows(sb, tabData.RsId, hgvs.Hgvs, hgvs.OriginalGRNAs, GrnaCsvSchema.OriginalType, hgvs.IsComplement);
             }
 
             var fileName = $"Report_RS{tabData.RsId}_{DateTime.Now:yyyyMMdd_HHmmss}.csv";
@@ -471,14 +457,14 @@ namespace DiseaseMutationsApp.Pages
             if (!allRsTabs.Any()) return;
 
             var sb = new System.Text.StringBuilder();
-            sb.AppendLine("RS ID,HGVS,Sequence Type,Rank,Sequence,Score,GC Content,Alignments,Seed Region,Homopolymers,Fold Energy");
+            sb.AppendLine(GrnaCsvSchema.Header);
 
             foreach (var tabData in allRsTabs)
             {
                 foreach (var hgvs in tabData.ChildHgvsList!)
                 {
-                    AppendGrnaRows(sb, tabData.RsId, hgvs.Hgvs, hgvs.GRNAs, "Mutated");
-                    AppendGrnaRows(sb, tabData.RsId, hgvs.Hgvs, hgvs.OriginalGRNAs, "Original");
+                    GrnaCsvSchema.AppendRows(sb, tabData.RsId, hgvs.Hgvs, hgvs.GRNAs, GrnaCsvSchema.MutatedType, hgvs.IsComplement);
+                    GrnaCsvSchema.AppendRows(sb, tabData.RsId, hgvs.Hgvs, hgvs.OriginalGRNAs, GrnaCsvSchema.OriginalType, hgvs.IsComplement);
                 }
             }
 

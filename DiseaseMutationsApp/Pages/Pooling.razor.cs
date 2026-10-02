@@ -255,15 +255,7 @@ namespace DiseaseMutationsApp.Pages
         /// Guide labels are pasted by the user and may contain commas or quotes, so fields are
         /// quoted properly rather than concatenated raw.
         /// </summary>
-        private static string Csv(string value)
-        {
-            if (value.IndexOfAny(new[] { ',', '"', '\n', '\r' }) < 0)
-            {
-                return value;
-            }
-
-            return $"\"{value.Replace("\"", "\"\"")}\"";
-        }
+        private static string Csv(string value) => GrnaCsvSchema.Csv(value);
 
         public void Dispose()
         {

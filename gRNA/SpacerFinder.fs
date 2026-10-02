@@ -176,7 +176,7 @@ let getOrderedgRna (seedStart: int) (seedEnd: int) (window: int) (sequence: stri
         let gRNASequences = results |> List.map (fun r -> scaffold + r.Sequence)
 
         let! allignments = bowtieService.ProcessMultipleSequencesAsync(subsequences, 2, 2, cancellationToken)
-        let! folds = foldMany gRNASequences
+        let! folds = foldMany gRNASequences cancellationToken
         
         let results =
             List.zip3 results folds allignments

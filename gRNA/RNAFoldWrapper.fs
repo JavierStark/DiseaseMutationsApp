@@ -1,7 +1,8 @@
-﻿module gRNA.RNAFoldWrapper
+module gRNA.RNAFoldWrapper
 
 open System
 open System.Diagnostics
+open System.Threading
 open System.Threading.Tasks
 
 type RNAFoldResult = {
@@ -9,163 +10,75 @@ type RNAFoldResult = {
     Energy: float
 }
 
-let private parseOutput (output: string) : RNAFoldResult =
-    try
-        // Expected output format: ['(((...))).........', -2.0999999046325684]
-        let trimmed = output.Trim()
-        
-        // Remove square brackets
-        let cleaned = 
-            if trimmed.StartsWith("[") && trimmed.EndsWith("]") then
-                trimmed.Substring(1, trimmed.Length - 2)
-            else
-                trimmed
-        
-        // Split by comma, but we need to be careful as the structure might contain commas
-        let commaIndex = cleaned.LastIndexOf(',')
-        if commaIndex = -1 then
-            raise (Exception(sprintf "No comma found in output: %s" output))
-        
-        let structurePart = cleaned.Substring(0, commaIndex).Trim()
-        let energyPart = cleaned.Substring(commaIndex + 1).Trim()
-        
-        // Remove quotes from structure
-        let structure = 
-            if structurePart.StartsWith("'") && structurePart.EndsWith("'") then
-                structurePart.Substring(1, structurePart.Length - 2)
-            elif structurePart.StartsWith("\"") && structurePart.EndsWith("\"") then
-                structurePart.Substring(1, structurePart.Length - 2)
-            else
-                structurePart
-        
-        let energy = float energyPart
-        
-        { Structure = structure; Energy = energy }
-    with
-    | ex ->
-        raise (Exception(sprintf "Failed to parse ViennaRNA output '%s': %s" output ex.Message, ex))
+/// Bounds concurrent Python interpreters across the whole process.
+let private foldSemaphore = new SemaphoreSlim(2, 2)
 
-/// Folds an RNA sequence using ViennaRNA Python library via subprocess
-/// Returns the secondary structure in dot-bracket notation and the minimum free energy
-let fold (sequence: string) : Task<RNAFoldResult> = task {
-    let startInfo = ProcessStartInfo()
-    
-    startInfo.FileName <- "python3"
-    startInfo.Arguments <- sprintf "-c \"import RNA; print(RNA.fold('%s'))\"" sequence
-    startInfo.RedirectStandardOutput <- true
-    startInfo.RedirectStandardError <- true
-    startInfo.UseShellExecute <- false
-    startInfo.CreateNoWindow <- true
-    
-    try
-        use proc = new Process()
-        proc.StartInfo <- startInfo
-        
-        let started = proc.Start()
-        if not started then
-            // Try with 'python' command instead
-            let startInfo2 = ProcessStartInfo()
-            startInfo2.FileName <- "python"
-            startInfo2.Arguments <- sprintf "-c \"import RNA; print(RNA.fold('%s'))\"" sequence
-            startInfo2.RedirectStandardOutput <- true
-            startInfo2.RedirectStandardError <- true
-            startInfo2.UseShellExecute <- false
-            startInfo2.CreateNoWindow <- true
-            
-            use proc2 = new Process()
-            proc2.StartInfo <- startInfo2
-            proc2.Start() |> ignore
-            
-            let! stdout = proc2.StandardOutput.ReadToEndAsync()
-            let! stderr = proc2.StandardError.ReadToEndAsync()
-            do! proc2.WaitForExitAsync()
-            
-            if proc2.ExitCode <> 0 then
-                raise (Exception(sprintf "Python process failed with exit code %d: %s" proc2.ExitCode stderr))
-            
-            return parseOutput stdout
-        else
-            let! stdout = proc.StandardOutput.ReadToEndAsync()
-            let! stderr = proc.StandardError.ReadToEndAsync()
-            do! proc.WaitForExitAsync()
-            
-            if proc.ExitCode <> 0 then
-                raise (Exception(sprintf "Python process failed with exit code %d: %s" proc.ExitCode stderr))
-            
-            return parseOutput stdout
-    with
-    | ex -> 
-        return! Task.FromException<RNAFoldResult>(Exception(sprintf "Failed to execute ViennaRNA fold: %s" ex.Message, ex))
-}
-let private parseOutputBatch (output: string) : RNAFoldResult list =
-    try
-        // Expected output: one result per line in format ['structure', energy]
-        output.Split('\n', StringSplitOptions.RemoveEmptyEntries)
-        |> Array.map parseOutput
-        |> List.ofArray
-    with
-    | ex ->
-        raise (Exception(sprintf "Failed to parse batch ViennaRNA output: %s" ex.Message, ex))
+// The script prints `structure<TAB>energy` itself, so the parser owns the format end to end
+// instead of scraping the repr of whatever the installed ViennaRNA binding returns.
+let private script =
+    "import sys, RNA\nfor s in sys.argv[1:]:\n    st, e = RNA.fold(s)\n    print(st + chr(9) + repr(float(e)))"
 
-/// Folds multiple RNA sequences efficiently in a single Python call
-let foldMany (sequences: string list) : Task<RNAFoldResult list> = task {
-    if sequences.IsEmpty then
-        return []
-    else
-        // Build Python script that processes all sequences
-        let pythonScript = 
-            let seqArray = 
-                sequences 
-                |> List.map (fun s -> sprintf "'%s'" s)
-                |> String.concat ", "
-            
-            sprintf "import RNA; sequences = [%s]; [print(RNA.fold(seq)) for seq in sequences]" seqArray
-        
+let private runPython (env: GrnaEnvironment) (sequences: string list) (cancellationToken: CancellationToken) : Task<string> = task {
+    do! foldSemaphore.WaitAsync(cancellationToken)
+    try
         let startInfo = ProcessStartInfo()
-        startInfo.FileName <- "python3"
-        startInfo.Arguments <- sprintf "-c \"%s\"" pythonScript
+        startInfo.FileName <- env.PythonExecutable
+        startInfo.ArgumentList.Add "-c"
+        startInfo.ArgumentList.Add script
+        for s in sequences do startInfo.ArgumentList.Add s
         startInfo.RedirectStandardOutput <- true
         startInfo.RedirectStandardError <- true
         startInfo.UseShellExecute <- false
         startInfo.CreateNoWindow <- true
-        
+
+        use proc = new Process()
+        proc.StartInfo <- startInfo
+        use cts = CancellationTokenSource.CreateLinkedTokenSource(cancellationToken)
+        cts.CancelAfter env.ProcessTimeout
+
         try
-            use proc = new Process()
-            proc.StartInfo <- startInfo
-            
-            let started = proc.Start()
-            if not started then
-                // Try with 'python' command instead
-                let startInfo2 = ProcessStartInfo()
-                startInfo2.FileName <- "python"
-                startInfo2.Arguments <- sprintf "-c \"%s\"" pythonScript
-                startInfo2.RedirectStandardOutput <- true
-                startInfo2.RedirectStandardError <- true
-                startInfo2.UseShellExecute <- false
-                startInfo2.CreateNoWindow <- true
-                
-                use proc2 = new Process()
-                proc2.StartInfo <- startInfo2
-                proc2.Start() |> ignore
-                
-                let! stdout = proc2.StandardOutput.ReadToEndAsync()
-                let! stderr = proc2.StandardError.ReadToEndAsync()
-                do! proc2.WaitForExitAsync()
-                
-                if proc2.ExitCode <> 0 then
-                    raise (Exception(sprintf "Python batch process failed with exit code %d: %s" proc2.ExitCode stderr))
-                
-                return parseOutputBatch stdout
-            else
-                let! stdout = proc.StandardOutput.ReadToEndAsync()
-                let! stderr = proc.StandardError.ReadToEndAsync()
-                do! proc.WaitForExitAsync()
-                
-                if proc.ExitCode <> 0 then
-                    raise (Exception(sprintf "Python batch process failed with exit code %d: %s" proc.ExitCode stderr))
-                
-                return parseOutputBatch stdout
-        with
-        | ex -> 
-            return! Task.FromException<RNAFoldResult list>(Exception(sprintf "Failed to execute batch ViennaRNA fold: %s" ex.Message, ex))
+            proc.Start() |> ignore
+        with ex ->
+            raise (GrnaDependencyException(sprintf "Cannot start '%s' (is Python installed?): %s" env.PythonExecutable ex.Message, ex))
+
+        use _ = cts.Token.Register(fun () -> try if not proc.HasExited then proc.Kill(entireProcessTree = true) with _ -> ())
+        let stdoutTask = proc.StandardOutput.ReadToEndAsync()
+        let stderrTask = proc.StandardError.ReadToEndAsync()
+        try
+            do! proc.WaitForExitAsync(cts.Token)
+        with :? OperationCanceledException when not cancellationToken.IsCancellationRequested ->
+            raise (GrnaUpstreamException(sprintf "ViennaRNA fold timed out after %O." env.ProcessTimeout))
+        let! stdout = stdoutTask
+        let! stderr = stderrTask
+        if proc.ExitCode <> 0 then
+            raise (GrnaDependencyException(sprintf "Python/ViennaRNA failed with exit code %d: %s" proc.ExitCode stderr))
+        return stdout
+    finally
+        foldSemaphore.Release() |> ignore
+}
+
+/// Folds many RNA sequences in a single Python call. Results are in input order.
+let foldManyWith (env: GrnaEnvironment) (sequences: string list) (cancellationToken: CancellationToken) : Task<RNAFoldResult list> = task {
+    if sequences.IsEmpty then
+        return []
+    else
+        // Chunk to stay under OS argument-length limits.
+        let chunks = sequences |> List.chunkBySize 200
+        let results = ResizeArray<RNAFoldResult>()
+        for chunk in chunks do
+            let! stdout = runPython env chunk cancellationToken
+            let parsed = Parsing.parseFoldBatch stdout
+            if parsed.Length <> chunk.Length then
+                raise (GrnaUpstreamException(sprintf "ViennaRNA returned %d results for %d sequences." parsed.Length chunk.Length))
+            for (s, e) in parsed do results.Add { Structure = s; Energy = e }
+        return List.ofSeq results
+}
+
+let foldMany (sequences: string list) (cancellationToken: CancellationToken) : Task<RNAFoldResult list> =
+    foldManyWith (GrnaEnvironment.getCurrent ()) sequences cancellationToken
+
+/// Folds one RNA sequence: dot-bracket structure and minimum free energy.
+let fold (sequence: string) (cancellationToken: CancellationToken) : Task<RNAFoldResult> = task {
+    let! r = foldMany [ sequence ] cancellationToken
+    return List.head r
 }

@@ -37,24 +37,17 @@ public record ParsedGuideList
 /// </summary>
 public static class GuideListParser
 {
-    /// <summary>
-    /// Leading columns of the header written by Index.razor.cs when exporting a report. Matching
-    /// on just these keeps this tolerant of extra columns being appended later, and checking them
-    /// as separate fields (rather than a literal string prefix) keeps it tolerant of the header
-    /// being pasted tab-delimited, which is what a spreadsheet's Ctrl+A/Ctrl+C puts on the
-    /// clipboard even though the Builder itself exports comma-delimited.
-    /// </summary>
-    private static readonly string[] BuilderCsvHeaderFields = { "RS ID", "HGVS", "Sequence Type" };
+    private static readonly string[] BuilderCsvHeaderFields =
+        GrnaCsvSchema.Columns.Take(GrnaCsvSchema.RequiredLeadingColumns).ToArray();
 
-    private const string MutatedSequenceType = "Mutated";
-
-    // Column positions in the Builder CSV.
-    private const int ColRsId = 0;
-    private const int ColHgvs = 1;
-    private const int ColSequenceType = 2;
-    private const int ColRank = 3;
-    private const int ColSequence = 4;
-    private const int MinCsvColumns = 5;
+    private const string MutatedSequenceType = GrnaCsvSchema.MutatedType;
+    private const int ColRsId = GrnaCsvSchema.ColRsId;
+    private const int ColHgvs = GrnaCsvSchema.ColHgvs;
+    private const int ColSequenceType = GrnaCsvSchema.ColSequenceType;
+    private const int ColRank = GrnaCsvSchema.ColRank;
+    private const int ColSequence = GrnaCsvSchema.ColSequence;
+    private const int ColStrand = GrnaCsvSchema.ColStrand;
+    private const int MinCsvColumns = GrnaCsvSchema.MinDataColumns;
 
     public static ParsedGuideList Parse(string? raw)
     {
@@ -146,6 +139,8 @@ public static class GuideListParser
         var bestByHgvs = new Dictionary<string, (int Rank, GuideEntry Entry, int Order)>(StringComparer.OrdinalIgnoreCase);
         var malformed = 0;
         var originalRows = 0;
+        var firstStrand = new Dictionary<string, string>(StringComparer.OrdinalIgnoreCase);
+        var otherStrandRows = 0;
         var order = 0;
         var delimiter = DetectDelimiter(lines[0]);
 
@@ -168,6 +163,19 @@ public static class GuideListParser
             if (!string.Equals(fields[ColSequenceType].Trim(), MutatedSequenceType, StringComparison.OrdinalIgnoreCase))
             {
                 originalRows++;
+                continue;
+            }
+
+            // Older exports carry no Strand column; when present, keep only the first strand seen
+            // per HGVS so normal and complement rows are never merged.
+            var strand = fields.Length > ColStrand ? fields[ColStrand].Trim() : "";
+            if (!firstStrand.TryGetValue(hgvs, out var seenStrand))
+            {
+                firstStrand[hgvs] = strand;
+            }
+            else if (!string.Equals(seenStrand, strand, StringComparison.OrdinalIgnoreCase))
+            {
+                otherStrandRows++;
                 continue;
             }
 
@@ -200,6 +208,11 @@ public static class GuideListParser
         if (originalRows > 0)
         {
             warnings.Add($"Skipped {originalRows} original-sequence row(s); only mutated-sequence guides are pooled.");
+        }
+
+        if (otherStrandRows > 0)
+        {
+            warnings.Add($"Skipped {otherStrandRows} row(s) from a different strand of an already-listed variant; only one strand per variant is pooled.");
         }
 
         if (malformed > 0)

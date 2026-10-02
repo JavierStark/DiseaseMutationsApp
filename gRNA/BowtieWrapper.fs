@@ -1,137 +1,109 @@
-﻿module gRNA.BowtieWrapper
+module gRNA.BowtieWrapper
 
 open System
 open System.Diagnostics
 open System.IO
 open System.Threading
 open System.Threading.Tasks
+open gRNA.Parsing
 
-//example output:
-// 0	+	chr7	147119362	ACTGACTGACTG	IIIIIIIIIIII	478	
-// 0	+	chr9	37515365	ACTGACTGACTG	IIIIIIIIIIII	478	
-
+// Bowtie 2 indexes use .bt2/.bt2l, Bowtie 1 indexes use .ebwt/.ebwtl.
 let private indexSuffixes =
-    [| ".rev.2.bt2"; ".rev.1.bt2"; ".4.bt2"; ".3.bt2"; ".2.bt2"; ".1.bt2";
-       ".rev.2.bt2l"; ".rev.1.bt2l"; ".4.bt2l"; ".3.bt2l"; ".2.bt2l"; ".1.bt2l" |]
+    [| ".rev.2.bt2l"; ".rev.1.bt2l"; ".4.bt2l"; ".3.bt2l"; ".2.bt2l"; ".1.bt2l"
+       ".rev.2.bt2"; ".rev.1.bt2"; ".4.bt2"; ".3.bt2"; ".2.bt2"; ".1.bt2"
+       ".rev.2.ebwtl"; ".rev.1.ebwtl"; ".4.ebwtl"; ".3.ebwtl"; ".2.ebwtl"; ".1.ebwtl"
+       ".rev.2.ebwt"; ".rev.1.ebwt"; ".4.ebwt"; ".3.ebwt"; ".2.ebwt"; ".1.ebwt" |]
 
-let private tryStripIndexSuffix (fileName: string) =
+let tryStripIndexSuffix (fileName: string) =
     indexSuffixes
     |> Array.tryFind (fun suffix -> fileName.EndsWith(suffix, StringComparison.OrdinalIgnoreCase))
     |> Option.map (fun suffix -> fileName.Substring(0, fileName.Length - suffix.Length))
 
-let private resolveBowtieIndexBase () =
-    let indexDirectory = "bowtie/indexes"
-
-    if not (Directory.Exists(indexDirectory)) then
-        failwith "No Bowtie index base found in bowtie/indexes. Expected .bt2 or .bt2l index files."
-
-    let firstIndexFile =
-        Directory.GetFiles(indexDirectory, "*.bt2*", SearchOption.AllDirectories)
-        |> Array.tryHead
-
-    match firstIndexFile with
-    | Some filePath ->
-        match tryStripIndexSuffix filePath with
-        | Some indexBase -> indexBase
-        | None -> failwith "Invalid Bowtie index file name in bowtie/indexes. Expected .bt2 or .bt2l index files."
+/// Deterministically resolves the index base: explicit setting wins, otherwise the first
+/// (sorted) index file found under the index directory.
+let resolveBowtieIndexBase (env: GrnaEnvironment) : string =
+    match env.BowtieIndexBase with
+    | Some b -> b
     | None ->
-        failwith "No Bowtie index base found in bowtie/indexes. Expected .bt2 or .bt2l index files."
+        let dir = GrnaEnvironment.resolvePath env.BowtieIndexDirectory
+        if not (Directory.Exists dir) then
+            raise (GrnaDependencyException(sprintf "Bowtie index directory '%s' not found. Expected .bt2/.bt2l/.ebwt index files." dir))
+        let bases =
+            Directory.GetFiles(dir, "*", SearchOption.AllDirectories)
+            |> Array.sort
+            |> Array.choose tryStripIndexSuffix
+        match Array.tryHead bases with
+        | Some b -> b
+        | None -> raise (GrnaDependencyException(sprintf "No Bowtie index files found in '%s'." dir))
 
-let private cachedBowtieIndexBase = lazy (resolveBowtieIndexBase())
+// Retryable memo: failures are not cached.
+let private memoLock = obj ()
+let mutable private memo: (string * string) option = None
 
-// ./bowtie-align-s -x GCA_000001405.15_GRCh38_no_alt_analysis_set -c SEQUENCE -v MISMATCHES -k 2
-let runBowtie(mismatches: int) (threads: int) (sequence: string) (cancellationToken: CancellationToken) : Task<string array> = task {
+let private indexBaseFor (env: GrnaEnvironment) =
+    lock memoLock (fun () ->
+        let key = defaultArg env.BowtieIndexBase env.BowtieIndexDirectory
+        match memo with
+        | Some (k, v) when k = key -> v
+        | _ ->
+            let v = resolveBowtieIndexBase env
+            memo <- Some (key, v)
+            v)
+
+/// Runs Bowtie for the given reads and returns the parsed alignments.
+let runBowtieWith (env: GrnaEnvironment) (mismatches: int) (threads: int) (sequences: string list) (cancellationToken: CancellationToken) : Task<BowtieAlignment list> = task {
+    let binary = GrnaEnvironment.resolvePath env.BowtieBinary
+    let indexBase = indexBaseFor env
     let startInfo = ProcessStartInfo()
-    let maxAllignment = 6
-    let indexBase = cachedBowtieIndexBase.Value
-    startInfo.FileName <- "bowtie/bowtie-align-s"
-    startInfo.Arguments <- sprintf "-x \"%s\" -c %s -v %d -k %d --threads %d --mm" indexBase sequence mismatches maxAllignment threads
+    startInfo.FileName <- binary
+    for a in [ "-x"; indexBase; "-c"; String.concat "," sequences; "-v"; string mismatches; "-k"; "6"; "--threads"; string threads; "--mm" ] do
+        startInfo.ArgumentList.Add a
     startInfo.RedirectStandardOutput <- true
     startInfo.RedirectStandardError <- true
     startInfo.UseShellExecute <- false
     startInfo.CreateNoWindow <- true
-    
-    printf "Working Directory: %s\n" Environment.CurrentDirectory
-    printf "Running Bowtie with command: %s %s" startInfo.FileName startInfo.Arguments
+
+    GrnaLog.log (sprintf "Running Bowtie: %s (%d reads)" binary sequences.Length)
 
     use proc = new Process()
     proc.StartInfo <- startInfo
-    
+    use cts = CancellationTokenSource.CreateLinkedTokenSource(cancellationToken)
+    cts.CancelAfter env.ProcessTimeout
+    // Registered before Start so a token cancelled in that window still kills the process.
+    use _ = cts.Token.Register(fun () ->
+        try if not proc.HasExited then proc.Kill(entireProcessTree = true) with _ -> ())
+
     try
-        proc.Start() |> ignore
+        try
+            proc.Start() |> ignore
+        with ex ->
+            raise (GrnaDependencyException(sprintf "Cannot start Bowtie at '%s': %s" binary ex.Message, ex))
+        if cts.Token.IsCancellationRequested then
+            try proc.Kill(entireProcessTree = true) with _ -> ()
 
-        use _ = cancellationToken.Register(fun () ->
-            try if not proc.HasExited then proc.Kill(entireProcessTree = true) with | _ -> ()
-        )
-
-        let stdoutTask = proc.StandardOutput.ReadToEndAsync(cancellationToken)
-        let stderrTask = proc.StandardError.ReadToEndAsync(cancellationToken)
-
-        do! proc.WaitForExitAsync(cancellationToken)
-
+        let stdoutTask = proc.StandardOutput.ReadToEndAsync()
+        let stderrTask = proc.StandardError.ReadToEndAsync()
+        try
+            do! proc.WaitForExitAsync(cts.Token)
+        with :? OperationCanceledException when not cancellationToken.IsCancellationRequested ->
+            raise (GrnaUpstreamException(sprintf "Bowtie timed out after %O." env.ProcessTimeout))
         let! stdout = stdoutTask
         let! stderr = stderrTask
 
-        let combinedOutput =
-            if String.IsNullOrWhiteSpace(stdout) && String.IsNullOrWhiteSpace(stderr) then
-                sprintf "Bowtie exited with code %d but produced no output." proc.ExitCode
-            else
-                stdout + "\n" + stderr
-                
-        //0	+	chr7	147119362	ACTGACTGACTG	IIIIIIIIIIII	478
-        // 0	+	chr9	37515365	ACTGACTGACTG	IIIIIIIIIIII	478//
-        //
-        // # reads processed: 1
-        // # reads with at least one alignment: 1 (100.00%)
-        // # reads that failed to align: 0 (0.00%)
-        // Reported 2 alignments
-
-        let allignments =
-            combinedOutput.Split([|'\n'|])
-            |> Array.takeWhile (fun line -> not (String.IsNullOrEmpty(line)))
-            |> Array.map (_.Trim())
-            
-        printfn "Bowtie finished with exit code %d" proc.ExitCode
-        
-        // Check for memory-related exit codes
         if proc.ExitCode = 137 then
-            failwith "Bowtie process was killed due to out of memory (OOM). Try processing fewer sequences at once or increase system memory."
+            raise (GrnaDependencyException "Bowtie was killed (likely out of memory). Process fewer sequences at once or increase memory.")
         elif proc.ExitCode <> 0 then
-            printfn "Bowtie stderr: %s" stderr
-            failwith (sprintf "Bowtie exited with code %d. Error: %s" proc.ExitCode stderr)
+            raise (GrnaDependencyException(sprintf "Bowtie exited with code %d. Error: %s" proc.ExitCode stderr))
 
-        return allignments
+        return parseBowtieAlignments stdout
     finally
-        try
-            proc.Kill(entireProcessTree = true)
-        with
-        | :? System.InvalidOperationException -> ()  // Process already exited - normal on Linux
-        | ex -> printfn "Cleanup error: %s" ex.Message
-        // Force garbage collection to clean up resources
-        GC.Collect()
-        GC.WaitForPendingFinalizers()
-           
+        try if not proc.HasExited then proc.Kill(entireProcessTree = true) with _ -> ()
 }
 
-let runBowtieForMultipleSequences (sequences: string list) (mismatches: int) (threads: int) (cancellationToken: CancellationToken) : Task<int list> = task {
-    let! results =
-        sequences
-        |> String.concat ","
-        |> fun seq -> runBowtie mismatches threads seq cancellationToken
-        
-    
-    let nOfAllignments =
-        results
-        |> Array.map(fun r -> r.Split '\t' |> Array.head |> int)
-        |> Array.groupBy id
-        |> Array.map(fun (key, group) -> (key, group.Length))
-        |> dict
-        |> fun dict ->
-            sequences
-            |> List.mapi(fun i _ ->
-                match dict.TryGetValue(i) with
-                | true, count -> count
-                | _ -> 0)
-            
-    return nOfAllignments
+let runBowtieForMultipleSequencesWith (env: GrnaEnvironment) (sequences: string list) (mismatches: int) (threads: int) (cancellationToken: CancellationToken) : Task<int list> = task {
+    let! alignments = runBowtieWith env mismatches threads sequences cancellationToken
+    return countAlignments sequences.Length alignments
 }
+
+let runBowtieForMultipleSequences (sequences: string list) (mismatches: int) (threads: int) (cancellationToken: CancellationToken) : Task<int list> =
+    runBowtieForMultipleSequencesWith (GrnaEnvironment.getCurrent ()) sequences mismatches threads cancellationToken
