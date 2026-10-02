@@ -17,17 +17,15 @@ keep it reproducible. If you change a dependency, change it here.
 
 ## Facts that were verified, and how
 
-**V1: Bowtie 1 vs Bowtie 2.** The committed binary is Bowtie **1.3.1**: its SHA256 equals the upstream
-`bowtie-1.3.1-linux-x86_64` `bowtie-align-s`, and the binary references only `.ebwt` index suffixes. Bowtie 1 indexes
-are `*.ebwt`; Bowtie 2 indexes are `*.bt2`. The old index resolver accepted only `*.bt2` and threw otherwise, which
-contradicted both the binary and the `bt/` index prefix. The resolver now accepts both families
-(`.ebwt/.ebwtl/.bt2/.bt2l`), sorts for a deterministic choice, and lets `GRNA_BOWTIE_INDEX` name the base explicitly.
-The contents of the downloaded zip could not be inspected here (no Docker daemon available during this work), so the
-first `docker build` followed by `docker run --rm --entrypoint grna <image> doctor` is what settles the suffix actually
-shipped: `doctor` prints the resolved index base.
-The command line was validated against the real binary: `bowtie-align-s -x idx -c READ1,READ2,... -v 2 -k 6 --threads 2 --mm`
-prints one tab-separated line per alignment on **stdout** and the `#`-prefixed summary on **stderr**. A captured real
-output is a fixture in `ParsingTests.cs`.
+**V1: Bowtie 1 vs Bowtie 2.** Settled empirically against the previously built image: the committed binary is
+**Bowtie 1.3.1** (its SHA256 equals the `bowtie-align-s` of the upstream `bowtie-1.3.1-linux-x86_64` release asset, and
+`--version` reports 1.3.1), and the baked index `GRCh38_noalt_as` is in **`.bt2` format** (`*.1.bt2 ... *.rev.2.bt2`, ~4 GB).
+Bowtie 1.3.x reads that format, so the combination works: `bowtie-align-s -x <base> -c READ -v 2 -k 6 --threads 2 --mm`
+returned alignments from the real index. The resolver accepts both families (`.bt2/.bt2l/.ebwt/.ebwtl`), sorts for a
+deterministic choice, and lets `GRNA_BOWTIE_INDEX` name the base explicitly; `grna doctor` prints the resolved base.
+Output: one tab-separated line per alignment on **stdout** (read index, strand, reference, offset, sequence, qualities,
+a count column and, for mismatching hits, a `pos:ref>alt` list) and the `#` summary on **stderr**. Captured real output is a
+fixture in `ParsingTests.cs`.
 
 **V3: ViennaRNA output format.** With `viennarna 2.7.2`, `RNA.fold('GCGCAAAAGCGC')` returns a **list**,
 `['((((....))))', -5.099999904632568]`, so the old bracket-stripping parser worked, but only by coincidence with an
