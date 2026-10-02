@@ -17,7 +17,8 @@ original (wild-type) sequence.
 - **Runs**: cancellable (whole run or one variant), bounded-parallel, and they survive navigating to another page. A refresh
   restores your inputs (never results: download the CSV report to keep them).
 - **Off-target loci**: expand any spacer to see where its target window aligns in the genome (chromosome, position, strand,
-  mismatches; up to 50 alignments). The table's alignment chip still saturates at "6+", honestly labelled.
+  mismatches; up to 50 alignments). The table's alignment chip still saturates at "6+", honestly labelled. Loci are looked up for the spacer exactly as displayed; for the
+  substitution special rule's engineered spacer this can differ from the table's count, which is carried over from the unadjusted candidate.
 - **Shortlist**: pick spacers across variants, send them to the Pooling page without a CSV round trip, or download an
   order-ready **oligo CSV** (DNA, optional T7 promoter, top/bottom pairs, plate wells addressed like the pooling plan).
 - **Files and sessions**: load inputs from a plain list, a Builder CSV report or a saved session; *Save session* downloads a
