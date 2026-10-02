@@ -1,0 +1,10 @@
+<Project>
+  <PropertyGroup>
+    <!-- Every project commits a packages.lock.json; CI restores in locked mode so any drift fails the build. -->
+    <RestorePackagesWithLockFile>true</RestorePackagesWithLockFile>
+    <Authors>Javier Torralbo Cortes</Authors>
+    <Copyright>Copyright (c) 2026 Javier Torralbo Cortes</Copyright>
+    <PackageLicenseExpression>MIT</PackageLicenseExpression>
+    <RepositoryUrl>https://github.com/JavierStark/DiseaseMutationsApp</RepositoryUrl>
+  </PropertyGroup>
+</Project>

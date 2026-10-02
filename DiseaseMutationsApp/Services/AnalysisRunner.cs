@@ -44,7 +44,7 @@ public sealed partial class AnalysisRunner : IAsyncDisposable
 {
     private static readonly Regex RsPattern = RsRegex();
 
-    private readonly GrnaService _grna;
+    private readonly IGrnaAnalysis _grna;
     private readonly AppStateService _state;
     private readonly AnalysisOptions _options;
     private readonly ILogger<AnalysisRunner> _logger;
@@ -57,7 +57,7 @@ public sealed partial class AnalysisRunner : IAsyncDisposable
     private bool _disposed;
     private int _notifyScheduled;
 
-    public AnalysisRunner(GrnaService grna, AppStateService state, IOptions<AnalysisOptions> options, ILogger<AnalysisRunner> logger)
+    public AnalysisRunner(IGrnaAnalysis grna, AppStateService state, IOptions<AnalysisOptions> options, ILogger<AnalysisRunner> logger)
     {
         _grna = grna;
         _state = state;

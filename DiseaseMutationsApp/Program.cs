@@ -32,6 +32,7 @@ builder.Services.AddScoped<SessionStorageService>();
 // Bowtie is serialised per process, so the service is a singleton.
 builder.Services.AddSingleton<gRNA.Services.BowtieService>();
 builder.Services.AddScoped<GrnaService>();
+builder.Services.AddScoped<IGrnaAnalysis>(sp => sp.GetRequiredService<GrnaService>());
 builder.Services.AddScoped<PoolingService>();
 builder.Services.AddSingleton<DiagnosticsService>();
 

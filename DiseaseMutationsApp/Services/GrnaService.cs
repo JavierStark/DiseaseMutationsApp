@@ -2,11 +2,19 @@ using gRNA;
 
 namespace DiseaseMutationsApp.Services;
 
+/// <summary>The slice of the gRNA pipeline the analysis runner depends on; lets tests substitute a fake.</summary>
+public interface IGrnaAnalysis
+{
+    Task<ResultFromHGVS> GetBestgRNAFromHgvs(string hgvs, int window, int seedStart, int seedEnd, bool complement = false, CancellationToken cancellationToken = default);
+    Task<List<string>> GetHgvsFromSnp(string rsid, CancellationToken cancellationToken = default);
+    string? GetNcbiNuccoreUrl(string hgvs);
+}
+
 /// <summary>
 /// Service that provides direct access to the F# gRNA library functionality.
 /// Replaces the HTTP-based IDiseaseMutationsApi.
 /// </summary>
-public class GrnaService
+public class GrnaService : IGrnaAnalysis
 {
     private readonly ILogger<GrnaService> _logger;
     private readonly gRNA.Services.BowtieService _bowtieService;
