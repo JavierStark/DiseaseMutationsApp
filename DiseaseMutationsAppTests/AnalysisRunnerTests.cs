@@ -25,7 +25,7 @@ public class AnalysisRunnerTests
                 else await Task.Delay(40, cancellationToken);
                 return new ResultFromHGVS
                 {
-                    gRNA = new(), OriginalGRNA = new(), MutatedSequence = "ACGT", OriginalSequence = "ACGA", ExtraNucleotids = 1
+                    gRNA = new(), OriginalGRNA = new(), MutatedSequence = "ACGT", OriginalSequence = "ACGA", ExtraNucleotids = 1, WindowStart = 5, WindowEnd = 8
                 };
             }
             finally
@@ -293,5 +293,20 @@ public class AnalysisRunnerTests
         await runner.DisposeAsync();
 
         Assert.That(fake.Current, Is.EqualTo(0));
+    }
+
+    [Test]
+    public async Task Leaf_ReceivesTheGenomicWindowOfItsResult()
+    {
+        var (runner, state, _) = Create();
+        runner.TryStart("NG_1.1:g.6A>T", P);
+        await runner.WaitForRunAsync();
+        var leaf = state.IndexInputTabs.Single().DirectHgvs!;
+        Assert.Multiple(() =>
+        {
+            Assert.That(leaf.Locus, Is.EqualTo("NG_1.1:5-8"));
+            Assert.That(leaf.WindowStart, Is.EqualTo(5));
+            Assert.That(leaf.WindowEnd, Is.EqualTo(8));
+        });
     }
 }

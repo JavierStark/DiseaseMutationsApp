@@ -92,6 +92,7 @@
                             <SequenceSpan Sequence="@spacer" SeedStart="SeedStart" SeedEnd="SeedEnd"
                                           MutationStart="g.MutationHighlightStart" MutationLength="g.MutationHighlightLength" />
                             <span class="text-muted">3'</span>
+                            <RestrictionChip Enzymes="RestrictionSites.ForGuide(spacer, false)" />
                         </td>
                         <td class="num bar-cell bar-gc" style="--w:@Pct(g.GCScore)"><span>@g.GCScore.ToString("0.##")</span></td>
                         <td class="num">@g.GCContent.ToString("F2")</td>

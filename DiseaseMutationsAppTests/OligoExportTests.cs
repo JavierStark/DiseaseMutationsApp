@@ -33,6 +33,24 @@ public class OligoExportTests
     }
 
     [Test]
+    public void ShortlistCsv_ListsRestrictionSitesOfTheOrderedDna()
+    {
+        var items = new[]
+        {
+            new ShortlistItem("NG_1:g.1A>T", false, "ACGUACGUACGUACGUACGUACGUACGU", "1", 1, 1),
+            new ShortlistItem("NG_1:g.2A>T", false, "ACGUGAAUUCACGUACGUACGUGAAGAC", "1", 1, 1)
+        };
+        var lines = OligoExport.ShortlistCsv(items, false, false, PlateKind.Plate96)
+            .Split('\n', StringSplitOptions.RemoveEmptyEntries).Select(l => l.TrimEnd('\r')).ToList();
+
+        Assert.Multiple(() =>
+        {
+            Assert.That(lines[1], Does.EndWith(","), "clean guide leaves the column empty");
+            Assert.That(lines[2], Does.EndWith(",BbsI;EcoRI"), "enzymes in list order");
+        });
+    }
+
+    [Test]
     public void ShortlistCsv_AddressesWellsLikeThePoolingPlan()
     {
         var items = new[]
@@ -45,7 +63,7 @@ public class OligoExportTests
 
         Assert.Multiple(() =>
         {
-            Assert.That(lines[0], Is.EqualTo("Well,Name,Oligo,Sequence 5'-3',Length"));
+            Assert.That(lines[0], Is.EqualTo("Well,Name,Oligo,Sequence 5'-3',Length,Restriction sites"));
             Assert.That(lines, Has.Count.EqualTo(5), "header + 2 guides x 2 oligos");
             Assert.That(lines[1], Does.StartWith("Plate 1 - A1,NG_1:g.1A>T_top,top,"));
             Assert.That(lines[4], Does.StartWith("Plate 1 - A4,NG_1:g.1A>T_C_bottom,bottom,"));

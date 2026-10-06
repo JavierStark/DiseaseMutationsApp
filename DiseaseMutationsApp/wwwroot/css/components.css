@@ -85,6 +85,8 @@
 .seq-toolbar { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: var(--space-2); margin-bottom: var(--space-2); }
 .seq-title-original { color: var(--reference-text); }
 .seq-title-mutated { color: var(--variant-text); }
+.seq-locus { display: flex; flex-wrap: wrap; align-items: center; gap: var(--space-2) var(--space-3); margin: 0 0 var(--space-3); font-size: var(--text-sm); color: var(--text-secondary); }
+.site-warning { display: inline-flex; align-items: center; gap: 0.3em; margin-left: var(--space-2); font-family: var(--font-sans); font-size: var(--text-xs); font-weight: var(--weight-strong); color: var(--state-warning); background: var(--state-warning-bg); border: 1px solid var(--state-warning-border); border-radius: 999px; padding: 0.05em 0.6em; white-space: nowrap; vertical-align: middle; }
 .seq-card-original { border-left: 4px solid var(--reference-strong); }
 .seq-card-mutated { border-left: 4px solid var(--variant-strong); }
 
@@ -116,7 +118,7 @@ th[aria-sort="ascending"] .sort-btn .icon, th[aria-sort="descending"] .sort-btn 
 .risk-high .risk-glyph { width: 0; height: 0; background: none; border-left: 0.35em solid transparent; border-right: 0.35em solid transparent; border-bottom: 0.65em solid currentColor; }
 .risk-saturated { color: #fff; background: var(--crimson-500); border-color: var(--crimson-800); }
 .risk-saturated .risk-glyph { background: currentColor; }
-[data-bs-theme="dark"] .risk-saturated { color: #1A1218; background: #FF9FB2; border-color: #FF9FB2; }
+[data-bs-theme="dark"] .risk-saturated { color: var(--text-on-accent); background: #FF9FB2; border-color: #FF9FB2; }
 
 .filter-row { display: flex; flex-wrap: wrap; gap: var(--space-3); align-items: flex-end; margin-bottom: var(--space-3); }
 .filter-row .form-control { width: 7rem; }
@@ -156,7 +158,7 @@ button.pool-well:hover { border-color: var(--variant-strong); }
 .pool-well-unused { border-style: dotted; opacity: 0.45; }
 .pool-well-selected { outline: 2px solid var(--focus-ring); outline-offset: 2px; background: var(--variant); color: var(--text-on-accent); }
 .pool-well-positive { background: var(--critical); border-color: var(--crimson-800); color: #fff; }
-[data-bs-theme="dark"] .pool-well-positive { color: #1A1218; }
+[data-bs-theme="dark"] .pool-well-positive { color: var(--text-on-accent); }
 .pool-readout { border: 1px solid var(--border); border-radius: var(--radius-md); background: var(--surface-sunken); padding: var(--space-3); min-height: 4rem; font-size: var(--text-sm); }
 .pool-legend { display: inline-flex; align-items: center; gap: var(--space-2); font-size: var(--text-sm); color: var(--text-secondary); }
 .pool-legend-swatch { width: 1rem; height: 1rem; border-radius: 50%; border: 1.5px solid var(--border-strong); display: inline-block; }

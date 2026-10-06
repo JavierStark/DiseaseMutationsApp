@@ -26,6 +26,7 @@ h1, h2, h3, h4, h5, h6 { color: var(--text-primary); font-weight: var(--weight-s
 a { color: var(--link); text-underline-offset: 2px; }
 a:hover { color: var(--link-hover); }
 .text-muted, .text-body-secondary { color: var(--text-muted) !important; }
+[data-bs-theme="dark"] .text-danger { color: var(--critical-text) !important; }
 code { color: var(--variant-text); font-family: var(--font-mono); font-size: 0.9em; }
 .font-monospace { font-family: var(--font-mono) !important; }
 

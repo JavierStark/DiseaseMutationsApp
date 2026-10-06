@@ -54,7 +54,7 @@ Main.getBestgRNAFromHGVS : hgvs:string -> grnaSize:int -> seedStart:int -> seedE
 The function is **curried**; from C# the compiler exposes it as a normal method taking all arguments in order, as
 `GrnaService.GetBestgRNAFromHgvs` shows: `Main.getBestgRNAFromHGVS(hgvs, window, seedStart, seedEnd, bowtie, ct, complement)`.
 `ResultFromHGVS` (note: a different type from the C# record of the same name in `DiseaseMutationsApp.Services`) carries
-`gRNA`, `originalGRNA` (ranked candidate lists), `mutatedSequence`, `originalSequence` and `extraNucleotids`. For
+`gRNA`, `originalGRNA` (ranked candidate lists), `mutatedSequence`, `originalSequence`, `extraNucleotids` and `windowStart`/`windowEnd` (the 1-based inclusive accession window the sequences were cut from). For
 substitutions the special rule may replace a list with a single engineered candidate (it can also yield **zero** candidates
 while carrying the pre-adjustment alignment and fold values onto the adjusted sequence).
 

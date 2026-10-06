@@ -48,19 +48,20 @@ public static class OligoExport
     {
         var format = plate == PlateKind.Plate384 ? Pooling.plate384 : Pooling.plate96;
         var sb = new StringBuilder();
-        sb.AppendLine("Well,Name,Oligo,Sequence 5'-3',Length");
+        sb.AppendLine("Well,Name,Oligo,Sequence 5'-3',Length,Restriction sites");
         var well = 1;
         foreach (var item in items)
         {
             var baseName = $"{item.Hgvs}{(item.IsComplement ? "_C" : "")}".Replace(' ', '_');
             var pair = Pair(baseName, item.Spacer, includeT7);
+            var sites = string.Join(";", RestrictionSites.Find(pair.Top));
             var rows = bothOligos
                 ? new[] { ("top", pair.Top), ("bottom", pair.Bottom) }
                 : new[] { ("top", pair.Top) };
             foreach (var (label, seq) in rows)
             {
                 var address = Pooling.wellAddress(format, well++);
-                sb.AppendLine(string.Join(",", GrnaCsvSchema.Csv(address.Label), GrnaCsvSchema.Csv($"{pair.Name}_{label}"), label, seq, seq.Length));
+                sb.AppendLine(string.Join(",", GrnaCsvSchema.Csv(address.Label), GrnaCsvSchema.Csv($"{pair.Name}_{label}"), label, seq, seq.Length, sites));
             }
         }
 

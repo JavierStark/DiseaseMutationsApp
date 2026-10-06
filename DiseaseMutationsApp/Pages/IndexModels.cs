@@ -46,6 +46,14 @@ namespace DiseaseMutationsApp.Pages
         public string? Mutated { get; set; }
         public string? SourceUrl { get; set; }
         public int? ExtraNucleotids { get; set; }
+        public int? WindowStart { get; set; }
+        public int? WindowEnd { get; set; }
+
+        /// <summary>Accession and 1-based inclusive window, e.g. NC_000017.11:43045690-43045734.</summary>
+        public string? Locus => WindowStart is > 0 && WindowEnd is > 0
+            ? $"{Hgvs.Split(':', 2)[0].Trim()}:{WindowStart}-{WindowEnd}"
+            : null;
+
         public List<GRNAResult>? GRNAs { get; set; }
         public List<GRNAResult>? OriginalGRNAs { get; set; }
         public string? ErrorMessage { get; set; }

@@ -1,0 +1,10 @@
+@using DiseaseMutationsApp.Services
+@foreach (var enzyme in Enzymes)
+{
+    <span class="site-warning" title="@RestrictionSites.Warning(enzyme)" aria-label="@RestrictionSites.Warning(enzyme)"><Icon Name="alert" />@enzyme</span>
+}
+
+@code {
+    /// <summary>Enzymes whose recognition site was found in the DNA; renders nothing when empty.</summary>
+    [Parameter] public IReadOnlyList<string> Enzymes { get; set; } = Array.Empty<string>();
+}

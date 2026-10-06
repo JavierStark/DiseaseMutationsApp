@@ -299,6 +299,8 @@ public sealed partial class AnalysisRunner : IAsyncDisposable
                 leaf.GRNAs = result.gRNA;
                 leaf.OriginalGRNAs = result.OriginalGRNA;
                 leaf.ExtraNucleotids = result.ExtraNucleotids;
+                leaf.WindowStart = result.WindowStart;
+                leaf.WindowEnd = result.WindowEnd;
                 leaf.ErrorMessage = null;
                 leaf.Status = LeafStatus.Ready;
             });

@@ -60,4 +60,29 @@ public class MainTests
             Assert.That(mutationLength, Is.EqualTo(0));
         });
     }
+
+    [TestCase("NM_000546.6:c.50G>A", 10, 100, 40, 60)]
+    [TestCase("NM_000546.6:c.3G>A", 10, 100, 1, 13)]
+    [TestCase("NM_000546.6:c.98G>A", 10, 100, 88, 100)]
+    [TestCase("NM_000546.6:c.40_42del", 5, 100, 35, 47)]
+    public void CalculateWindow_IsOneBasedInclusiveAndClampedToTheSequence(string code, int extra, int length, int start, int end)
+    {
+        var (s, e) = Main.calculateWindow(extra, length, new HGVS.HGVS(code));
+        Assert.Multiple(() =>
+        {
+            Assert.That(s, Is.EqualTo(start));
+            Assert.That(e, Is.EqualTo(end));
+        });
+    }
+
+    [Test]
+    public void CalculateWindow_MatchesTheLengthOfTheSliceTakenFromTheSequence()
+    {
+        var hgvs = new HGVS.HGVS("NM_000546.6:c.3G>A");
+        var data = new string('A', 100);
+        var sequence = new Sequence.Sequence("test", data);
+        var original = sequence.GetMutatedSubsequence(hgvs, 10, 10).Item2;
+        var window = Main.calculateWindow(10, data.Length, hgvs);
+        Assert.That(window.Item2 - window.Item1 + 1, Is.EqualTo(original.Length));
+    }
 }

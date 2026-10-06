@@ -65,8 +65,9 @@
                                 </a>
                             }
                         </div>
+                        @StrandLine
                         <SequenceView Sequence="@Data.Original" MutationStart="@extra" MutationLength="@mutLenOriginal"
-                                      Title="@($"{Data.Hgvs} original{(Data.IsComplement ? " (complement)" : "")}")" />
+                                      Title="@FastaTitle("original")" />
                     </div>
                 </div>
             </div>
@@ -76,8 +77,9 @@
                         <h2 class="card-title section-title mb-2 seq-title-mutated">
                             <Icon Name="dna" />@(Data.IsComplement ? "Complement mutated sequence" : "Mutated sequence")
                         </h2>
+                        @StrandLine
                         <SequenceView Sequence="@Data.Mutated" MutationStart="@extra" MutationLength="@mutLenMutated"
-                                      Title="@($"{Data.Hgvs} mutated{(Data.IsComplement ? " (complement)" : "")}")" />
+                                      Title="@FastaTitle("mutated")" />
                     </div>
                 </div>
             </div>
@@ -139,6 +141,15 @@
                 {
                     <p class="helper-note mt-3 mb-0"><Icon Name="info" />Press "Use" on a spacer above to add it here.</p>
                 }
+                else
+                {
+                    @foreach (var enzyme in RestrictionSites.ForGuide(Data.SelectedSpacer, false))
+                    {
+                        <div class="alert alert-warning mt-3 mb-0" role="alert">
+                            <Icon Name="alert" />@RestrictionSites.Warning(enzyme)
+                        </div>
+                    }
+                }
 
                 @if (Data.RnaFoldResult != null)
                 {
@@ -192,6 +203,22 @@
     [Parameter] public string? RsId { get; set; }
     [Parameter] public int SeedStart { get; set; }
     [Parameter] public int SeedEnd { get; set; }
+
+    /// <summary>Locus window plus strand and reading direction under a sequence card title.</summary>
+    private RenderFragment StrandLine => __builder =>
+    {
+        <p class="seq-locus">
+            @if (Data.Locus is { } locus)
+            {
+                <span class="font-monospace" title="1-based, inclusive">@locus</span>
+            }
+            <span class="tab-strand" title="@(Data.IsComplement ? "Complement of the reference strand" : "Reference strand")">@(Data.IsComplement ? "− strand" : "+ strand")</span>
+            <span>@(Data.IsComplement ? "complement, shown 3'→5'" : "reference, shown 5'→3'")</span>
+        </p>
+    };
+
+    private string FastaTitle(string kind) =>
+        $"{Data.Hgvs} {kind}{(Data.IsComplement ? " (complement)" : "")}{(Data.Locus is { } l ? $" {l}" : "")} {(Data.IsComplement ? "- strand" : "+ strand")}";
 
     private bool Shortlisted => Data.SelectedSpacer != null && State.IsShortlisted(Data.Hgvs, Data.IsComplement);
 

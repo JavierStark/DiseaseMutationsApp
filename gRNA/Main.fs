@@ -9,7 +9,16 @@ type ResultFromHGVS = {
     mutatedSequence: string
     originalSequence: string
     extraNucleotids: int
+    /// 1-based inclusive window of the accession that original/mutated were cut from (same for both strands).
+    windowStart: int
+    windowEnd: int
 }
+
+/// The 1-based inclusive accession window that Sequence.GetMutatedSubsequence slices for these paddings.
+let calculateWindow (extraNucleotids: int) (sequenceLength: int) (hgvs: HGVS.HGVS) : int * int =
+    let windowStart = max 0 ((fst hgvs.Position) - 1 - extraNucleotids) + 1
+    let windowEnd = min sequenceLength ((snd hgvs.Position) + extraNucleotids)
+    (windowStart, windowEnd)
 
 let calculateMutationSpanInMutated (extraNucleotids: int) (sequenceLength: int) (hgvs: HGVS.HGVS) (mutatedLength: int) : int * int =
     let leftContext = max 0 (min extraNucleotids ((fst hgvs.Position) - 1))
@@ -68,11 +77,15 @@ let getBestgRNAFromHGVS (hgvsString: string) (grnaSize: int) (seedStart: int) (s
         else
             gRNAs, originalGRNAs
 
+    let windowStart, windowEnd = calculateWindow extraNucleotids sequence.Data.Length hgvsObj
+
     return  {
         gRNA = gRNAs
         originalGRNA = originalGRNAs
         mutatedSequence = finalMutated
         originalSequence = finalOriginal
         extraNucleotids = extraNucleotids
+        windowStart = windowStart
+        windowEnd = windowEnd
     }
 }

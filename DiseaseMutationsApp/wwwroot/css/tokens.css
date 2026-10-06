@@ -108,52 +108,52 @@
 }
 
 [data-bs-theme="dark"] {
-    --bg: #1A1218;
-    --surface: #241A22;
-    --surface-sunken: #1F161D;
-    --surface-hover: #2E212B;
-    --border: #3F2E3B;
-    --border-strong: #5A4455;
-    --divider: #33242F;
+    --bg: #0C0C0F;
+    --surface: #1C1C22;
+    --surface-sunken: #101014;
+    --surface-hover: #2A2A32;
+    --border: #44444F;
+    --border-strong: #6A6A78;
+    --divider: #30303A;
 
-    --text-primary: #F3E8F0;
-    --text-secondary: #D8C5D2;
-    --text-muted: #B49DAE;
-    --text-on-accent: #1A1218;
+    --text-primary: #F4F4F7;
+    --text-secondary: #D2D2DA;
+    --text-muted: #A9A9B5;
+    --text-on-accent: #0C0C0F;
 
-    --variant: #D9A4CF;
-    --variant-strong: #E3B4DA;
-    --variant-text: #E8BFE0;
-    --variant-bg: #33232F;
-    --reference: #8FD9B4;
-    --reference-strong: #A7E6C6;
-    --reference-text: #A7E6C6;
-    --reference-bg: #1F2E27;
+    --variant: #F2A9E4;
+    --variant-strong: #F6BDEB;
+    --variant-text: #F8CCF1;
+    --variant-bg: #3B2337;
+    --reference: #8EE6BA;
+    --reference-strong: #A6EFCA;
+    --reference-text: #B2F2D2;
+    --reference-bg: #19322A;
     --critical: #FF8FA6;
     --critical-text: #FF9FB2;
 
-    --link: #E8BFE0;
+    --link: #F8CCF1;
     --link-hover: #FFB3C2;
 
-    --state-info: #9CC4F0;
-    --state-info-bg: #1B2733;
-    --state-info-border: #34506E;
-    --state-success: #A7E6C6;
-    --state-success-bg: #1F2E27;
-    --state-success-border: #3B6B53;
-    --state-warning: #F2CB78;
-    --state-warning-bg: #32280F;
-    --state-warning-border: #7A5E1B;
+    --state-info: #A7CDF5;
+    --state-info-bg: #1B2A3A;
+    --state-info-border: #3A5A7C;
+    --state-success: #B2F2D2;
+    --state-success-bg: #19322A;
+    --state-success-border: #3F7459;
+    --state-warning: #F5D27F;
+    --state-warning-bg: #3A2E10;
+    --state-warning-border: #8A6A1E;
     --state-danger: #FF9FB2;
-    --state-danger-bg: #351A22;
-    --state-danger-border: #7A3346;
+    --state-danger-bg: #3A1B24;
+    --state-danger-border: #8A3A4F;
 
     --focus-ring: #8DB8FF;
 
     --elev-1: 0 1px 2px rgba(0, 0, 0, 0.5);
     --elev-2: 0 8px 22px rgba(0, 0, 0, 0.55);
 
-    --seq-seed-bg: #3E2638;
-    --seq-seed-border: #D9A4CF;
+    --seq-seed-bg: #452B40;
+    --seq-seed-border: #F2A9E4;
     --seq-mutation: #FF9FB2;
 }

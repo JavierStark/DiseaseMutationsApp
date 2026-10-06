@@ -28,8 +28,10 @@ monospace disambiguates `0/O` and `1/l`, which matters for sequences.
 
 ## Dark theme
 
-`[data-bs-theme="dark"]` redefines the same tokens, desaturating the hues rather than inverting them: ground `#1A1218`,
-pink `#D9A4CF`, mint `#8FD9B4`, critical `#FF8FA6`. The theme is chosen from the OS preference and persisted by the
+`[data-bs-theme="dark"]` redefines the same tokens on near-neutral surfaces, so the pastel accents read as colour rather than
+blending into a tinted ground: page `#0C0C0F`, card `#1C1C22`, inset `#101014`, hairline border `#44444F` (1.8:1 on a card),
+strong border `#6A6A78`. Accents are brightened, not inverted: pink `#F2A9E4`, mint `#8EE6BA`, critical `#FF8FA6`. Body, muted
+and accent text stay above 6:1 on every surface they sit on. The theme is chosen from the OS preference and persisted by the
 app-bar toggle (`localStorage["grna.theme"]`), applied before first paint to avoid a flash.
 
 ## Icons

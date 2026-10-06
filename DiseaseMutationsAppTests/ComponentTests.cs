@@ -62,6 +62,17 @@ public class ComponentTests : BunitContext
     {
         JSInterop.Mode = JSRuntimeMode.Loose;
         Services.AddSingleton(new GrnaService(Microsoft.Extensions.Logging.Abstractions.NullLogger<GrnaService>.Instance, new gRNA.Services.BowtieService()));
+        var state = new AppStateService();
+        Services.AddSingleton(state);
+        Services.AddSingleton(new AnalysisRunner(new FakeGrnaAnalysis(), state,
+            Microsoft.Extensions.Options.Options.Create(new AnalysisOptions()), Microsoft.Extensions.Logging.Abstractions.NullLogger<AnalysisRunner>.Instance));
+    }
+
+    private sealed class FakeGrnaAnalysis : IGrnaAnalysis
+    {
+        public Task<ResultFromHGVS> GetBestgRNAFromHgvs(string hgvs, int window, int seedStart, int seedEnd, bool complement = false, CancellationToken cancellationToken = default) => throw new NotSupportedException();
+        public Task<List<string>> GetHgvsFromSnp(string rsid, CancellationToken cancellationToken = default) => throw new NotSupportedException();
+        public string? GetNcbiNuccoreUrl(string hgvs) => null;
     }
 
     [Test]
@@ -149,6 +160,57 @@ public class ComponentTests : BunitContext
 
         var chips = cut.FindAll(".risk-chip").Select(c => c.TextContent.Trim()).ToList();
         Assert.That(chips, Is.EqualTo(new[] { "1 unique", "6+ saturated" }));
+    }
+
+    [Test]
+    public void GrnaResultsTable_FlagsSpacersWhoseDnaHasARestrictionSite()
+    {
+        var items = new List<GRNAResult> { G("ACGUGAAUUCACGUACGUAC", 0.9, 1, -2), G("ACGUACGUACGUACGUACGU", 0.5, 1, -1) };
+        var cut = Render<GrnaResultsTable>(p => p.Add(c => c.GRNAs, items));
+
+        var chips = cut.FindAll(".site-warning");
+        Assert.That(chips, Has.Count.EqualTo(1));
+        Assert.Multiple(() =>
+        {
+            Assert.That(chips[0].TextContent.Trim(), Is.EqualTo("EcoRI"));
+            Assert.That(chips[0].GetAttribute("title"), Is.EqualTo("Warning: This DNA sequence includes a restriction site for the enzyme: 'EcoRI'"));
+        });
+    }
+
+    private static HgvsData ReadyLeaf(bool complement, string? spacer = null) => new()
+    {
+        Hgvs = "NC_000017.11:g.100A>G", IsComplement = complement, Status = LeafStatus.Ready,
+        Original = "ACGTACGTAC", Mutated = "ACGTGCGTAC", ExtraNucleotids = 4, WindowStart = 96, WindowEnd = 105, SelectedSpacer = spacer
+    };
+
+    [Test]
+    public void HgvsDetailPanel_ShowsLocusAndStrand_OnNormalAndComplementCards()
+    {
+        var normal = Render<HgvsDetailPanel>(p => p.Add(c => c.Data, ReadyLeaf(false)));
+        var complement = Render<HgvsDetailPanel>(p => p.Add(c => c.Data, ReadyLeaf(true)));
+
+        var normalLines = normal.FindAll(".seq-locus").Select(l => l.TextContent).ToList();
+        var complementLines = complement.FindAll(".seq-locus").Select(l => l.TextContent).ToList();
+        Assert.Multiple(() =>
+        {
+            Assert.That(normalLines, Has.Count.EqualTo(2), "original and mutated cards");
+            Assert.That(normalLines, Has.All.Contain("NC_000017.11:96-105").And.Contain("+ strand").And.Contain("5'→3'"));
+            Assert.That(complementLines, Has.All.Contain("NC_000017.11:96-105").And.Contain("− strand").And.Contain("3'→5'"));
+        });
+    }
+
+    [Test]
+    public void HgvsDetailPanel_CompleteGrnaWarnsWithTheExactMessage_OnlyWhenASiteIsPresent()
+    {
+        var flagged = Render<HgvsDetailPanel>(p => p.Add(c => c.Data, ReadyLeaf(false, "ACGUGAAUUCACGUACGUAC")));
+        var clean = Render<HgvsDetailPanel>(p => p.Add(c => c.Data, ReadyLeaf(false, "ACGUACGUACGUACGUACGU")));
+
+        Assert.Multiple(() =>
+        {
+            Assert.That(flagged.FindAll(".complete-grna-card .alert-warning").Select(a => a.TextContent.Trim()),
+                Is.EqualTo(new[] { "Warning: This DNA sequence includes a restriction site for the enzyme: 'EcoRI'" }));
+            Assert.That(clean.FindAll(".complete-grna-card .alert-warning"), Is.Empty);
+        });
     }
 
     [Test]

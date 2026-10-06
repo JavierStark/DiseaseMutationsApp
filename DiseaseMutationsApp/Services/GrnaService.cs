@@ -44,7 +44,9 @@ public class GrnaService : IGrnaAnalysis
                 OriginalGRNA = MapGrnaResults(fsharpResult.originalGRNA),
                 MutatedSequence = fsharpResult.mutatedSequence,
                 OriginalSequence = fsharpResult.originalSequence,
-                ExtraNucleotids = fsharpResult.extraNucleotids
+                ExtraNucleotids = fsharpResult.extraNucleotids,
+                WindowStart = fsharpResult.windowStart,
+                WindowEnd = fsharpResult.windowEnd
             };
         }
         catch (Exception ex)
@@ -207,6 +209,9 @@ public record ResultFromHGVS
     public required string MutatedSequence { get; init; }
     public required string OriginalSequence { get; init; }
     public int ExtraNucleotids { get; init; }
+    /// <summary>1-based inclusive window of the accession the sequences were cut from (0 when unknown).</summary>
+    public int WindowStart { get; init; }
+    public int WindowEnd { get; init; }
 }
 
 public record RNAFoldResult
