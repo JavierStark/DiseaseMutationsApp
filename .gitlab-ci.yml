@@ -21,7 +21,7 @@ test:
   image: mcr.microsoft.com/dotnet/sdk:9.0.306-bookworm-slim@sha256:81f6d622fe21ed9d31375167f62a3538ff4d6835f9d5e6da9c2defa8a84b7687
   cache:
     key:
-      files: [gRNA/packages.lock.json, DiseaseMutationsApp/packages.lock.json, gRNA.Cli/packages.lock.json, DiseaseMutationsAppTests/packages.lock.json]
+      files: [gRNA/packages.lock.json, DiseaseMutationsApp/packages.lock.json] # GitLab allows at most 2 files here
     paths: [.nuget/]
   script:
     - dotnet restore --locked-mode
