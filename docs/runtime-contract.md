@@ -13,7 +13,7 @@ keep it reproducible. If you change a dependency, change it here.
 | Python | 3.11 (Debian bookworm `python3`) | base image digest | `python3 -c "import RNA"` |
 | .NET SDK / runtime | SDK 9.0.306 / runtime 9.0.10 | `global.json`, image digests | `dotnet --version` |
 | Base images | `mcr.microsoft.com/dotnet/sdk:9.0.306-bookworm-slim@sha256:81f6d622...7687`, `.../aspnet:9.0.10-bookworm-slim@sha256:3dcb3339...2682` | `Dockerfile*` | digests pinned, checked by `scripts/check-pins.sh` |
-| NuGet | every direct and transitive version | `Directory.Packages.props` + committed `packages.lock.json` | `dotnet restore --locked-mode` |
+| NuGet | every direct and transitive version | `Directory.Packages.props` + committed `packages.lock.json` | CI runs `dotnet restore --locked-mode` |
 
 ## Facts that were verified, and how
 
@@ -97,11 +97,11 @@ pushing to enforce the pinning policy below.
 No floating, implicit or mutable version anywhere:
 
 - NuGet: exact versions only, in `Directory.Packages.props`; transitive pinning on; `packages.lock.json` committed;
-  restore with `dotnet restore --locked-mode`. The .NET SDK is pinned in `global.json`.
-- Images: every `FROM` is pinned by `@sha256:` digest; no `:latest` inputs.
+  CI restores in locked mode. The .NET SDK is pinned in `global.json`.
+- Images: every `FROM` and CI `image:` is pinned by `@sha256:` digest; no `:latest` inputs.
 - pip: `==` versions only. Downloads (s5cmd, the index zip, the Bowtie binary) are SHA256-verified at build.
 - Front-end assets: Bootstrap 5.3.3 and the two font families are vendored with versions and checksums recorded in
   `THIRD-PARTY-NOTICES.md` and [design-system.md](design-system.md); no CDN is used at runtime.
 
 `scripts/check-pins.sh` enforces the mechanical parts. To bump something: change it in the one place above, regenerate the
-lock files (`dotnet restore --force-evaluate`), update the checksum/version here, and run `scripts/check-pins.sh` to confirm.
+lock files (`dotnet restore --force-evaluate`), update the checksum/version here, and let CI confirm.
