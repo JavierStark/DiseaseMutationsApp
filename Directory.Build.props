@@ -5,6 +5,6 @@
     <Authors>Javier Torralbo Cortes</Authors>
     <Copyright>Copyright (c) 2026 Javier Torralbo Cortes</Copyright>
     <PackageLicenseExpression>MIT</PackageLicenseExpression>
-    <RepositoryUrl>https://github.com/JavierStark/DiseaseMutationsApp</RepositoryUrl>
+    <RepositoryUrl>https://gitlab.igem.org/2026/software/uma-malaga/diana-grna-designer</RepositoryUrl>
   </PropertyGroup>
 </Project>

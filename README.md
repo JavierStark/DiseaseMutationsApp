@@ -2,10 +2,17 @@
 
 *Diana: precision guide RNA design.* The name is explained in [docs/about-the-name.md](docs/about-the-name.md).
 
-A web application and command-line tool for turning disease-related variants (HGVS notations or rsIDs) into ranked
+**iGEM Team UMA-Malaga 2026, Software.** This repository (`main` branch) hosts the full source code of the team's software
+tool, as the competition requires. Source: <https://gitlab.igem.org/2026/software/uma-malaga/diana-grna-designer>.
+
+Diana is a web application and command-line tool for turning disease-related variants (HGVS notations or rsIDs) into ranked
 CRISPR-Cas13 guide RNA spacers, and for planning combinatorial guide pooling onto 96/384-well plates. Spacers are scored for
 GC content, homopolymers, off-target alignments (Bowtie) and RNA secondary structure (ViennaRNA), for both the mutated and the
-original (wild-type) sequence.
+original (wild-type) sequence. It also flags restriction sites (BsaI, BsmBI, SapI, BbsI, EcoRI, PstI, XbaI, SpeI, EcoRV, NotI)
+in the DNA you would order, and exports an order-ready oligo CSV.
+
+> **AI assistance.** Parts of this code were written with an AI coding assistant and reviewed by the team. Read
+> [.claude/RESPONSIBLE_AI_USE.md](.claude/RESPONSIBLE_AI_USE.md); the team remains responsible for everything committed here.
 
 ## Overview
 
@@ -79,6 +86,13 @@ memory-mapped, and a volume or bind mount would make alignment 10x+ slower
 Requirements: Docker with Compose v2, about **10 GB free disk** for the first build (the ~3.7 GB index zip and the unpacked
 index coexist), and about **3 GB RAM available to Docker** (the index is memory-mapped reclaimable cache, so more RAM only keeps more of it hot; no need to raise Docker's memory).
 
+Get the code:
+
+```bash
+git clone https://gitlab.igem.org/2026/software/uma-malaga/diana-grna-designer.git
+cd diana-grna-designer
+```
+
 ### Route 1: one command (default)
 
 ```bash
@@ -113,7 +127,7 @@ Needs the .NET SDK pinned in `global.json`, a Bowtie binary and index, and pytho
 with `GRNA_BOWTIE_BINARY`, `GRNA_BOWTIE_INDEX`, `GRNA_PYTHON`, then `dotnet run --project DiseaseMutationsApp`. Everything else
 (tests, the pooling page) works without any native tool.
 
-## Using the builder
+## Using Diana
 
 1. Enter variants (comma-separated) and the spacer size and seed range (defaults 28 and 10-17, inclusive, 0-based in the spacer).
 2. **Run analysis**. rsIDs resolve first, then variants are analysed two at a time. Cancel the run, or one variant, any time.
@@ -175,6 +189,14 @@ the `AnalysisRunner` (concurrency bound, cancellation, per-variant cancel, timeo
 components with bUnit. `RnaFoldIntegrationTests` run the real ViennaRNA when `python3` and `RNA` are available and skip
 otherwise. The GitLab pipeline runs the same plus the pinning gate, and smoke-tests the built image with `grna doctor`.
 
+## Data and large files
+
+This repository holds source code only. The GRCh38 Bowtie index (about 3.7 GB) is **not** stored here: the base image downloads it
+from the public Bowtie index bucket at build time and verifies its SHA-256 (`Dockerfile.bowtie-base`). Only the Bowtie 1.3.1
+binary (about 14 MB, `bowtie/`) and a Windows ViennaRNA wheel (about 2 MB, `DiseaseMutationsApp/`) are committed. Any dataset,
+model or other heavy artifact produced by the team belongs on [Zenodo](https://teams.igem.org/go/deliverables/software/zenodo)
+and should be referenced from this README.
+
 ## Configuration
 
 See the table in [docs/runtime-contract.md](docs/runtime-contract.md#configuration): `GRNA_BOWTIE_BINARY`, `GRNA_BOWTIE_INDEX`,
@@ -200,19 +222,20 @@ non-root user. If you publish it, put an authenticating reverse proxy in front.
 
 ## Contributing
 
-Fork, branch, commit, open a pull request. Contributions are accepted under the project's MIT license. Add unit tests for new
+Fork, branch, commit, open a merge request on GitLab. Contributions are accepted under the project's MIT license. Add unit tests for new
 behaviour; update this README and, for algorithm changes, [BIOLOGICAL_REPORT.md](BIOLOGICAL_REPORT.md). Dependencies are
 pinned (see the pinning policy in [docs/runtime-contract.md](docs/runtime-contract.md#dependency-pinning-policy)); run
 `scripts/check-pins.sh` before pushing and bump versions only in the central places listed there.
 
 ## License
 
-MIT, see [LICENSE](LICENSE). The image also contains components under other licenses, notably **Bowtie (GPL-3.0)** and
+MIT (an OSI-approved open-source license, as iGEM requires), see [LICENSE](LICENSE). The image also contains components under other licenses, notably **Bowtie (GPL-3.0)** and
 **ViennaRNA (non-commercial-use license)**: see [THIRD-PARTY-NOTICES.md](THIRD-PARTY-NOTICES.md).
 
 ## Authors
 
-Javier Torralbo Cortes: initial work.
+iGEM Team UMA-Malaga 2026. Initial work by Javier Torralbo Cortes. The Attributions Form on the team wiki is the authoritative
+record of contributors and sources.
 
 ## Acknowledgments and references
 
@@ -246,4 +269,4 @@ persistence) and no static hosting. The earlier CORS setup was removed; nothing 
 
 ## Support
 
-Open an issue, or contact javiertorralbocortes@gmail.com.
+Open an issue in the GitLab project, or contact javiertorralbocortes@gmail.com.
