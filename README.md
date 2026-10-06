@@ -187,7 +187,7 @@ dotnet test
 Tests need no container and no network: the library's pure logic (scoring, parsing, pooling and decoding, CSV round trips),
 the `AnalysisRunner` (concurrency bound, cancellation, per-variant cancel, timeouts, retry) against a fake pipeline, and the
 components with bUnit. `RnaFoldIntegrationTests` run the real ViennaRNA when `python3` and `RNA` are available and skip
-otherwise. There is no CI pipeline; run `scripts/check-pins.sh` (the pinning gate) and `grna doctor` in the built image yourself.
+otherwise. The GitLab pipeline (`.gitlab-ci.yml`) runs the pinning gate and these tests; it builds no images, so run `grna doctor` in the locally built image yourself.
 
 ## Data and large files
 

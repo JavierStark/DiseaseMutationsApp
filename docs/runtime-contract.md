@@ -86,7 +86,7 @@ returns JSON and HTTP 503 when any required check fails; the container `HEALTHCH
 
 ## Registry (optional)
 
-There is no CI pipeline in this repository: images are built locally (`./start.sh`). `./start.sh` can still pull prebuilt images
+`.gitlab-ci.yml` runs only the pinning gate (`pins`) and the tests (`test`); it builds no images, because iGEM's runners have no privileged Docker. Images are built locally (`./start.sh`). `./start.sh` can still pull prebuilt images
 from a registry when `GRNA_REGISTRY` is set (`<registry>/bowtie-base:grch38-noalt-20260526` and `<registry>/app:latest`), and falls
 back to a local build when the registry is unreachable; `--build-local` never pulls. Rebuilding the base manually:
 `./start.sh --rebuild-bowtie`, or `docker compose --profile base build bowtie-base`. Run `scripts/check-pins.sh` yourself before
