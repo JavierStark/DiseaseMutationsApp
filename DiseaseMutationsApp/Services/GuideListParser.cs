@@ -7,7 +7,7 @@ public enum GuideListSource
     /// <summary>One guide per line, or comma separated.</summary>
     PlainList,
 
-    /// <summary>The CSV report exported by the gRNA Builder tab.</summary>
+    /// <summary>The CSV report exported by the Diana tab.</summary>
     BuilderCsv
 }
 
@@ -32,7 +32,7 @@ public record ParsedGuideList
 
 /// <summary>
 /// Turns pasted text into the ordered guide list that drives pooling.
-/// Accepts either a plain list or the gRNA Builder's own CSV export, so a researcher can
+/// Accepts either a plain list or Diana's own CSV export, so a researcher can
 /// run the Builder, download the report, and paste it straight in.
 /// </summary>
 public static class GuideListParser

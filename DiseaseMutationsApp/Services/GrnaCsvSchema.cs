@@ -4,7 +4,7 @@ using System.Text;
 namespace DiseaseMutationsApp.Services;
 
 /// <summary>
-/// Single source of truth for the gRNA Builder CSV report: the web export writes it,
+/// Single source of truth for the Diana CSV report: the web export writes it,
 /// <see cref="GuideListParser"/> reads it, and the tests assert they agree.
 /// </summary>
 public static class GrnaCsvSchema
@@ -31,7 +31,7 @@ public static class GrnaCsvSchema
 
     /// <summary>A leading comment line recording the parameters, so an exported report can be reproduced.</summary>
     public static string ProvenanceLine(int spacerSize, int seedStart, int seedEnd) =>
-        $"# gRNA Builder report; spacer={spacerSize}; seed={seedStart}-{seedEnd}; generated={DateTime.UtcNow:yyyy-MM-ddTHH:mm:ssZ}";
+        $"# Diana report; spacer={spacerSize}; seed={seedStart}-{seedEnd}; generated={DateTime.UtcNow:yyyy-MM-ddTHH:mm:ssZ}";
 
     public static string Header => string.Join(",", Columns);
 

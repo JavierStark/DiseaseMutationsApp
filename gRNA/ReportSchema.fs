@@ -43,4 +43,4 @@ let row (rsId: string option) (hgvs: string) (sequenceType: string) (isComplemen
 
 /// A leading comment line recording the parameters so a report can be reproduced.
 let provenance (spacer: int) (seedStart: int) (seedEnd: int) =
-    sprintf "# gRNA Builder report; spacer=%d; seed=%d-%d; generated=%s" spacer seedStart seedEnd (DateTime.UtcNow.ToString("yyyy-MM-ddTHH:mm:ssZ"))
+    sprintf "# Diana report; spacer=%d; seed=%d-%d; generated=%s" spacer seedStart seedEnd (DateTime.UtcNow.ToString("yyyy-MM-ddTHH:mm:ssZ"))

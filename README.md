@@ -1,4 +1,6 @@
-# Disease Mutations App (gRNA Builder)
+# Diana
+
+*Diana: precision guide RNA design.* The name is explained in [docs/about-the-name.md](docs/about-the-name.md).
 
 A web application and command-line tool for turning disease-related variants (HGVS notations or rsIDs) into ranked
 CRISPR-Cas13 guide RNA spacers, and for planning combinatorial guide pooling onto 96/384-well plates. Spacers are scored for
@@ -7,7 +9,7 @@ original (wild-type) sequence.
 
 ## Overview
 
-### gRNA Builder (`/`)
+### Diana: guide design (`/`)
 
 - **Inputs**: HGVS (`NC_000017.11:g.7674220C>T`) and rsIDs (`rs334`), several at once. An rsID is resolved to its HGVS
   notations and each is analysed on both strands: a normal tab and a complement (`C`) tab.
@@ -21,7 +23,7 @@ original (wild-type) sequence.
   substitution special rule's engineered spacer this can differ from the table's count, which is carried over from the unadjusted candidate.
 - **Shortlist**: pick spacers across variants, send them to the Pooling page without a CSV round trip, or download an
   order-ready **oligo CSV** (DNA, optional T7 promoter, top/bottom pairs, plate wells addressed like the pooling plan).
-- **Files and sessions**: load inputs from a plain list, a Builder CSV report or a saved session; *Save session* downloads a
+- **Files and sessions**: load inputs from a plain list, a Diana CSV report or a saved session; *Save session* downloads a
   JSON document (inputs, spacer/seed, shortlist) that `grna design --input session.json` reads too.
 - **Permalinks**: *Copy link to this design* encodes `?hgvs=...&spacer=28&seed=10-17`; opening it starts the run.
 - **CSV report**: per rsID or all at once, with the spacer/seed parameters in a leading `#` line and a `Strand` column.
@@ -30,7 +32,7 @@ original (wild-type) sequence.
 
 Screening a whole variant panel one guide per well is infeasible, so guides are pooled combinatorially: at most K guides per
 tube (a biological limit, default 5), laid out so each guide appears in R wells (2 for the 2D models, 3 for 3D) and a positive
-readout still identifies the guide. Choose a guide count or paste a guide list / Builder CSV report; the page compares the
+readout still identifies the guide. Choose a guide count or paste a guide list / Diana CSV report; the page compares the
 three models (2D fragmented, 2D matrix, 3D), shows the plate map and the tube list, and exports CSV. **Decode screening
 results**: enter the positive wells (`A1, B3`, `Plate 2 - C4`, or tube numbers like `#12`) to get the implicated guides, with
 overlapping multi-hit collisions flagged as ambiguous instead of hidden.
@@ -155,7 +157,7 @@ DiseaseMutationsApp/   Blazor Server app (Pages, Components, Services, Shared, w
 gRNA/                  F# library
 gRNA.Cli/              the grna command-line tool
 DiseaseMutationsAppTests/  NUnit + bUnit tests
-docs/                  runtime-contract, using-the-library, running-as-a-service, design-system
+docs/                  about-the-name, runtime-contract, using-the-library, running-as-a-service, design-system
 examples/standalone.fsx    run the library from F# Interactive
 scripts/check-pins.sh      dependency pinning gate
 Dockerfile, Dockerfile.bowtie-base, docker-compose.yml, start.sh, start.ps1, .gitlab-ci.yml

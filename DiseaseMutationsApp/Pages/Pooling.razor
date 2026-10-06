@@ -42,14 +42,14 @@
                             <div class="mb-2">
                                 <label for="guide-list" class="form-label">Guides</label>
                                 <textarea id="guide-list" class="form-control" rows="6" @bind="_guideListText"
-                                          placeholder="One guide per line (or comma-separated) — or paste a CSV report downloaded from the gRNA Builder tab"></textarea>
+                                          placeholder="One guide per line (or comma-separated) — or paste a CSV report downloaded from the Diana tab"></textarea>
 
                                 @if (_parsedGuides.Count > 0)
                                 {
                                     <div class="alert alert-info mt-3 mb-0">
                                         <div class="alert-heading mb-2">
                                             <Icon Name="check" />
-                                            Detected @(_guideListSource == GuideListSource.BuilderCsv ? "a gRNA Builder CSV report" : "a plain guide list")
+                                            Detected @(_guideListSource == GuideListSource.BuilderCsv ? "a Diana CSV report" : "a plain guide list")
                                             — <strong>@_parsedGuides.Count</strong> guide@(_parsedGuides.Count == 1 ? "" : "s").
                                         </div>
                                         <div class="alert-detail">

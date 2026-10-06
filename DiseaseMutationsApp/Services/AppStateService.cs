@@ -7,7 +7,7 @@ namespace DiseaseMutationsApp.Services
 {
     /// <summary>
     /// Scoped service that maintains state across page navigations.
-    /// This service persists data for both the Index (gRNA Builder) and OmimToRs pages.
+    /// This service persists data for both the Index (Diana) and OmimToRs pages.
     /// </summary>
     public class AppStateService
     {
