@@ -101,7 +101,7 @@ cd diana-grna-designer
 ```
 
 It runs preflight checks (Docker daemon, Compose v2, free disk), builds or pulls the images, starts the app and prints
-success only once `http://localhost:5000/healthz` answers. If `GRNA_REGISTRY` points at a GitLab registry holding prebuilt
+success only once `http://localhost:5000/healthz` answers. If `GRNA_REGISTRY` points at a container registry holding prebuilt
 images it pulls them (falling back to a local build if the registry is unreachable). The app listens on `127.0.0.1` only; set
 `GRNA_BIND=0.0.0.0` to expose it on your network (there is no authentication).
 
@@ -174,7 +174,7 @@ DiseaseMutationsAppTests/  NUnit + bUnit tests
 docs/                  about-the-name, runtime-contract, using-the-library, running-as-a-service, design-system
 examples/standalone.fsx    run the library from F# Interactive
 scripts/check-pins.sh      dependency pinning gate
-Dockerfile, Dockerfile.bowtie-base, docker-compose.yml, start.sh, start.ps1, .gitlab-ci.yml
+Dockerfile, Dockerfile.bowtie-base, docker-compose.yml, start.sh, start.ps1
 ```
 
 ## Testing
@@ -187,7 +187,7 @@ dotnet test
 Tests need no container and no network: the library's pure logic (scoring, parsing, pooling and decoding, CSV round trips),
 the `AnalysisRunner` (concurrency bound, cancellation, per-variant cancel, timeouts, retry) against a fake pipeline, and the
 components with bUnit. `RnaFoldIntegrationTests` run the real ViennaRNA when `python3` and `RNA` are available and skip
-otherwise. The GitLab pipeline runs the same plus the pinning gate, and smoke-tests the built image with `grna doctor`.
+otherwise. There is no CI pipeline; run `scripts/check-pins.sh` (the pinning gate) and `grna doctor` in the built image yourself.
 
 ## Data and large files
 

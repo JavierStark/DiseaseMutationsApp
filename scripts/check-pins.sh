@@ -8,14 +8,14 @@ report() { printf 'PIN VIOLATION: %s\n' "$1" >&2; fail=1; }
 
 # 1. No ':latest' on any image we pull. The locally built output names (disease-mutations-app:latest,
 #    <registry>/app:latest) are artefacts we produce, not inputs.
-hits=$(grep -nE ':latest' Dockerfile Dockerfile.bowtie-base docker-compose.yml .gitlab-ci.yml 2>/dev/null \
+hits=$(grep -nE ':latest' Dockerfile Dockerfile.bowtie-base docker-compose.yml 2>/dev/null \
   | grep -vE '^[^:]+:[0-9]+:\s*#' \
   | grep -vE 'disease-mutations-app:latest|/app:latest|GRNA_APP_IMAGE' || true)
 [ -z "$hits" ] || report "floating ':latest' reference:
 $hits"
 
 # 2. Base images must be pinned by digest.
-hits=$(grep -nE '^FROM [a-z]|^\s+image: [a-z]' Dockerfile Dockerfile.bowtie-base .gitlab-ci.yml 2>/dev/null \
+hits=$(grep -nE '^FROM [a-z]|^\s+image: [a-z]' Dockerfile Dockerfile.bowtie-base 2>/dev/null \
   | grep -vE '@sha256:' || true)
 [ -z "$hits" ] || report "image without @sha256 digest:
 $hits"

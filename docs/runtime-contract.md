@@ -12,7 +12,7 @@ keep it reproducible. If you change a dependency, change it here.
 | ViennaRNA | **2.7.2** (`viennarna==2.7.2`) | `Dockerfile` (`VIENNARNA_VERSION`) | `import RNA; RNA.__version__` is reported by `grna doctor`. |
 | Python | 3.11 (Debian bookworm `python3`) | base image digest | `python3 -c "import RNA"` |
 | .NET SDK / runtime | SDK 9.0.306 / runtime 9.0.10 | `global.json`, image digests | `dotnet --version` |
-| Base images | `mcr.microsoft.com/dotnet/sdk:9.0.306-bookworm-slim@sha256:81f6d622...7687`, `.../aspnet:9.0.10-bookworm-slim@sha256:3dcb3339...2682` | `Dockerfile*`, `.gitlab-ci.yml` | digests pinned, checked by `scripts/check-pins.sh` |
+| Base images | `mcr.microsoft.com/dotnet/sdk:9.0.306-bookworm-slim@sha256:81f6d622...7687`, `.../aspnet:9.0.10-bookworm-slim@sha256:3dcb3339...2682` | `Dockerfile*` | digests pinned, checked by `scripts/check-pins.sh` |
 | NuGet | every direct and transitive version | `Directory.Packages.props` + committed `packages.lock.json` | CI runs `dotnet restore --locked-mode` |
 
 ## Facts that were verified, and how
@@ -84,14 +84,13 @@ One routine, three surfaces. It checks: working directory, Bowtie binary (presen
 (resolved base), Python + ViennaRNA import and version, optionally NCBI reachability, and available memory. `/healthz`
 returns JSON and HTTP 503 when any required check fails; the container `HEALTHCHECK` uses it.
 
-## CI/CD and registry
+## Registry (optional)
 
-`.gitlab-ci.yml` stages: `pins` (the pinning gate), `test` (`dotnet restore --locked-mode`, build, test, JUnit), `build-base`
-(manual/scheduled; needs ~10 GB disk and a long timeout, so use a project runner), `build-app`, `smoke` (`grna doctor`
-inside the built image). Registry tags: `$CI_REGISTRY_IMAGE/bowtie-base:grch38-noalt-20260526` and
-`$CI_REGISTRY_IMAGE/app:<sha>` (`:latest` on the default branch). `./start.sh` pulls them when `GRNA_REGISTRY` is set and
-falls back to a local build when the registry is unreachable; `--build-local` never pulls. Rebuilding the base manually:
-`./start.sh --rebuild-bowtie`, or `docker compose --profile base build bowtie-base`.
+There is no CI pipeline in this repository: images are built locally (`./start.sh`). `./start.sh` can still pull prebuilt images
+from a registry when `GRNA_REGISTRY` is set (`<registry>/bowtie-base:grch38-noalt-20260526` and `<registry>/app:latest`), and falls
+back to a local build when the registry is unreachable; `--build-local` never pulls. Rebuilding the base manually:
+`./start.sh --rebuild-bowtie`, or `docker compose --profile base build bowtie-base`. Run `scripts/check-pins.sh` yourself before
+pushing to enforce the pinning policy below.
 
 ## Dependency pinning policy
 
