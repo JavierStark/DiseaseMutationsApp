@@ -1,3 +1,4 @@
+@using DiseaseMutationsApp.Services
 @inject IJSRuntime JS
 
 <div class="seq-toolbar">
@@ -6,6 +7,13 @@
         <Icon Name="@(_copied ? "check" : "copy")" />@(_copied ? "Copied" : "Copy FASTA")
     </button>
 </div>
+
+@foreach (var enzyme in RestrictionSites.Find(Sequence))
+{
+    <div class="alert alert-warning mb-2" role="alert">
+        <Icon Name="alert" />@RestrictionSites.Warning(enzyme)
+    </div>
+}
 
 <div class="seq-view" role="group" aria-label="@Title">
     @foreach (var row in Rows())
