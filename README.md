@@ -175,6 +175,7 @@ docs/                  about-the-name, runtime-contract, using-the-library, runn
 examples/standalone.fsx    run the library from F# Interactive
 scripts/check-pins.sh      dependency pinning gate
 Dockerfile, Dockerfile.bowtie-base, docker-compose.yml, start.sh, start.ps1
+.claude/skills/diana/      AI-agent skill: install, run and drive the grna CLI (with grna.sh / grna.ps1 Docker wrappers)
 ```
 
 ## Testing

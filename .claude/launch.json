@@ -1,0 +1,11 @@
+{
+  "version": "0.0.1",
+  "configurations": [
+    {
+      "name": "app",
+      "runtimeExecutable": "dotnet",
+      "runtimeArgs": ["run", "--project", "DiseaseMutationsApp/DiseaseMutationsApp.csproj", "--launch-profile", "http"],
+      "port": 5000
+    }
+  ]
+}
