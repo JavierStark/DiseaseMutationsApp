@@ -42,7 +42,9 @@ tube (a biological limit, default 5), laid out so each guide appears in R wells 
 readout still identifies the guide. Choose a guide count or paste a guide list / Diana CSV report; the page compares the
 three models (2D fragmented, 2D matrix, 3D), shows the plate map and the tube list, and exports CSV. **Decode screening
 results**: enter the positive wells (`A1, B3`, `Plate 2 - C4`, or tube numbers like `#12`) to get the implicated guides, with
-overlapping multi-hit collisions flagged as ambiguous instead of hidden.
+overlapping multi-hit collisions flagged as ambiguous instead of hidden. The CSV columns are `Tube ID, Mixture Name, Guides in
+Tandem, Well`; slots the layout reserves but that hold no guides are listed as `Empty - do not prepare`. Limits: 100,000 guides
+and 10,000 guides per well.
 
 ### Diagnostics (`/diagnostics`, `/healthz`)
 
