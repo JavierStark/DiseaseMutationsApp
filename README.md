@@ -230,7 +230,7 @@ pinned (see the pinning policy in [docs/runtime-contract.md](docs/runtime-contra
 
 ## License
 
-MIT (an OSI-approved open-source license, as iGEM requires), see [LICENSE](LICENSE). The image also contains components under other licenses, notably **Bowtie (GPL-3.0)** and
+MIT (an OSI-approved open-source license, as iGEM requires), see [LICENSE](LICENSE). The image also contains components under other licenses, notably **Bowtie (Artistic License 2.0)** and
 **ViennaRNA (non-commercial-use license)**: see [THIRD-PARTY-NOTICES.md](THIRD-PARTY-NOTICES.md).
 
 ## Authors
@@ -240,18 +240,41 @@ record of contributors and sources.
 
 ## Acknowledgments and references
 
-Bowtie (Langmead et al.), ViennaRNA (Lorenz et al.), NCBI, the Genome Reference Consortium, the HGVS nomenclature, and the CRISPR
-community. Licenses for these components are stated in [THIRD-PARTY-NOTICES.md](THIRD-PARTY-NOTICES.md).
+Bowtie (Langmead et al.), ViennaRNA (Lorenz et al.), forna (Kerpedjiev et al.), NCBI and dbSNP, the Genome Reference Consortium,
+the HGVS nomenclature, and the CRISPR community. Licenses for these components are stated in
+[THIRD-PARTY-NOTICES.md](THIRD-PARTY-NOTICES.md).
+
+### What each resource asks us to cite
+
+We checked each resource's own citation guidance (July-October 2026) and cite accordingly:
+
+| Resource | What it asks | Reference |
+|---|---|---|
+| Bowtie | Cite Langmead et al. 2009 | 1 |
+| ViennaRNA | Main references: Lorenz et al. 2011 and Hofacker et al. 1994 (feature-specific papers are suggested, not required) | 2, 3 |
+| forna | Kerpedjiev et al. 2015 | 4 |
+| dbSNP | Cite the *Nucleic Acids Research* paper (Phan et al. 2025); to point at a single variant, cite its accession (e.g. rs334) | 5 |
+| NCBI (sequences, E-utilities, Variation Services) | Acknowledge NCBI/NLM; automated clients should send `tool` and `email` (we send `tool=gRNA` and `email=$GRNA_NCBI_CONTACT`) | 6-8 |
+| GRCh38 | Cite the assembly (Schneider et al. 2017) | 9 |
+| HGVS nomenclature | Cite den Dunnen et al. 2016 rather than the web site | 10 |
+
+### References
 
 1. Langmead, B., Trapnell, C., Pop, M., & Salzberg, S. L. (2009). Ultrafast and memory-efficient alignment of short DNA sequences to the human genome. *Genome Biology*, 10(3), R25. https://doi.org/10.1186/gb-2009-10-3-r25
-2. Human Genome Variation Society. HGVS nomenclature. http://varnomen.hgvs.org/
-3. Genome Reference Consortium. Human Build 38 (GRCh38). https://www.ncbi.nlm.nih.gov/grc/human
-4. Doench, J. G. et al. (2016). Optimized sgRNA design to maximize activity and minimize off-target effects of CRISPR-Cas9. *Nature Biotechnology*, 34(2), 184-191. https://doi.org/10.1038/nbt.3437
-5. Bryson, J. W. (2025). Array Assembler Provides Greatly Simplified crRNA Array Design for CRISPR Cas12 and Cas13 Variants. *ACS Synthetic Biology*. https://doi.org/10.1021/acssynbio.5c00100
-6. Gruber, A. R. et al. (2008). The Vienna RNA websuite. *Nucleic Acids Research*, 36(Web Server issue). https://doi.org/10.1093/nar/gkn188
-7. Karimi, M. et al. (2025). Integrating AI and CRISPR Cas13a for rapid detection of tomato brown rugose fruit virus. *Scientific Reports*, 15(1). https://doi.org/10.1038/s41598-025-11405-z
-8. Lorenz, R. et al. (2011). ViennaRNA Package 2.0. http://www.tbi.univie.ac.at/RNA
-9. Mathews, D. H. et al. (2004). Incorporating chemical modification constraints into a dynamic programming algorithm for prediction of RNA secondary structure. *PNAS*, 101. https://doi.org/10.1073/pnas.0401799101
+2. Lorenz, R., Bernhart, S. H., Höner zu Siederdissen, C., Tafer, H., Flamm, C., Stadler, P. F., & Hofacker, I. L. (2011). ViennaRNA Package 2.0. *Algorithms for Molecular Biology*, 6, 26. https://doi.org/10.1186/1748-7188-6-26
+3. Hofacker, I. L., Fontana, W., Stadler, P. F., Bonhoeffer, L. S., Tacker, M., & Schuster, P. (1994). Fast folding and comparison of RNA secondary structures. *Monatshefte für Chemie*, 125, 167-188. https://doi.org/10.1007/BF00818163
+4. Kerpedjiev, P., Hammer, S., & Hofacker, I. L. (2015). Forna (force-directed RNA): simple and effective online RNA secondary structure diagrams. *Bioinformatics*, 31(20), 3377-3379. https://doi.org/10.1093/bioinformatics/btv372
+5. Phan, L., Zhang, H., Wang, Q., Villamarin, R., Hefferon, T., Ramanathan, A., & Kattman, B. (2025). The evolution of dbSNP: 25 years of impact in genomic research. *Nucleic Acids Research*, 53(D1), D925-D931. https://doi.org/10.1093/nar/gkae977
+6. Sayers, E. W. et al. (2025). Database resources of the National Center for Biotechnology Information in 2025. *Nucleic Acids Research*, 53(D1), D20-D29. https://doi.org/10.1093/nar/gkae979
+7. Sayers, E. A General Introduction to the E-utilities. In: *Entrez Programming Utilities Help*. National Center for Biotechnology Information. https://www.ncbi.nlm.nih.gov/books/NBK25497/
+8. Holmes, J. B., Moyer, E., Phan, L., Maglott, D., & Kattman, B. (2020). SPDI: data model for variants and applications at NCBI. *Bioinformatics*, 36(6), 1902-1907. https://doi.org/10.1093/bioinformatics/btz856
+9. Schneider, V. A. et al. (2017). Evaluation of GRCh38 and de novo haploid genome assemblies demonstrates the enduring quality of the reference assembly. *Genome Research*, 27(5), 849-864. https://doi.org/10.1101/gr.213611.116
+10. den Dunnen, J. T. et al. (2016). HGVS recommendations for the description of sequence variants: 2016 update. *Human Mutation*, 37(6), 564-569. https://doi.org/10.1002/humu.22981
+11. Mathews, D. H. et al. (2004). Incorporating chemical modification constraints into a dynamic programming algorithm for prediction of RNA secondary structure. *PNAS*, 101(19), 7287-7292. https://doi.org/10.1073/pnas.0401799101
+12. Doench, J. G. et al. (2016). Optimized sgRNA design to maximize activity and minimize off-target effects of CRISPR-Cas9. *Nature Biotechnology*, 34(2), 184-191. https://doi.org/10.1038/nbt.3437
+13. Bryson, J. W. (2025). Array Assembler Provides Greatly Simplified crRNA Array Design for CRISPR Cas12 and Cas13 Variants. *ACS Synthetic Biology*. https://doi.org/10.1021/acssynbio.5c00100
+14. Karimi, M. et al. (2025). Integrating AI and CRISPR Cas13a for rapid detection of tomato brown rugose fruit virus. *Scientific Reports*, 15(1). https://doi.org/10.1038/s41598-025-11405-z
+15. Gruber, A. R., Lorenz, R., Bernhart, S. H., Neuböck, R., & Hofacker, I. L. (2008). The Vienna RNA websuite. *Nucleic Acids Research*, 36(Web Server issue). https://doi.org/10.1093/nar/gkn188
 
 ## Future enhancements
 
