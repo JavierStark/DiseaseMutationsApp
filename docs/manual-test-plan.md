@@ -32,6 +32,7 @@ Record every run in section 9. A step that was not run is written as "not run", 
 
 | # | Step | Expected |
 |---|---|---|
+| 2.1b | `grna design --hgvs NG_000007.3:g.81703T>C` (3 bases from the end of the record), then with `--complement` | Normal strand: ordinary ranking and a `note ...` line on stderr (the web page shows the same text as a warning); complement strand: one engineered spacer, no note |
 | 2.1 | Web app: enter `NC_000017.11:g.7674220C>T`, **Run analysis** | Done within about 30 s; one tab; mutated and original sequence cards; two tables; a single engineered spacer per table (substitution special rule, Rank 1, Score 100%) |
 | 2.2 | Same variant, the `C` (complement) result of an rsID, or `grna design ... --complement` | Spacer sequence differs from 2.1; **Alignments is 1**, not 0; strand shown as "− strand, reverse complement, shown 5'→3'" |
 | 2.3 | Change the spacer to 17, then to 61 | Message "between 18 and 60", **Run analysis** disabled |
