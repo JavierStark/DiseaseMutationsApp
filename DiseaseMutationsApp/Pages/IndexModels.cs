@@ -48,6 +48,8 @@ namespace DiseaseMutationsApp.Pages
         public int? ExtraNucleotids { get; set; }
         public int? WindowStart { get; set; }
         public int? WindowEnd { get; set; }
+        /// <summary>Warnings about this result, shown above the sequences.</summary>
+        public List<string> Notices { get; set; } = new();
 
         /// <summary>Accession and 1-based inclusive window, e.g. NC_000017.11:43045690-43045734.</summary>
         public string? Locus => WindowStart is > 0 && WindowEnd is > 0
@@ -78,6 +80,7 @@ namespace DiseaseMutationsApp.Pages
         {
             Status = LeafStatus.Queued;
             ErrorMessage = null;
+            Notices = new();
         }
     }
 

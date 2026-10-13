@@ -161,7 +161,7 @@ public class SpacerFinderHighlightTests
     }
 
     [Test]
-    public void ApplySubstitutionSpecialRule_NoMatchingPosition_ReturnsEmpty()
+    public void ApplySubstitutionSpecialRule_NoMatchingPosition_KeepsTheRankedList()
     {
         var nonMatching = new SpacerFinder.gRNAResult(
             "UUUUGG",
@@ -179,7 +179,14 @@ public class SpacerFinderHighlightTests
         var input = Microsoft.FSharp.Collections.ListModule.OfSeq(new[] { nonMatching });
         var results = SpacerFinder.applySubstitutionSpecialRule(0, 3, 6, input);
 
-        Assert.That(results, Is.Empty);
+        // Decision 2026-10-13: when no spacer carries the mutation at N-3 the ranked list is kept, not emptied.
+        Assert.Multiple(() =>
+        {
+            Assert.That(results.Length, Is.EqualTo(1));
+            Assert.That(results[0].Sequence, Is.EqualTo("UUUUGG"));
+            Assert.That(results[0].Rank, Is.EqualTo(2), "the candidate is returned untouched");
+            Assert.That(SpacerFinder.specialRuleApplies(6, input), Is.False);
+        });
     }
 
     [Test]

@@ -86,3 +86,36 @@ public class MainTests
         Assert.That(window.Item2 - window.Item1 + 1, Is.EqualTo(original.Length));
     }
 }
+
+/// <summary>The warning that goes with the substitution rule falling back to the ordinary ranking.</summary>
+public class SpecialRuleNoticeTests
+{
+    private static HGVS.HGVS Sub(int position) => new($"NG_000007.3:g.{position}C>T");
+
+    [Test]
+    public void RuleAppliedToBoth_NoNotice()
+    {
+        Assert.That(Main.specialRuleNotice(Sub(500), 1000, 28, true, true), Is.EqualTo(Microsoft.FSharp.Core.FSharpOption<string>.None));
+    }
+
+    [TestCase(false, true, "mutated sequence")]
+    [TestCase(true, false, "original sequence")]
+    [TestCase(false, false, "mutated and original sequences")]
+    public void RuleNotApplied_NamesTheSequence_AndGivesTheGeometry(bool mutated, bool original, string which)
+    {
+        var notice = Main.specialRuleNotice(Sub(1), 1000, 28, mutated, original)!.Value;
+        Assert.Multiple(() =>
+        {
+            Assert.That(notice, Does.Contain(which));
+            Assert.That(notice, Does.Contain("position 1 of NG_000007.3 (1000 bases)"));
+            Assert.That(notice, Does.Contain("at least 2 and 25 bases"));
+            Assert.That(notice, Does.Contain("ordinary ranking is shown instead"));
+        });
+    }
+
+    [Test]
+    public void TheNoticeFollowsTheSpacerSize()
+    {
+        Assert.That(Main.specialRuleNotice(Sub(5), 100, 20, false, false)!.Value, Does.Contain("at least 2 and 17 bases"));
+    }
+}

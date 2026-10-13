@@ -5,7 +5,7 @@ namespace DiseaseMutationsApp.E2E;
 
 /// <summary>
 /// Deterministic stand-in for the real pipeline. The variant text selects the behaviour:
-/// containing "SLOW" it waits until cancelled (for cancel tests), containing "FAIL" it raises the same typed input error
+/// containing "SLOW" it waits until cancelled (for cancel tests), containing "NOTICE" it adds a warning to the result, containing "FAIL" it raises the same typed input error
 /// the real pipeline raises for a reference mismatch, anything else returns five ranked candidates per sequence.
 /// </summary>
 public sealed class FakeAnalysis : IGrnaAnalysis
@@ -31,7 +31,10 @@ public sealed class FakeAnalysis : IGrnaAnalysis
             OriginalSequence = Sequence(55, mutated: false),
             ExtraNucleotids = 27,
             WindowStart = 70587,
-            WindowEnd = 70641
+            WindowEnd = 70641,
+            Notices = hgvs.Contains("NOTICE", StringComparison.Ordinal)
+                ? new List<string> { "The substitution rule (an engineered mismatch next to the mutation, near the 3' end of the spacer) could not be applied to the mutated sequence: too close to an end of the sequence. The ordinary ranking is shown instead." }
+                : new List<string>()
         };
     }
 

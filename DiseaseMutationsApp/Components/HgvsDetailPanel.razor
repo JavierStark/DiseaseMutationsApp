@@ -50,6 +50,13 @@
         var mutLenOriginal = Data.Original.Length - 2 * extra;
         var mutLenMutated = Data.Mutated.Length - 2 * extra;
 
+        @foreach (var notice in Data.Notices)
+        {
+            <div class="alert alert-warning mb-3" role="status">
+                <Icon Name="alert" />@notice
+            </div>
+        }
+
         <div class="row g-4 mb-4">
             <div class="col-12">
                 <div class="card seq-card-original">

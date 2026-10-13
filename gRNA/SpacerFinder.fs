@@ -96,6 +96,17 @@ let adjustFourthFromEndToAorU (sequence: string) =
 
         sequence.Remove(targetIndex, 1).Insert(targetIndex, string replacement)
 
+/// True when some candidate carries the mutation at index `windowSize - 3`, i.e. when the rule below can build its
+/// engineered spacer. It cannot when the mutation is too close to an end of the sequence for such a window to exist.
+let specialRuleApplies (windowSize: int) (results: gRNAResult list) =
+    results
+    |> List.exists (fun result ->
+        result.MutationHighlightStart = windowSize - 3
+        && result.MutationHighlightLength > 0)
+
+/// Replaces the ranked list by the single mismatch-engineered candidate. When no candidate carries the mutation at
+/// `windowSize - 3` (see `specialRuleApplies`) the ranked list is returned UNCHANGED, never emptied: the caller reports
+/// that the rule did not apply.
 let applySubstitutionSpecialRule (seedStart: int) (seedEnd: int) (windowSize: int) (results: gRNAResult list) =
     let targetMutationIndex = windowSize - 3
 
@@ -114,7 +125,9 @@ let applySubstitutionSpecialRule (seedStart: int) (seedEnd: int) (windowSize: in
             MutationHighlightLength = selected.MutationHighlightLength
             Rank = 1
             Score = 1.0 })
-    |> Option.toList
+    |> function
+        | Some adjusted -> [ adjusted ]
+        | None -> results
 
 let getMutationHighlightSpan (windowStart: int) (windowSize: int) (mutationStart: int) (mutationLength: int) : int * int =
     let windowEndExclusive = windowStart + windowSize

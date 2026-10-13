@@ -57,8 +57,9 @@ The function is **curried**; from C# the compiler exposes it as a normal method 
 `GrnaService.GetBestgRNAFromHgvs` shows: `Main.getBestgRNAFromHGVS(hgvs, window, seedStart, seedEnd, bowtie, ct, complement)`.
 `ResultFromHGVS` (note: a different type from the C# record of the same name in `DiseaseMutationsApp.Services`) carries
 `gRNA`, `originalGRNA` (ranked candidate lists), `mutatedSequence`, `originalSequence`, `extraNucleotids` and `windowStart`/`windowEnd` (the 1-based inclusive accession window the sequences were cut from). For
-substitutions the special rule may replace a list with a single engineered candidate (it can also yield **zero** candidates
-while carrying the pre-adjustment alignment and fold values onto the adjusted sequence).
+substitutions the special rule may replace a list with a single engineered candidate (the alignment and fold values are carried over from the
+unadjusted candidate). If no candidate carries the mutation at index `N-3` (`SpacerFinder.specialRuleApplies` is false: the mutation is too
+close to an end of the sequence) the ranked list is kept and `notices` holds a warning (`Main.specialRuleNotice`).
 
 ### `HGVS.HGVS(code)`
 Parsing happens in the **constructor**, so construction is what throws `GrnaInputException`. Members: `Code`, `Accession`,
@@ -115,6 +116,5 @@ can implicate innocent guides at the intersections of their pools; those are rep
 - NCBI sequences are upper-cased by `parseFasta`, but IUPAC letters other than ACGT inside a window are not handled by the scoring or the folding step, which will fail for that window.
 - `extraNucleotids` is `max 0 (spacer - mutation length)`. A deletion longer than the spacer leaves no window and is refused with a message; this is a limit of the design, not a solved case.
 - Alignment counts saturate at 6 (`-k 6`).
-- The substitution special rule can legitimately return zero candidates while carrying the pre-adjustment alignment and
-  fold values onto the adjusted sequence.
+- The substitution special rule carries the pre-adjustment alignment and fold values onto the adjusted sequence (re-running Bowtie and the folding for one changed base was judged redundant).
 - Bowtie is serialised per process.

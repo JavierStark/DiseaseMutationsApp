@@ -209,3 +209,25 @@ public class ReportDownloadTests : E2EBase
         await Expect(Page.GetByRole(AriaRole.Button, new() { Name = "Download all reports" })).ToHaveCountAsync(0);
     }
 }
+
+/// <summary>A result can carry warnings (for example that the substitution rule fell back to the ordinary ranking).</summary>
+public class ResultNoticeTests : E2EBase
+{
+    [Test]
+    public async Task Notice_IsShownAsAWarning_AboveTheSequences_AndOnlyForThatVariant()
+    {
+        await GotoAsync("/");
+        await RunAsync("NOTICE_VARIANT, NC_000017.11:g.7674220C>T");
+        await Expect(DoneStatus).ToContainTextAsync("2 of 2");
+
+        await Page.GetByRole(AriaRole.Tab, new() { NameRegex = new("NOTICE_VARIANT") }).ClickAsync();
+        var notice = Page.GetByRole(AriaRole.Status).Filter(new() { HasText = "could not be applied" });
+        await Expect(notice).ToBeVisibleAsync();
+        await Expect(notice).ToContainTextAsync("ordinary ranking is shown instead");
+        // The ranked tables are still there (the fallback shows candidates, not an empty table).
+        await Expect(Page.GetByRole(AriaRole.Table).First.Locator("tbody tr")).ToHaveCountAsync(5);
+
+        await Page.GetByRole(AriaRole.Tab, new() { Name = "NC_000017.11:g.7674220C>T" }).ClickAsync();
+        await Expect(Page.GetByText("could not be applied")).ToHaveCountAsync(0);
+    }
+}

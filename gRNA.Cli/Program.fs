@@ -167,6 +167,7 @@ let private jsonOf (rows: DesignRow list) =
             {| hgvs = r.Hgvs
                rsId = Option.toObj r.RsId
                strand = if r.Complement then "Complement" else "Normal"
+               notices = r.Result.notices
                mutated = cands r.Result.gRNA
                original = cands r.Result.originalGRNA |})
     JsonSerializer.Serialize(items, opts)
@@ -299,6 +300,7 @@ let design (args: Args) (ct: CancellationToken) : Task<int> =
                             let! r = Main.getBestgRNAFromHGVS h spacer seedS seedE bowtie ct complement
                             results.Add((i, { Hgvs = h; RsId = rs; Complement = complement; Result = r }))
                             eprintfn "ok   %s" h
+                            for notice in r.notices do eprintfn "note %s: %s" h notice
                         with
                         | :? OperationCanceledException as oce -> raise oce
                         | ex ->

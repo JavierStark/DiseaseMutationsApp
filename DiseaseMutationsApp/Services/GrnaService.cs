@@ -46,7 +46,8 @@ public class GrnaService : IGrnaAnalysis
                 OriginalSequence = fsharpResult.originalSequence,
                 ExtraNucleotids = fsharpResult.extraNucleotids,
                 WindowStart = fsharpResult.windowStart,
-                WindowEnd = fsharpResult.windowEnd
+                WindowEnd = fsharpResult.windowEnd,
+                Notices = fsharpResult.notices.ToList()
             };
         }
         catch (Exception ex)
@@ -196,6 +197,8 @@ public record ResultFromHGVS
     /// <summary>1-based inclusive window of the accession the sequences were cut from (0 when unknown).</summary>
     public int WindowStart { get; init; }
     public int WindowEnd { get; init; }
+    /// <summary>Things the user should know about this result, shown as warnings (for example that the substitution rule did not apply).</summary>
+    public List<string> Notices { get; init; } = new();
 }
 
 public record RNAFoldResult

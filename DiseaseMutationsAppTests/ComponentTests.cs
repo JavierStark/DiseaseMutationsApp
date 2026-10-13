@@ -184,6 +184,22 @@ public class ComponentTests : BunitContext
     };
 
     [Test]
+    public void HgvsDetailPanel_ShowsTheNotices_AsWarnings_AndNothingWhenThereAreNone()
+    {
+        var with = ReadyLeaf(false);
+        with.Notices = new List<string> { "The substitution rule could not be applied: too close to an end." };
+        var cut = Render<HgvsDetailPanel>(p => p.Add(c => c.Data, with));
+        var plain = Render<HgvsDetailPanel>(p => p.Add(c => c.Data, ReadyLeaf(false)));
+
+        Assert.Multiple(() =>
+        {
+            Assert.That(cut.FindAll(".alert-warning").Select(a => a.TextContent), Has.Some.Contain("could not be applied"));
+            Assert.That(cut.Find(".alert-warning").GetAttribute("role"), Is.EqualTo("status"));
+            Assert.That(plain.FindAll(".alert-warning").Select(a => a.TextContent), Has.None.Contain("could not be applied"));
+        });
+    }
+
+    [Test]
     public void HgvsDetailPanel_ShowsLocusAndStrand_OnNormalAndComplementCards()
     {
         var normal = Render<HgvsDetailPanel>(p => p.Add(c => c.Data, ReadyLeaf(false)));

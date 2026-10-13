@@ -304,6 +304,7 @@ public sealed partial class AnalysisRunner : IAsyncDisposable
                 leaf.ExtraNucleotids = result.ExtraNucleotids;
                 leaf.WindowStart = result.WindowStart;
                 leaf.WindowEnd = result.WindowEnd;
+                leaf.Notices = result.Notices;
                 leaf.ErrorMessage = null;
                 leaf.Status = LeafStatus.Ready;
             });

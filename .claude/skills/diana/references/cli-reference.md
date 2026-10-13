@@ -36,7 +36,7 @@ grna <unknown>                 "Unknown command", usage on stderr, exit 2
 ### Streams
 
 - **stdout**: only the result (report, plan, fold result, resolve lines, doctor lines, usage).
-- **stderr**: progress (`ok   <hgvs>`, `FAIL <hgvs>: <message>`), `pool` summary, `<rsID>: no NG_ notations found`,
+- **stderr**: progress (`ok   <hgvs>`, `FAIL <hgvs>: <message>`, and `note <hgvs>: <warning>` when a result carries a warning, for example that the substitution rule could not be applied near the end of the sequence), `pool` summary, `<rsID>: no NG_ notations found`,
   `error: ...` messages, `cancelled.`.
 - `--out <file>` writes UTF-8 **without BOM** and overwrites (except the resumable batch case, below).
 
@@ -251,7 +251,7 @@ Same columns, tab-separated, header first, **no provenance line**.
 
 `>` is escaped as `>` (valid JSON). `structure` (dot-bracket of the complete gRNA) exists only in JSON.
 `rsId` holds the digits as a string (e.g. `"334"`), or `null`. Keys are emitted alphabetically (`hgvs, mutated,
-original, rsId, strand`); don't rely on key order.
+notices, original, rsId, strand`); don't rely on key order. `notices` is an array of warning strings (usually empty).
 
 ### Pool plan CSV
 

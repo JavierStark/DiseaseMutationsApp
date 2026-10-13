@@ -161,7 +161,10 @@ If a variant fails it shows the reason and a **Retry this variant** button; othe
 
 Substitution variants get the **special rule**: when the mutation lands at the right position near the 3' end, a single
 mismatch-engineered spacer (`Rank = 1`, `Score = 1.0`) replaces the whole ranked list for that variant, by design
-([BIOLOGICAL_REPORT.md](BIOLOGICAL_REPORT.md) section 4.4).
+([BIOLOGICAL_REPORT.md](BIOLOGICAL_REPORT.md) section 4.4). When the mutation is too close to an end of the accession for such a
+window to exist (at the start or in the last 24 bases for a 28 nt spacer, the sides swapping on the complement strand) the rule
+cannot apply: the ordinary ranking is shown instead, with a visible warning (a `note` line on stderr and a `notices` field in
+`--format json` for the CLI).
 
 The complete gRNA is the 36 nt scaffold `GAUUUAGACUACCCCAAAAACGAAGGGGACUAAAAC` followed by the spacer (the reverse complement of the
 target window, as RNA).

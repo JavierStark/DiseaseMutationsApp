@@ -12,6 +12,8 @@ type ResultFromHGVS = {
     /// 1-based inclusive window of the accession that original/mutated were cut from (same for both strands).
     windowStart: int
     windowEnd: int
+    /// Things the user should know about this result (for example that the substitution rule could not be applied).
+    notices: string list
 }
 
 /// Spacer sizes outside this range are rejected: shorter spacers cannot be specific, longer ones are not Cas13 spacers
@@ -57,6 +59,17 @@ let validateAgainstSequence (hgvs: HGVS.HGVS) (data: string) : unit =
         | _ -> ""
     if stated <> "" && stated <> actual then
         raise (GrnaInputException(sprintf "Reference mismatch at %s:%d_%d: the variant states %s but the sequence has %s." hgvs.Accession startPos endPos stated actual))
+
+/// The warning shown when the substitution special rule could not be applied to one or both candidate lists, or None.
+let specialRuleNotice (hgvs: HGVS.HGVS) (sequenceLength: int) (windowSize: int) (appliesToMutated: bool) (appliesToOriginal: bool) : string option =
+    if appliesToMutated && appliesToOriginal then None
+    else
+        let which =
+            if not appliesToMutated && not appliesToOriginal then "mutated and original sequences"
+            elif not appliesToMutated then "mutated sequence"
+            else "original sequence"
+        Some(sprintf "The substitution rule (an engineered mismatch next to the mutation, near the 3' end of the spacer) could not be applied to the %s: the mutation is at position %d of %s (%d bases), too close to an end of the sequence for a window that makes it the 3rd base, which needs at least 2 and %d bases on its two sides. The ordinary ranking is shown instead."
+                which (fst hgvs.Position) hgvs.Accession sequenceLength (windowSize - 3))
 
 /// Maps a (start, length) span from the forward orientation of a string of the given length to its reverse complement.
 /// A zero-length span (a deletion junction) keeps pointing at the same boundary.
@@ -129,12 +142,21 @@ let getBestgRNAFromHGVS (hgvsString: string) (grnaSize: int) (seedStart: int) (s
     let! gRNAs = gRNAsTask
     let! originalGRNAs = originalGRNAsTask
 
+    let isSubstitution = hgvsObj.Mutation = HGVS.MutationType.Substitution
+    let appliesToMutated = SpacerFinder.specialRuleApplies grnaSize gRNAs
+    let appliesToOriginal = SpacerFinder.specialRuleApplies grnaSize originalGRNAs
+
     let gRNAs, originalGRNAs =
-        if hgvsObj.Mutation = HGVS.MutationType.Substitution then
+        if isSubstitution then
             SpacerFinder.applySubstitutionSpecialRule seedStart seedEnd grnaSize gRNAs,
             SpacerFinder.applySubstitutionSpecialRule seedStart seedEnd grnaSize originalGRNAs
         else
             gRNAs, originalGRNAs
+
+    let notices =
+        if isSubstitution then
+            specialRuleNotice hgvsObj sequence.Data.Length grnaSize appliesToMutated appliesToOriginal |> Option.toList
+        else []
 
     let windowStart, windowEnd = calculateWindow extraNucleotids sequence.Data.Length hgvsObj
 
@@ -146,5 +168,6 @@ let getBestgRNAFromHGVS (hgvsString: string) (grnaSize: int) (seedStart: int) (s
         extraNucleotids = extraNucleotids
         windowStart = windowStart
         windowEnd = windowEnd
+        notices = notices
     }
 }
