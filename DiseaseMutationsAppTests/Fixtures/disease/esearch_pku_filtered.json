@@ -1,0 +1,39 @@
+{
+ "header": {
+  "type": "esearch",
+  "version": "0.3"
+ },
+ "esearchresult": {
+  "count": "923",
+  "retmax": "5",
+  "retstart": "0",
+  "idlist": [
+   "5016062",
+   "5016061",
+   "5016045",
+   "5014657",
+   "5014236"
+  ],
+  "translationset": [],
+  "translationstack": [
+   "GROUP",
+   "AND",
+   {
+    "term": "clinsig_pathogenic[prop]",
+    "field": "prop",
+    "count": "265292",
+    "explode": "N"
+   },
+   {
+    "term": "clinsig_likely_pathogenic[prop]",
+    "field": "prop",
+    "count": "181857",
+    "explode": "N"
+   },
+   "OR",
+   "GROUP",
+   "AND"
+  ],
+  "querytranslation": "(#1) AND #1 AND (clinsig_pathogenic[prop] OR clinsig_likely_pathogenic[prop])"
+ }
+}

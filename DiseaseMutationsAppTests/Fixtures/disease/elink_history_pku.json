@@ -1,0 +1,22 @@
+{
+ "header": {
+  "type": "elink",
+  "version": "0.3"
+ },
+ "linksets": [
+  {
+   "dbfrom": "omim",
+   "ids": [
+    "261600"
+   ],
+   "linksetdbhistories": [
+    {
+     "dbto": "clinvar",
+     "linkname": "omim_clinvar",
+     "querykey": "1"
+    }
+   ],
+   "webenv": "MCID_6ace799b95757ad3bd01cfae"
+  }
+ ]
+}

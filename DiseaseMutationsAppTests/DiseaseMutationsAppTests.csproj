@@ -20,6 +20,11 @@
     </ItemGroup>
 
     <ItemGroup>
+        <!-- Trimmed real responses from Monarch and NCBI E-utilities, read by DiseaseVariantsTests. -->
+        <None Include="Fixtures\**\*.json" CopyToOutputDirectory="PreserveNewest" />
+    </ItemGroup>
+
+    <ItemGroup>
       <ProjectReference Include="..\DiseaseMutationsApp\DiseaseMutationsApp.csproj" />
       <ProjectReference Include="..\gRNA\gRNA.fsproj" />
       <ProjectReference Include="..\gRNA.Cli\gRNA.Cli.fsproj" />

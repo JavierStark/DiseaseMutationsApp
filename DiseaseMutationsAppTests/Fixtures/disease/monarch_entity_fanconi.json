@@ -1,0 +1,189 @@
+{
+ "id": "MONDO:0019391",
+ "category": "biolink:Disease",
+ "name": "Fanconi anemia",
+ "xref": [
+  "DOID:13636",
+  "GARD:0006425",
+  "ICD10CM:D61.03",
+  "ICD9:284.09",
+  "MEDGEN:41967",
+  "MESH:D005199",
+  "MedDRA:10055206",
+  "NANDO:1200303",
+  "NANDO:1200891",
+  "NANDO:2200652",
+  "NCIT:C62505",
+  "OMIMPS:227650",
+  "Orphanet:84",
+  "SCTID:30575002",
+  "UMLS:C0015625"
+ ],
+ "node_hierarchy": {
+  "super_classes": [
+   {
+    "id": "MONDO:0015161",
+    "category": "biolink:Disease",
+    "name": "multiple congenital anomalies/dysmorphic syndrome without intellectual disability",
+    "xref": null,
+    "namespace": null
+   }
+  ],
+  "sub_classes": [
+   {
+    "id": "MONDO:0014986",
+    "category": "biolink:Disease",
+    "name": "Fanconi anemia complementation group R",
+    "xref": null,
+    "namespace": null
+   },
+   {
+    "id": "MONDO:0014985",
+    "category": "biolink:Disease",
+    "name": "Fanconi anemia complementation group V",
+    "xref": null,
+    "namespace": null
+   },
+   {
+    "id": "MONDO:0014987",
+    "category": "biolink:Disease",
+    "name": "Fanconi anemia complementation group U",
+    "xref": null,
+    "namespace": null
+   },
+   {
+    "id": "MONDO:0054748",
+    "category": "biolink:Disease",
+    "name": "Fanconi anemia, complementation group S",
+    "xref": null,
+    "namespace": null
+   },
+   {
+    "id": "MONDO:0044325",
+    "category": "biolink:Disease",
+    "name": "Fanconi anemia, complementation group W",
+    "xref": null,
+    "namespace": null
+   },
+   {
+    "id": "MONDO:0979241",
+    "category": "biolink:Disease",
+    "name": "fanconi anemia, complementation group 10",
+    "xref": null,
+    "namespace": null
+   },
+   {
+    "id": "MONDO:0009215",
+    "category": "biolink:Disease",
+    "name": "Fanconi anemia complementation group A",
+    "xref": null,
+    "namespace": null
+   },
+   {
+    "id": "MONDO:0009213",
+    "category": "biolink:Disease",
+    "name": "Fanconi anemia complementation group C",
+    "xref": null,
+    "namespace": null
+   },
+   {
+    "id": "MONDO:0009214",
+    "category": "biolink:Disease",
+    "name": "Fanconi anemia complementation group D2",
+    "xref": null,
+    "namespace": null
+   },
+   {
+    "id": "MONDO:0010953",
+    "category": "biolink:Disease",
+    "name": "Fanconi anemia complementation group E",
+    "xref": null,
+    "namespace": null
+   },
+   {
+    "id": "MONDO:0012186",
+    "category": "biolink:Disease",
+    "name": "Fanconi anemia complementation group I",
+    "xref": null,
+    "namespace": null
+   },
+   {
+    "id": "MONDO:0012187",
+    "category": "biolink:Disease",
+    "name": "Fanconi anemia complementation group J",
+    "xref": null,
+    "namespace": null
+   },
+   {
+    "id": "MONDO:0013565",
+    "category": "biolink:Disease",
+    "name": "Fanconi anemia complementation group G",
+    "xref": null,
+    "namespace": null
+   },
+   {
+    "id": "MONDO:0013566",
+    "category": "biolink:Disease",
+    "name": "Fanconi anemia complementation group L",
+    "xref": null,
+    "namespace": null
+   },
+   {
+    "id": "MONDO:0014108",
+    "category": "biolink:Disease",
+    "name": "Fanconi anemia complementation group Q",
+    "xref": null,
+    "namespace": null
+   },
+   {
+    "id": "MONDO:0012565",
+    "category": "biolink:Disease",
+    "name": "Fanconi anemia complementation group N",
+    "xref": null,
+    "namespace": null
+   },
+   {
+    "id": "MONDO:0013248",
+    "category": "biolink:Disease",
+    "name": "Fanconi anemia complementation group O",
+    "xref": null,
+    "namespace": null
+   },
+   {
+    "id": "MONDO:0013499",
+    "category": "biolink:Disease",
+    "name": "Fanconi anemia complementation group P",
+    "xref": null,
+    "namespace": null
+   },
+   {
+    "id": "MONDO:0014638",
+    "category": "biolink:Disease",
+    "name": "Fanconi anemia complementation group T",
+    "xref": null,
+    "namespace": null
+   },
+   {
+    "id": "MONDO:0011325",
+    "category": "biolink:Disease",
+    "name": "Fanconi anemia complementation group F",
+    "xref": null,
+    "namespace": null
+   },
+   {
+    "id": "MONDO:0011584",
+    "category": "biolink:Disease",
+    "name": "Fanconi anemia complementation group D1",
+    "xref": null,
+    "namespace": null
+   },
+   {
+    "id": "MONDO:0010351",
+    "category": "biolink:Disease",
+    "name": "Fanconi anemia complementation group B",
+    "xref": null,
+    "namespace": null
+   }
+  ]
+ }
+}

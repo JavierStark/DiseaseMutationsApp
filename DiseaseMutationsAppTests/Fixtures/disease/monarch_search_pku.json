@@ -1,0 +1,50 @@
+{
+ "limit": 3,
+ "offset": 0,
+ "total": 12,
+ "items": [
+  {
+   "id": "MONDO:0009861",
+   "category": "biolink:Disease",
+   "name": "phenylketonuria",
+   "xref": [
+    "DOID:9281",
+    "GARD:0007383",
+    "ICD9:270.1",
+    "MEDGEN:19244",
+    "MESH:D010661",
+    "MedDRA:10034872",
+    "NANDO:1200784",
+    "NANDO:1200785",
+    "NANDO:2200467",
+    "NANDO:2201075",
+    "NCIT:C81315",
+    "NORD:65",
+    "OMIM:261600",
+    "Orphanet:716",
+    "SCTID:7573000",
+    "UMLS:C0031485",
+    "icd11.foundation:444122923"
+   ],
+   "namespace": "MONDO",
+   "score": 410.94235
+  },
+  {
+   "id": "MONDO:0016366",
+   "category": "biolink:Disease",
+   "name": "maternal phenylketonuria",
+   "xref": [
+    "GARD:0003413",
+    "MEDGEN:88435",
+    "MESH:D017042",
+    "Orphanet:2209",
+    "UMLS:C0085547",
+    "icd11.foundation:1509230254"
+   ],
+   "namespace": "MONDO",
+   "score": 45.718704
+  }
+ ],
+ "facet_queries": [],
+ "scope": null
+}

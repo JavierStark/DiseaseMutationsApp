@@ -1,0 +1,28 @@
+{
+ "id": "MONDO:0009861",
+ "category": "biolink:Disease",
+ "name": "phenylketonuria",
+ "xref": [
+  "DOID:9281",
+  "GARD:0007383",
+  "ICD9:270.1",
+  "MEDGEN:19244",
+  "MESH:D010661",
+  "MedDRA:10034872",
+  "NANDO:1200784",
+  "NANDO:1200785",
+  "NANDO:2200467",
+  "NANDO:2201075",
+  "NCIT:C81315",
+  "NORD:65",
+  "OMIM:261600",
+  "Orphanet:716",
+  "SCTID:7573000",
+  "UMLS:C0031485",
+  "icd11.foundation:444122923"
+ ],
+ "node_hierarchy": {
+  "super_classes": [],
+  "sub_classes": []
+ }
+}

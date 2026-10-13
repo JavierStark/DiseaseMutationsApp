@@ -1,0 +1,17 @@
+{
+ "id": "MONDO:0009213",
+ "category": "biolink:Disease",
+ "name": "Fanconi anemia complementation group C",
+ "xref": [
+  "DOID:0111087",
+  "GARD:0015168",
+  "MEDGEN:483324",
+  "NCIT:C125704",
+  "OMIM:227645",
+  "UMLS:C3468041"
+ ],
+ "node_hierarchy": {
+  "super_classes": [],
+  "sub_classes": []
+ }
+}
