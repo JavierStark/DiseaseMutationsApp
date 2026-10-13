@@ -1,19 +1,21 @@
-bin/
-obj/
-/packages/
-riderModule.iml
-/_ReSharper.Caches/
-.idea/
-bowtie/indexes/*
-
-**/ELIMINAR
-
+# Build output
 **/bin/
 **/obj/
+/packages/
+
+# IDE and user-specific files (JetBrains Rider, Visual Studio)
+.idea/
+riderModule.iml
+/_ReSharper.Caches/
 **/.vs/
-**/.git/
-**/.gitignore
-**/node_modules/
+*.user
+
+# Secrets and local environment
 **/.env
 
+# The GRCh38 index is downloaded into the base image, never committed
+bowtie/indexes/*
+
+# Tooling
+**/node_modules/
 .fake

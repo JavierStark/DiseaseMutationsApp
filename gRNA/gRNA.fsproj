@@ -27,11 +27,7 @@
     </ItemGroup>
 
     <ItemGroup>
-        <None Include="LibraryTesting.fsx" />
-        <None Include="LevenshteinDistance.fs" />
         <Compile Include="SNP.fs" />
-        <None Include="snp_sample.json" />
-        <None Include="Omim.fs" />
     </ItemGroup>
 
     <ItemGroup>

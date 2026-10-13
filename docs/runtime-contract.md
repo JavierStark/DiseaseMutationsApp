@@ -48,8 +48,7 @@ property of the image, identical across the local-build and registry-pull routes
 ## Process-wide concurrency model
 
 - **Bowtie** is serialised per process by a single-slot semaphore on the `BowtieService` instance (a DI singleton).
-  Throughput is one alignment batch at a time per process; scale by replicas, not threads
-  ([running-as-a-service.md](running-as-a-service.md)).
+  Throughput is one alignment batch at a time per process; scale by replicas, not threads.
 - **ViennaRNA** launches are bounded to 2 concurrent Python interpreters per process.
 - **Variants**: the web app analyses `Analysis__MaxConcurrentVariants` variants at once (default 2, clamped to 1-4). Each
   variant already runs its two strands' windows concurrently, so 2 variants means up to four heavy sub-tasks in flight.

@@ -5,7 +5,7 @@ This document describes how a number of biological and bioinformatic concepts ar
 ### 1. HGVS Notation: the Language of Genetic Variants
 
 **Scientific concept:**
-HGVS notation (Human Genome Variation Society) is the gold standard for describing variations in DNA, RNA, and protein sequences. It allows precise, unambiguous communication about mutations such as substitutions, deletions, or insertions. For example, `NG_012345.1:c.76A>T` describes a substitution at position 76 of a gene's coding sequence, where an Adenine (A) has been replaced by a Thymine (T).
+HGVS notation (Human Genome Variation Society) is the gold standard for describing variations in DNA, RNA, and protein sequences. It allows precise, unambiguous communication about mutations such as substitutions, deletions, or insertions. For example, `NC_000017.11:g.7674220C>T` describes a substitution at position 7,674,220 of the chromosome 17 reference, where a Cytosine (C) has been replaced by a Thymine (T).
 
 **Implementation:**
 In `gRNA/HGVS.fs`, a parser interprets this notation. The code breaks an HGVS string down into its fundamental components: the sequence accession number, the mutation type, the affected positions, and the nucleotides involved.
@@ -30,6 +30,14 @@ type HGVS(hgvs: string) =
 ```
 
 This module is essential for the application to understand the user's initial request: a specific genetic variant.
+
+**What is accepted and what is refused.** The parser is strict, because a variant that is silently misread produces a convincing but wrong design:
+
+* The code must be `ACCESSION:TYPE.CHANGE`; a missing colon, a position without a change, a position of 0 or beyond the 32-bit range, a reversed range (`10_5del`), and a substitution that changes nothing (`C>C`) are rejected with a message (CLI exit code 2).
+* Alleles must be upper-case `A`, `C`, `G` or `T` (no IUPAC codes, no lower case).
+* Before any design, the variant is checked against the sequence that NCBI returns (`Main.validateAgainstSequence`): the position must lie inside the accession, an insertion needs two adjacent positions, and **the stated reference base must equal the base actually at that position**. `NC_000017.11:g.7674220A>T` is refused because base 7,674,220 is `C`.
+* Only genomic (`g.`), mitochondrial (`m.`) and non-coding (`n.`) positions are designed, because they index the fetched sequence directly. **`c.` (coding-sequence) positions are refused**: they count from the start of the coding sequence, which the application does not yet convert, so using them as plain sequence indexes would target a different place than the notation says. Repeat (`[n]`), conversion and translocation notation parse but are refused for design.
+* The spacer size must be between 18 and 60 nt and the seed range must lie inside the spacer.
 
 ### 2. SNP (Single Nucleotide Polymorphism): Common Variations
 
@@ -78,6 +86,8 @@ module Sequence =
             // ... etc.
 ```
 
+An **inversion** (`inv`) is written into the sequence as the **reverse complement** of the segment, as the HGVS recommendations define it (`GTA` becomes `TAC`). An earlier version only reversed it, which is a different sequence.
+
 ### 4. Search and Optimization of gRNA Spacers: the Heart of CRISPR
 
 **Scientific concept:**
@@ -91,7 +101,7 @@ The `SpacerFinder` module is the application's main engine. It orchestrates a mu
 
 #### 4.1. Candidate Generation: the Sliding Window
 
-The first step is generating all possible spacers. This is done with a "sliding window" (`slidingWindow`) technique that scans the mutated DNA sequence, extracting subsequences of the configured gRNA length (the "spacer size", user-configurable, 20-28 nt in typical use).
+The first step is generating all possible spacers. This is done with a "sliding window" (`slidingWindow`) technique that scans the mutated DNA sequence, extracting subsequences of the configured gRNA length (the "spacer size", user-configurable between 18 and 60 nt, 28 by default). A mutated region shorter than the spacer has no window; the application then reports that instead of searching.
 
 > **IMPORTANT: Nature of the Generated Spacer Sequence**
 >
@@ -114,6 +124,15 @@ let slidingWindow (input: string) (windowSize: int) =
 ```
 
 For every position in the sequence, a spacer candidate is generated. This exhaustive candidate set is the raw material for filtering and scoring.
+
+#### 4.1.1. The two strands: "Normal" and "Complement" results
+
+Every variant can be designed against either strand of the reference; the result tables and the CSV `Strand` column say which.
+
+* **Normal (+ strand).** The window is read 5'→3' on the reference strand. The spacer is the reverse complement of the window, so it hybridises to the reference strand. Bowtie is asked where that window occurs in the genome.
+* **Complement (− strand).** Both the original and the mutated sequence are first replaced by their **reverse complement**, i.e. the opposite strand read 5'→3', and then go through exactly the same steps. The windows, the spacers, the Bowtie query and the folding therefore all describe real 5'→3' molecules of the opposite strand; the spacer of a complement result equals the corresponding stretch of the reference strand written as RNA. The position of the mutation is mirrored accordingly (`Main.mirrorSpan`).
+
+*History, so that older reports can be read correctly.* Until 2026-10-13 the complement mode complemented the sequence without reversing it, which gave a spacer equal to the reverse of the reference strand and a Bowtie query that is a sequence on neither strand: its alignment count was 0 for the TP53 example where the normal strand gives 1. Reports made before that date contain complement rows that should be regenerated.
 
 #### 4.2. Scoring and Filtering: a Multi-Factor Approach
 
@@ -146,7 +165,7 @@ The key evaluation criteria are:
 // In gRNA/SpacerFinder.fs
 
 let calculateGCScore (gcContent: float) (lowerThreshold: float, upperThreshold: float) =
-    if gcContent < upperThreshold && gcContent > lowerThreshold then
+    if gcContent <= upperThreshold && gcContent >= lowerThreshold then
         1.0
     else if gcContent < lowerThreshold then
         gcContent / lowerThreshold
@@ -160,7 +179,9 @@ let calculateGCScore (gcContent: float) (lowerThreshold: float, upperThreshold: 
 
 **c) Off-target analysis with Bowtie:**
 * **Concept:** For CRISPR therapy to be safe, the gRNA must be highly specific to the target sequence. Off-target analysis searches the whole genome for sequences similar to the candidate spacer that could be cut by mistake. Bowtie is an ultra-fast bioinformatic tool for aligning short sequences against a reference genome.
-* **Implementation:** Bowtie is invoked on the raw DNA window (not the RNA spacer) allowing up to 2 mismatches, with up to 6 reported alignments per sequence (`-v 2 -k 6`). An alignment count (`Allignments`) of 1 is ideal, indicating a unique spacer; a higher count severely penalizes the candidate.
+* **Implementation:** Bowtie is invoked on the raw DNA window (not the RNA spacer) allowing up to 2 mismatches, with up to 6 reported alignments per sequence (`-v 2 -k 6`). An alignment count (`Allignments`) of 1 is ideal, indicating a unique spacer; a higher count severely penalizes the candidate. The count saturates at 6 (`-k 6`), which the tables show as "6+".
+
+> **A count of 0 is ranked best, on purpose.** The ranking sorts the count in ascending order, so a window with no Bowtie hit (0) sorts ahead of a window with exactly one (1). This is the team's chosen rule and it is easy to misread: 0 does not mean "unique". It means the sequence of that window was not found in the reference within 2 mismatches. For a substitution the window is almost the reference, so it normally has at least one hit; for edited sequences a 0 is expected, because a window that spans an insertion or duplication junction has no counterpart in the genome. In the runs of 2026-10-13 on `NC_000017.11:g.7674220` (a 3-nt delins, a 1-nt insertion and a 3-nt duplication) the top-ranked candidates all had 0, so the alignment criterion did not separate them and the energy, GC and homopolymer criteria decided the order; a 3-nt inversion at the same place gave 1. Treat a 0 as "no genomic match for this edited sequence", not as proof of specificity.
 
 **d) gRNA secondary structure:**
 * **Concept:** The complete gRNA (spacer + scaffold) must fold into a functional structure to bind Cas13. If the spacer itself folds into a stable secondary structure (hairpins, loops), it can interfere with its function. `RNAFold` (ViennaRNA) is used to predict the structure and its minimum free energy (MFE).
@@ -192,9 +213,9 @@ This rigorous selection process ensures the gRNAs recommended by the application
 #### 4.4. Special Rule for Substitution SNPs
 
 **Concept:**
-CRISPR editing efficiency can be improved if the mutation being introduced (or corrected) itself helps prevent the CRISPR machinery from re-cutting the DNA once it has been repaired. This is especially relevant for substitution SNPs. If the gRNA is designed so that one of its key nucleotides overlaps the mutation position, a mismatch can be created against the original (wild-type) sequence while retaining a perfect match against the repaired (mutated) sequence.
+The intent of the rule is to make a guide more sensitive to a single-base difference between the two alleles of a substitution, by adding one deliberate ("synthetic") mismatch next to the base where the alleles differ, close to the 3' end of the spacer. *[Needs source: the literature that supports synthetic mismatches at these positions, and the choice of `A`/`U` as the replacement, has not yet been added to this report; see docs/review-findings.md.]*
 
-One known strategy is to force a mismatch in the gRNA's "seed region". A more subtle, sometimes preferred technique is to introduce a mismatch near (but not inside) the seed, close to the spacer's 3' end. If the substitution SNP lands at the right spot near the 3' end, we can deliberately alter a nearby gRNA nucleotide to engineer a mismatch against the wild-type sequence.
+What the code actually produces, stated exactly because it is easy to read as something stronger: the spacer is designed against the **mutated** sequence, and the rule then changes one more base of it (index `N-4`). The engineered spacer therefore has **one** mismatch against the mutated target (the synthetic one) and **two** against the wild-type target (the synthetic one and the mutation itself at `N-3`). It is not a perfect match to either allele.
 
 **Implementation:**
 The system implements a special rule to capitalize on this strategy — **and it is applied only when the HGVS mutation type is `Substitution`** (checked in `Main.fs` before calling `applySubstitutionSpecialRule`; other mutation types skip it entirely). Using 0-based indices into a spacer of length `N` (`windowSize`), the rule uses two distinct positions, three bases apart, both counted from the 3' end:
@@ -231,7 +252,7 @@ This automatic rule offers the researcher a potentially more effective gRNA for 
 See section 4.2(c) above for the underlying concept.
 
 **Implementation:**
-`gRNA/BowtieWrapper.fs` is a wrapper around the Bowtie executable. It runs every candidate spacer (the raw DNA window) through Bowtie and counts the alignments found in the human genome. A low alignment count (ideally 1) indicates high specificity. The wrapper resolves the reference index automatically from the first `.bt2`/`.bt2l` file it finds under `bowtie/indexes/` (see the Prerequisites section of `README.md` for how those files are provisioned) and runs with 2 threads.
+`gRNA/BowtieWrapper.fs` is a wrapper around the Bowtie executable. It runs every candidate spacer (the raw DNA window) through Bowtie and counts the alignments found in the human genome. A low alignment count (ideally 1) indicates high specificity. The wrapper resolves the reference index from `GRNA_BOWTIE_INDEX` when set, otherwise from the first index file (sorted by path; `.bt2`, `.bt2l`, `.ebwt` or `.ebwtl`) under `bowtie/indexes/`, and runs with 2 threads. The image ships `GRCh38_noalt_as` as `.bt2` files, which `bowtie-align-s` 1.3.1 reads (checked by running it on 2026-10-13). The reads are written to a temporary file and passed with `-r` (one read per line, numbered in file order exactly as with `-c`): putting thousands of windows on the command line exceeded the operating system's argument-length limit for long variants.
 
 ```fsharp
 // In gRNA/BowtieWrapper.fs
@@ -239,7 +260,7 @@ See section 4.2(c) above for the underlying concept.
 module BowtieWrapper =
     let runBowtie (mismatches: int) (threads: int) (sequence: string) (cancellationToken: CancellationToken) =
         // Builds and executes the Bowtie command line, e.g.:
-        // bowtie-align-s -x <genome_index> -c <sequences> -v <mismatches> -k 6 --threads <threads>
+        // bowtie-align-s -x <genome_index> -v <mismatches> -k 6 --threads <threads> --mm -r <reads_file>
         // Parses the output to count alignments per sequence
 ```
 
@@ -263,47 +284,9 @@ module RNAFoldWrapper =
         // Parses the result to extract structure and energy.
 ```
 
-### 7. Levenshtein Distance: Measuring Similarity
+### 7. OMIM disease mapping and Levenshtein distance (removed)
 
-> **Status: not compiled into the application.** `gRNA/LevenshteinDistance.fs` exists in the repository but is listed as `<None Include="LevenshteinDistance.fs" />` in `gRNA/gRNA.fsproj`, so it is not part of the build and is not used by any currently active feature. It only matters as a dependency of the disabled OMIM integration described in section 8.
-
-**Scientific concept:**
-Levenshtein distance is a metric measuring the difference between two strings, defined as the minimum number of single-character edits (insertions, deletions, or substitutions) required to change one string into the other. In this project it would be used to compare disease phenotype names and group relevant allelic variants.
-
-**Implementation (inactive):**
-`gRNA/LevenshteinDistance.fs` contains an implementation of the algorithm, intended to help decide whether an allelic variant found in the OMIM database is related to the disease phenotype under investigation.
-
-```fsharp
-// In gRNA/LevenshteinDistance.fs
-
-module Levenshtein =
-    let levenshteinDistance (s1: string) (s2: string) =
-        // Dynamic-programming implementation of the edit-distance algorithm.
-```
-
-### 8. Disease Mapping with OMIM
-
-> **Status: disabled.** OMIM integration is fully implemented in code but currently switched off across the stack: `gRNA/Omim.fs` is excluded from the F# build (`<None Include="Omim.fs" />` in `gRNA/gRNA.fsproj`), `GrnaService.GetRsFromOmim` is commented out, the `/omim-to-rs` page and its navigation menu entry are commented out, and `AppStateService`'s OMIM-related state fields are commented out. The reason is that OMIM's site now sits behind a Cloudflare CAPTCHA that blocks the scraper used here (see git history for the change that disabled it). The description below documents the intended design for when/if the integration is re-enabled; it does not describe current, working behavior.
-
-**Scientific concept:**
-OMIM (Online Mendelian Inheritance in Man) is a comprehensive database of human genes and genetic phenotypes. The application would use it to find genetic variants (SNPs with an `rs` ID) associated with a specific disease, identified by its MIM number.
-
-**Implementation (inactive):**
-`gRNA/Omim.fs` performs web scraping on the OMIM site. Starting from a MIM number, it would navigate the "Phenotype-Gene Relationships" and "Allelic Variants" tables to extract the relevant `rs` IDs, using Levenshtein distance to filter by phenotype similarity.
-
-```fsharp
-// In gRNA/Omim.fs
-
-module Omim =
-    let rsFromOmim (mimNumber: string) (diseaseName: string) =
-        async {
-            // 1. Fetches the OMIM page for the MIM number.
-            // 2. Extracts the genes associated with the phenotype.
-            // 3. For each gene, visits the allelic variants table.
-            // 4. Filters variants by phenotype similarity using Levenshtein distance.
-            // 5. Extracts and returns the rs IDs.
-        }
-```
+An earlier version could start from an OMIM disease number, scrape the allelic-variant tables to find `rs` identifiers, and use Levenshtein distance between phenotype names to filter them. OMIM's site now sits behind a CAPTCHA that blocks the scraper, so the feature was switched off and, on 2026-10-13, its code (`Omim.fs`, `LevenshteinDistance.fs`, a sample dbSNP response) was deleted from the repository; the git history keeps it. Nothing in the application depends on it. Variants are entered as HGVS notations or rsIDs only, and the README lists OMIM-to-rsID conversion under future work.
 
 ### Main Workflow
 
@@ -317,14 +300,16 @@ type ResultFromHGVS = {
     originalGRNA: SpacerFinder.gRNAResult list  // Ranked candidates for the original (wild-type) sequence
     mutatedSequence: string
     originalSequence: string
-    extraNucleotids: int                        // Flanking context length used on each side
+    extraNucleotids: int                        // Flanking context length used on each side (never negative)
+    windowStart: int                            // 1-based accession window the sequences were cut from
+    windowEnd: int
 }
 ```
 
-1. **Input:** receives an HGVS notation, a spacer size, and a seed region.
-2. **Parsing:** uses `HGVS.fs` to interpret the mutation.
-3. **Sequence:** uses `SequenceRepository.fs` to fetch the reference sequence from NCBI (cached in-process per accession).
-4. **Mutation:** uses `Sequence.fs` to build both the mutated and the original (wild-type) subsequence, with flanking context on each side. When `complement` is requested, both sequences are complemented (not reverse-complemented) before spacer generation — this powers the app's complement-strand analysis mode.
+1. **Input:** receives an HGVS notation, a spacer size, and a seed region. The spacer size (18-60) and the seed range are validated first.
+2. **Parsing:** uses `HGVS.fs` to interpret the mutation; malformed codes are refused (section 1).
+3. **Sequence:** uses `SequenceRepository.fs` to fetch the reference sequence from NCBI (cached in-process per accession). The response must be exactly one FASTA record of letters (it is upper-cased); an HTML or JSON error page, an empty body or a second record is an upstream error, never a sequence. The variant is then checked against it (position inside the sequence, stated reference base equal to the real base, supported coordinate system).
+4. **Mutation:** uses `Sequence.fs` to build both the mutated and the original (wild-type) subsequence, with flanking context on each side (`spacer size - mutation length`, at least 0). When `complement` is requested, both sequences are replaced by their reverse complement before spacer generation (section 4.1.1), and the mutation position is mirrored. If the mutated sequence is shorter than the spacer there is no window and the run stops with a message.
 5. **gRNA search:** uses `SpacerFinder.fs` to generate and score all candidate gRNAs **for both the mutated and the original sequence**, coordinating calls to `BowtieWrapper.fs` and `RNAFoldWrapper.fs`.
 6. **Substitution rule:** if the HGVS mutation type is `Substitution`, `applySubstitutionSpecialRule` is applied to both candidate lists (see section 4.4) — each list is replaced by its single mismatch-engineered candidate, or emptied if no candidate matches.
 7. **Output:** returns the two ranked gRNA lists (mutated and original), both sequences, and the flanking-context length, so the UI can render the original-vs-mutated comparison and both result tables side by side.
@@ -338,7 +323,7 @@ This modular, science-grounded approach lets the application design efficient, s
 *Code: `gRNA/Pooling.fs`; UI: the `/pooling` page.*
 
 **Problem.** A disease panel can have hundreds of known variants; screening one guide per well is infeasible. Guides are produced
-in tandem (at most **K** per transcript, a biological limit because longer tandem arrays risk RNA conformations that block Cas13)
+in tandem (at most **K** per transcript, a biological limit because longer tandem arrays risk RNA conformations that block Cas13; *[needs source: the limit of 5 is the team's working assumption until a reference is added, see docs/review-findings.md]*)
 and **pooled**: each guide is placed in **R** wells so that a positive readout still identifies it.
 
 **Models** (V guides, K per well; N = total wells):
@@ -368,6 +353,5 @@ next to this report.
 - Section 3's `SNP` excerpt is simplified: the real module is `module gRNA.SNP`, uses `task { }` (not `async { }`), and
   `getHgvsNotationsAsync` now takes a `CancellationToken`, raises `GrnaUpstreamException` on HTTP failure and returns `[]` only for
   "no `NG_` mapping".
-- Section 8's `rsFromOmim` excerpt describes the intended design; the actual signature in the excluded `Omim.fs` differs. The
-  feature is disabled (the file is not part of the build).
-- The FORNA link now uses `https` with URL-encoded sequence and structure and is shown only on request, inside a sandboxed frame.
+- The FORNA diagram link uses plain `http` (the FORNA server refuses https connections, checked 2026-10-13), with the sequence and structure in the query string unencoded because the server does not decode them; it is shown only when the user asks, inside a sandboxed frame, and the interface says that the sequence is sent unencrypted to the FORNA server.
+- Section 3's `SNP` excerpt also omits the new check that the rsID number is digits only (it goes into a URL path).

@@ -38,6 +38,8 @@ COPY --from=build --chown=app:app /out/cli /opt/grna-cli/
 
 # Bowtie 1.3.1 (bowtie-align-s); the checksum matches the upstream bowtie-1.3.1-linux-x86_64 release.
 COPY --chown=app:app bowtie/bowtie-align-s /app/bowtie/bowtie-align-s
+# The licence text travels with the binary (Artistic License 2.0); source: https://github.com/BenLangmead/bowtie/tree/v1.3.1
+COPY --chown=app:app bowtie/LICENSE-Bowtie-Artistic-2.0.txt /app/bowtie/LICENSE-Bowtie-Artistic-2.0.txt
 RUN echo "45c58c69a10577e84e459e6b76d6c8f17ab030a5510d4b6399e6434228a9eaca  /app/bowtie/bowtie-align-s" | sha256sum -c - && \
     chmod 0755 /app/bowtie/bowtie-align-s && \
     printf '#!/bin/sh\nexec dotnet /opt/grna-cli/gRNA.Cli.dll "$@"\n' > /usr/local/bin/grna && \

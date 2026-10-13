@@ -7,7 +7,7 @@ namespace DiseaseMutationsApp.Services
 {
     /// <summary>
     /// Scoped service that maintains state across page navigations.
-    /// This service persists data for both the Index (Diana) and OmimToRs pages.
+    /// This service persists data for the Diana (Index) and Guide Pooling pages.
     /// </summary>
     public class AppStateService
     {
@@ -47,12 +47,6 @@ namespace DiseaseMutationsApp.Services
         public int? PoolingSelectedPoolId { get; set; }
         public string? PoolingErrorMessage { get; set; }
 
-        // ===== OmimToRs Page State (deactivated) =====
-        // public int? OmimCode { get; set; }
-        // public List<string>? OmimRsList { get; set; }
-        // public HashSet<string> OmimSelectedRs { get; set; } = new(StringComparer.OrdinalIgnoreCase);
-        // public string? OmimErrorMessage { get; set; }
-
         // Events to notify components when state changes
         public event Action? OnStateChanged;
 
@@ -75,12 +69,6 @@ namespace DiseaseMutationsApp.Services
 
             // Clear Guide Pooling state
             ResetPoolingState();
-
-            // Clear OmimToRs state (deactivated)
-            // OmimCode = null;
-            // OmimRsList = null;
-            // OmimSelectedRs.Clear();
-            // OmimErrorMessage = null;
 
             NotifyStateChanged();
         }
@@ -127,18 +115,6 @@ namespace DiseaseMutationsApp.Services
             PoolingSelectedPoolId = null;
             PoolingErrorMessage = null;
         }
-
-        // /// <summary>
-        // /// Clear only OmimToRs page state (deactivated)
-        // /// </summary>
-        // public void ClearOmimState()
-        // {
-        //     OmimCode = null;
-        //     OmimRsList = null;
-        //     OmimSelectedRs.Clear();
-        //     OmimErrorMessage = null;
-        //     NotifyStateChanged();
-        // }
 
         // ===== Shortlist (cross-variant basket) =====
 
