@@ -23,6 +23,13 @@
                         </div>
                     }
 
+                    @if (_incoming is { } incoming)
+                    {
+                        <div class="alert alert-info" role="status" id="incoming-banner">
+                            <Icon Name="info" />@incoming.Message Check the inputs, then press <strong>Run analysis</strong>.
+                        </div>
+                    }
+
                     @if (_restoredBanner)
                     {
                         <div class="alert alert-info" role="status">

@@ -26,6 +26,7 @@ namespace DiseaseMutationsApp.Pages
         private bool _restoredBanner;
         private bool _linkBanner;
         private bool _linkCopied;
+        private IncomingNotice? _incoming;
 
         public Index()
         {
@@ -148,6 +149,10 @@ namespace DiseaseMutationsApp.Pages
 
         protected override void OnInitialized()
         {
+            // Variants sent from the Disease variants page: shown once, never run on arrival.
+            _incoming = StateService.IndexIncomingNotice;
+            StateService.IndexIncomingNotice = null;
+
             Runner.Attach(_marshal);
             Runner.Changed += OnRunnerChanged;
             StateService.OnStateChanged += OnRunnerChanged;
@@ -193,6 +198,9 @@ namespace DiseaseMutationsApp.Pages
         {
             if (!firstRender) return;
 
+            // The sent inputs replace what storage held, so the new content is what a refresh restores.
+            if (_incoming is not null) SaveSession();
+
             // Live circuit state always beats storage; restoring never starts a run.
             if (Runner.Phase != RunPhase.Idle || _inputTabs.Count > 0 || !string.IsNullOrWhiteSpace(_hgvs)) return;
 
@@ -226,6 +234,7 @@ namespace DiseaseMutationsApp.Pages
             if (!CanFetchData) return;
             _restoredBanner = false;
             _linkBanner = false;
+            _incoming = null;
             SaveSession();
             Runner.TryStart(_hgvs, new RunParameters(_gRnaSize, _seedStart, _seedEnd));
         }

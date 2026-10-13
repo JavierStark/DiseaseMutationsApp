@@ -51,6 +51,7 @@ public sealed class E2EHost : IAsyncDisposable
         builder.Services.AddScoped<GrnaService>();
         builder.Services.AddScoped<IGrnaAnalysis, FakeAnalysis>();   // the one deliberate difference from Program.cs
         builder.Services.AddScoped<PoolingService>();
+        builder.Services.AddScoped<IDiseaseVariantSource, FakeDiseaseSource>();   // no Monarch or NCBI in browser tests
         builder.Services.AddSingleton<DiagnosticsService>();
 
         var app = builder.Build();

@@ -28,6 +28,12 @@ namespace DiseaseMutationsApp.Services
         /// <summary>Guides picked across variants, ready to send to the Pooling page.</summary>
         public List<ShortlistItem> Shortlist { get; set; } = new();
 
+        /// <summary>Set when variants were sent from the Disease variants page; the Diana page shows it once, then clears it.</summary>
+        public IncomingNotice? IndexIncomingNotice { get; set; }
+
+        // ===== Disease variants page state =====
+        public DiseaseSearchState DiseaseSearch { get; set; } = new();
+
         // ===== Guide Pooling Page State =====
         public PoolingInputMode PoolingInputMode { get; set; } = PoolingInputMode.GuideCount;
         public int PoolingGuideCount { get; set; } = 100;
@@ -66,6 +72,8 @@ namespace DiseaseMutationsApp.Services
             IndexActiveTabIndex = 0;
             IndexActiveLeafIds = new();
             IndexClaimedQuery = null;
+            IndexIncomingNotice = null;
+            DiseaseSearch = new();
 
             // Clear Guide Pooling state
             ResetPoolingState();
@@ -86,6 +94,7 @@ namespace DiseaseMutationsApp.Services
             IndexActiveTabIndex = 0;
             IndexActiveLeafIds = new();
             IndexClaimedQuery = null;
+            IndexIncomingNotice = null;
             NotifyStateChanged();
         }
 
@@ -114,6 +123,27 @@ namespace DiseaseMutationsApp.Services
             PoolingActivePlate = 1;
             PoolingSelectedPoolId = null;
             PoolingErrorMessage = null;
+        }
+
+        // ===== Hand-off to the Diana page =====
+
+        /// <summary>
+        /// Puts rsIDs (or genomic HGVS) into the Diana page's input box, replacing its content or adding to it. Duplicates
+        /// (case-insensitive) are dropped. It only fills the form: a run starts when the user presses Run analysis.
+        /// </summary>
+        public IncomingNotice SendToBuilder(IEnumerable<string> inputs, bool append, string source = "Disease variants")
+        {
+            var existing = append ? AnalysisRunner.ParseInputs(IndexHgvsInput) : new List<string>();
+            var present = new HashSet<string>(existing, StringComparer.OrdinalIgnoreCase);
+            var incoming = AnalysisRunner.ParseInputs(string.Join(",", inputs));
+            var added = incoming.Where(present.Add).ToList();
+
+            IndexHgvsInput = string.Join(", ", existing.Concat(added));
+            IndexClaimedQuery = null;
+            var notice = new IncomingNotice(source, added.Count, incoming.Count - added.Count, existing.Count + added.Count, append);
+            IndexIncomingNotice = notice;
+            NotifyStateChanged();
+            return notice;
         }
 
         // ===== Shortlist (cross-variant basket) =====
@@ -155,6 +185,46 @@ namespace DiseaseMutationsApp.Services
             PoolingGuideListText = string.Join(Environment.NewLine, guides.Select(g => g.Label));
             NotifyStateChanged();
         }
+    }
+
+    /// <summary>What a hand-off to the Diana page changed: how many inputs were added, how many were already there, and how many are in the box now.</summary>
+    public record IncomingNotice(string Source, int Added, int AlreadyPresent, int Total, bool Appended)
+    {
+        public string Message =>
+            $"{Source}: {Added} input{(Added == 1 ? "" : "s")} {(Appended ? "added" : "put in the box")}"
+            + (AlreadyPresent > 0 ? $" ({AlreadyPresent} already there)" : "")
+            + (Appended ? $", {Total} in total." : ".");
+    }
+
+    /// <summary>The Disease variants page's inputs, matches, result and selection, kept while the user visits another page.</summary>
+    public sealed class DiseaseSearchState
+    {
+        public string Query { get; set; } = "";
+        public string? ClaimedQuery { get; set; }
+        public IReadOnlyList<DiseaseMatchDto>? Matches { get; set; }
+        public string? SelectedMatchId { get; set; }
+        public bool IncludeSubtypes { get; set; }
+        public DiseaseSignificance Significance { get; set; } = DiseaseSignificance.PathogenicOrLikely;
+        public DiseaseMatchDto? ResultDisease { get; set; }
+        public DiseaseSearchResultDto? Result { get; set; }
+        /// <summary>ClinVar ids of the selected rows.</summary>
+        public HashSet<string> Selected { get; } = new(StringComparer.Ordinal);
+        public string FilterText { get; set; } = "";
+        public bool OnlyWithRsId { get; set; }
+        public int PageSize { get; set; } = 25;
+        public int Page { get; set; }
+        public DiseaseSortColumn SortColumn { get; set; } = DiseaseSortColumn.None;
+        public bool SortAscending { get; set; } = true;
+    }
+
+    public enum DiseaseSortColumn
+    {
+        None,
+        Variant,
+        Gene,
+        Name,
+        Classification,
+        Stars
     }
 
     /// <summary>One chosen spacer for one variant strand.</summary>
