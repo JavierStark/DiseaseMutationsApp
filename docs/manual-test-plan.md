@@ -119,12 +119,14 @@ Run by Claude Code at the request of the team lead; **not** a replacement for a 
 
 | Step | Result |
 |---|---|
-| 1.2 | Run (before the Dockerfile change): all PASS, exit 0 |
+| 1.2, 1.3 | Run on the final image: all PASS, also from `-w /tmp` |
 | 2.1 | Run: one engineered spacer per table, alignments 1 |
 | 2.2 | Run: complement result had Alignments 1 after the fix (0 before) |
 | 2.4, 2.5, 2.6 | Run: the three messages above, exit 2 |
 | 2.7 | Run: exit 0 after 4 min 20 s, 1.8 MB report |
-| 3.6 | Run: unknown option and `--capacity 0` were crashes before the fix; exit 2 after (in-process tests; real image re-run listed in section 10) |
+| 3.6 | Run on the final image: unknown option exit 2, `--capacity 0` exit 2, `design --help` exit 0 |
+| 1.4 | Run: HTTP 200, names and statuses only |
+| 2.10, 2.11 | Run in the browser pane: link fills the form without running; both report buttons offered for an HGVS input (the download itself was covered by the browser tests, not opened in Excel) |
 | everything else | not run |
 
 ## 10. Results of the final real-stack pass
