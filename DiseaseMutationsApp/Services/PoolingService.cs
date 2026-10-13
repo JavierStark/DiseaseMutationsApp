@@ -123,20 +123,22 @@ public class PoolingService
         foreach (var token in tokens)
         {
             var tube = System.Text.RegularExpressions.Regex.Match(token, @"^#?(\d+)$");
-            if (tube.Success)
+            if (tube.Success && int.TryParse(tube.Groups[1].Value, out var tubeId))
             {
-                ids.Add(int.Parse(tube.Groups[1].Value));
+                ids.Add(tubeId);
                 continue;
             }
 
             var well = System.Text.RegularExpressions.Regex.Match(token,
                 @"^(?:(?:plate|p)\s*(\d+)\s*[-\s]\s*)?([A-Za-z])\s*(\d+)$",
                 System.Text.RegularExpressions.RegexOptions.IgnoreCase);
-            if (well.Success)
+            var plate = 1;
+            // TryParse: a digit string beyond Int32 range is "unrecognised", not an OverflowException that ends the circuit.
+            if (well.Success
+                && (!well.Groups[1].Success || int.TryParse(well.Groups[1].Value, out plate))
+                && int.TryParse(well.Groups[3].Value, out var column))
             {
-                var plate = well.Groups[1].Success ? int.Parse(well.Groups[1].Value) : 1;
                 var row = char.ToUpperInvariant(well.Groups[2].Value[0]);
-                var column = int.Parse(well.Groups[3].Value);
                 var match = plan.Pools.FirstOrDefault(p => p.Plate == plate && p.Row == row && p.Column == column);
                 if (match is not null)
                 {

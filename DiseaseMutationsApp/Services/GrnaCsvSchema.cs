@@ -54,10 +54,9 @@ public static class GrnaCsvSchema
             sb.AppendLine(Row(rsId, hgvs, sequenceType, g, isComplement));
     }
 
-    /// <summary>Quotes a field only when needed (commas, quotes, newlines).</summary>
-    public static string Csv(string value)
-    {
-        if (value.IndexOfAny(new[] { ',', '"', '\n', '\r' }) < 0) return value;
-        return $"\"{value.Replace("\"", "\"\"")}\"";
-    }
+    /// <summary>
+    /// Quotes a field only when needed (commas, quotes, newlines) and neutralises spreadsheet formulas (a leading
+    /// = + - @ gets an apostrophe). One definition, shared with the CLI: <c>gRNA.ReportSchema.csvField</c>.
+    /// </summary>
+    public static string Csv(string value) => gRNA.ReportSchema.csvField(value);
 }

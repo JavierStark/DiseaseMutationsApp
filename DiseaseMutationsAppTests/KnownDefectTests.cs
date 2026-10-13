@@ -32,7 +32,7 @@ public class KnownDefectTests
     }
 
     // H7: an oversized tube number in the decode box must not throw OverflowException (it would kill the circuit).
-    [Test, Explicit("known defect H7: Decode overflows on huge tube numbers")]
+    [Test]
     public void H7_Decode_HugeNumbers_AreReportedAsUnrecognised()
     {
         var svc = new PoolingService(Microsoft.Extensions.Logging.Abstractions.NullLogger<PoolingService>.Instance);
@@ -48,7 +48,7 @@ public class KnownDefectTests
     [TestCase("+1+1")]
     [TestCase("-2+3")]
     [TestCase("@SUM(A1)")]
-    [Explicit("known defect H8: CSV fields are not neutralised against formula injection")]
+
     public void H8_Csv_NeutralisesFormulaCharacters(string value)
     {
         var field = GrnaCsvSchema.Csv(value);
