@@ -18,7 +18,9 @@
 }
 
 <div class="plate-scroll" @ref="_grid">
-    <div class="plate-grid" role="grid" aria-label="@($"Plate {ActivePlate}, {Plan.PlateRows} rows by {Plan.PlateColumns} columns. Use the arrow keys to move between wells.")"
+    @* A labelled group of real buttons, not role="grid": the wells sit in one flat CSS grid with no row elements, so grid
+       semantics were invalid (axe: aria-required-children / -parent). Arrow-key movement comes from data-r / data-c. *@
+    <div class="plate-grid" role="group" aria-label="@($"Plate {ActivePlate}, {Plan.PlateRows} rows by {Plan.PlateColumns} columns. Use the arrow keys to move between wells.")"
          style="grid-template-columns: repeat(@(Plan.PlateColumns + 1), max-content);">
         <span></span>
         @for (var column = 1; column <= Plan.PlateColumns; column++)
@@ -37,20 +39,19 @@
                 var isTabStop = rowIndex == _tabRow && colIndex == _tabCol;
                 if (pool is null)
                 {
-                    <span class="pool-well pool-well-unused" role="gridcell" aria-label="@($"{rowLetter}{column}, not used")"></span>
+                    <span class="pool-well pool-well-unused" aria-hidden="true"></span>
                 }
                 else
                 {
                     var cell = pool;
                     var cls = cell.IsEmpty ? "pool-well-empty" : "pool-well-filled";
                     <button type="button"
-                            role="gridcell"
                             data-r="@rowIndex" data-c="@colIndex"
                             tabindex="@(isTabStop ? 0 : -1)"
                             class="pool-well @cls @(cell.Id == SelectedPoolId ? "pool-well-selected" : null) @(PositiveIds.Contains(cell.Id) ? "pool-well-positive" : null)"
                             aria-label="@Label(cell)"
                             aria-pressed="@(cell.Id == SelectedPoolId ? "true" : "false")"
-                            @onfocus="() => _focused = cell"
+                            @onfocus="() => { _focused = cell; _announced = Describe(cell); }"
                             @onmouseenter="() => _focused = cell"
                             @onclick="() => OnSelectPool.InvokeAsync(cell)">
                         @cell.Id
@@ -61,7 +62,10 @@
     </div>
 </div>
 
-<div class="pool-readout mt-3" aria-live="polite">
+@* Announced to screen readers on keyboard focus only: a live region bound to hover announced every well the mouse crossed. *@
+<div class="visually-hidden" aria-live="polite" aria-atomic="true">@_announced</div>
+
+<div class="pool-readout mt-3">
     @if (_focused is { } f)
     {
         <strong>@f.WellLabel</strong> <span class="text-muted">&middot; tube @f.Id &middot; @f.Name</span>
@@ -111,6 +115,7 @@
     private int _indexedPlate = -1;
     private ElementReference _grid;
     private PoolWell? _focused;
+    private string _announced = "";
     private int _tabRow;
     private int _tabCol;
 
@@ -132,6 +137,7 @@
         _tabRow = first is null ? 0 : first.Row - 'A';
         _tabCol = first is null ? 0 : first.Column - 1;
         _focused = null;
+        _announced = "";
 
         _indexedPlan = Plan;
         _indexedPlate = ActivePlate;
@@ -147,8 +153,14 @@
     private PoolWell? PoolAt(char row, int column) =>
         _wellsOnPlate.TryGetValue((row, column), out var pool) ? pool : null;
 
-    private static string Label(PoolWell pool) =>
+    private static string Describe(PoolWell pool) =>
         pool.IsEmpty
+            ? $"{pool.WellLabel}: empty, do not prepare"
+            : $"{pool.WellLabel}: {string.Join(", ", pool.GuideLabels)}";
+
+    private string Label(PoolWell pool) =>
+        (pool.IsEmpty
             ? $"{pool.WellLabel}, tube {pool.Id}, empty, do not prepare"
-            : $"{pool.WellLabel}, tube {pool.Id}, {pool.GuideLabels.Count} guides";
+            : $"{pool.WellLabel}, tube {pool.Id}, {pool.GuideLabels.Count} guides")
+        + (PositiveIds.Contains(pool.Id) ? ", positive" : "");
 }

@@ -56,7 +56,7 @@
                     <div class="card-body">
                         <div class="d-flex justify-content-between align-items-center gap-3 mb-2">
                             <h2 class="card-title section-title section-title-reference mb-0 seq-title-original">
-                                <Icon Name="dna" />@(Data.IsComplement ? "Complement original sequence" : "Original sequence")
+                                <Icon Name="dna" />@(Data.IsComplement ? "Original sequence, opposite strand" : "Original sequence")
                             </h2>
                             @if (!string.IsNullOrWhiteSpace(Data.SourceUrl))
                             {
@@ -75,7 +75,7 @@
                 <div class="card seq-card-mutated">
                     <div class="card-body">
                         <h2 class="card-title section-title mb-2 seq-title-mutated">
-                            <Icon Name="dna" />@(Data.IsComplement ? "Complement mutated sequence" : "Mutated sequence")
+                            <Icon Name="dna" />@(Data.IsComplement ? "Mutated sequence, opposite strand" : "Mutated sequence")
                         </h2>
                         @StrandLine
                         <SequenceView Sequence="@Data.Mutated" MutationStart="@extra" MutationLength="@mutLenMutated"
@@ -212,8 +212,8 @@
             {
                 <span class="font-monospace" title="1-based, inclusive">@locus</span>
             }
-            <span class="tab-strand" title="@(Data.IsComplement ? "Complement of the reference strand" : "Reference strand")">@(Data.IsComplement ? "− strand" : "+ strand")</span>
-            <span>@(Data.IsComplement ? "complement, shown 3'→5'" : "reference, shown 5'→3'")</span>
+            <span class="tab-strand" title="@(Data.IsComplement ? "Opposite strand: the reverse complement of the reference" : "Reference strand")">@(Data.IsComplement ? "− strand" : "+ strand")</span>
+            <span>@(Data.IsComplement ? "reverse complement, shown 5'→3'" : "reference, shown 5'→3'")</span>
         </p>
     };
 

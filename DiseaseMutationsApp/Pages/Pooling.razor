@@ -200,6 +200,7 @@
                         <PoolPlateMap Plan="_plan"
                                       ActivePlate="_activePlate"
                                       SelectedPoolId="_selectedPoolId"
+                                      PositiveIds="_positiveIds"
                                       OnSelectPool="SelectPool"
                                       OnShowPlate="ShowPlate" />
 
@@ -246,6 +247,10 @@
                         <div class="mt-2">
                             <button class="btn btn-outline-primary" @onclick="RunDecode">Decode</button>
                         </div>
+                        @if (_decodeError is { } decodeError)
+                        {
+                            <div class="alert alert-danger mt-3" role="alert">@decodeError</div>
+                        }
                         @if (_decodeResult is { } d)
                         {
                             <div class="mt-3" role="status">

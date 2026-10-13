@@ -16,6 +16,13 @@
                 <div class="card-body">
                     <h2 class="card-title section-title"><Icon Name="settings" />Input parameters</h2>
 
+                    @if (_linkBanner)
+                    {
+                        <div class="alert alert-info" role="status">
+                            <Icon Name="info" />This page was opened from a link, which only fills in the form. Check the variants and parameters, then press <strong>Run analysis</strong>.
+                        </div>
+                    }
+
                     @if (_restoredBanner)
                     {
                         <div class="alert alert-info" role="status">
@@ -26,7 +33,7 @@
 
                     <div class="mb-4">
                         <label for="hgvs" class="form-label">HGVS or rs codes (comma-separated for several)</label>
-                        <textarea id="hgvs" class="form-control" @bind="_hgvs" @bind:event="oninput" @bind:after="OnInputChanged" rows="4"
+                        <textarea id="hgvs" class="form-control" @bind="_hgvs" @bind:event="oninput" @bind:after="OnInputChanged" rows="4" maxlength="8000"
                                   placeholder="NG_008690.2:g.123012G>T, rs12345"></textarea>
                         <small class="helper-note mt-2 d-block">One or more variants. An rsID is resolved to its HGVS notations and analysed on both strands.</small>
                     </div>
@@ -36,7 +43,7 @@
                         <div class="row g-3">
                             <div class="col-sm-4">
                                 <label for="grna-size" class="form-label">Spacer size</label>
-                                <input id="grna-size" type="number" class="form-control" @bind="_gRnaSize" @bind:after="OnInputChanged" min="1" />
+                                <input id="grna-size" type="number" class="form-control" @bind="_gRnaSize" @bind:after="OnInputChanged" min="@Main.MinSpacerSize" max="@Main.MaxSpacerSize" />
                             </div>
                             <div class="col-sm-4">
                                 <label for="seed-start" class="form-label">Seed start (inclusive)</label>
@@ -47,6 +54,10 @@
                                 <input id="seed-end" type="number" class="form-control" @bind="_seedEnd" @bind:after="OnInputChanged" min="0" max="@(_gRnaSize > 0 ? _gRnaSize - 1 : 0)" />
                             </div>
                         </div>
+                        @if (InputCountMessage != null)
+                        {
+                            <small class="text-danger mt-2 d-block" role="alert">@InputCountMessage</small>
+                        }
                         @if (SeedRangeValidationMessage != null)
                         {
                             <small class="text-danger mt-2 d-block" role="alert">@SeedRangeValidationMessage</small>

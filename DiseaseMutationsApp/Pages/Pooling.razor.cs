@@ -103,11 +103,27 @@ namespace DiseaseMutationsApp.Pages
         // Decode panel state (transient; not worth surviving navigation).
         private string? _decodeText;
         private DecodeOutcome? _decodeResult;
+        private string? _decodeError;
+
+        /// <summary>Tube ids of the last decoded readout, marked on the plate map.</summary>
+        private IReadOnlySet<int> _positiveIds = new HashSet<int>();
 
         private void RunDecode()
         {
             if (_plan is null) return;
-            _decodeResult = PoolingService.Decode(_plan, _decodeText);
+            try
+            {
+                _decodeResult = PoolingService.Decode(_plan, _decodeText);
+                _positiveIds = _decodeResult.PositivePoolIds.ToHashSet();
+                _decodeError = null;
+            }
+            catch (Exception ex) when (ex is ArgumentException or InvalidOperationException or FormatException or OverflowException)
+            {
+                // Never let a bad readout end the circuit: show it and keep the plan.
+                _decodeResult = null;
+                _positiveIds = new HashSet<int>();
+                _decodeError = "Could not decode that readout: " + ex.Message;
+            }
         }
 
         // ===== Derived values =====
@@ -199,6 +215,8 @@ namespace DiseaseMutationsApp.Pages
 
             _plan = PoolingService.BuildPlan(model, v, k, _plate, guides);
             _decodeResult = null;
+            _decodeError = null;
+            _positiveIds = new HashSet<int>();
             _activePlate = 1;
             _selectedPoolId = null;
         }
@@ -238,6 +256,8 @@ namespace DiseaseMutationsApp.Pages
             _estimates = null;
             _plan = null;
             _decodeResult = null;
+            _decodeError = null;
+            _positiveIds = new HashSet<int>();
             _activePlate = 1;
             _selectedPoolId = null;
         }

@@ -172,6 +172,7 @@ public class PoolingService
             UnexplainedPools = result.UnexplainedPools.Select(id => plan.Pools.First(p => p.Id == id).WellLabel).ToList(),
             Unrecognised = unrecognised.Concat(result.UnknownPools.Select(i => $"#{i}")).ToList(),
             IsAmbiguous = result.IsAmbiguous,
+            PositivePoolIds = result.PositivePools.ToList(),
             PositiveCount = result.PositivePools.Count()
         };
     }
@@ -290,4 +291,6 @@ public record DecodeOutcome
     public required List<string> Unrecognised { get; init; }
     public bool IsAmbiguous { get; init; }
     public int PositiveCount { get; init; }
+    /// <summary>Tube ids that read positive (recognised ones only), for marking them on the plate map.</summary>
+    public IReadOnlyList<int> PositivePoolIds { get; init; } = Array.Empty<int>();
 }

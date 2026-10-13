@@ -195,7 +195,7 @@ public class ComponentTests : BunitContext
         {
             Assert.That(normalLines, Has.Count.EqualTo(2), "original and mutated cards");
             Assert.That(normalLines, Has.All.Contain("NC_000017.11:96-105").And.Contain("+ strand").And.Contain("5'→3'"));
-            Assert.That(complementLines, Has.All.Contain("NC_000017.11:96-105").And.Contain("− strand").And.Contain("3'→5'"));
+            Assert.That(complementLines, Has.All.Contain("NC_000017.11:96-105").And.Contain("− strand").And.Contain("reverse complement").And.Contain("5'→3'"));
         });
     }
 

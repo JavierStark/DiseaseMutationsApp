@@ -24,6 +24,7 @@ namespace DiseaseMutationsApp.Pages
         private readonly Func<Action, Task> _marshal;
         private bool _disposed;
         private bool _restoredBanner;
+        private bool _linkBanner;
         private bool _linkCopied;
 
         public Index()
@@ -58,13 +59,24 @@ namespace DiseaseMutationsApp.Pages
         }
 
         private bool CanFetchData =>
-            !Runner.IsBusy && !string.IsNullOrWhiteSpace(_hgvs) && _gRnaSize > 0 && SeedRangeValidationMessage == null;
+            !Runner.IsBusy && !string.IsNullOrWhiteSpace(_hgvs) && InputCountMessage == null && SeedRangeValidationMessage == null;
+
+        private string? InputCountMessage
+        {
+            get
+            {
+                var count = AnalysisRunner.ParseInputs(_hgvs).Count;
+                return count > AnalysisRunner.MaxInputs
+                    ? $"At most {AnalysisRunner.MaxInputs} variants per run; you entered {count}. Split them into several runs."
+                    : null;
+            }
+        }
 
         private string? SeedRangeValidationMessage
         {
             get
             {
-                if (_gRnaSize <= 0) return "Spacer size must be greater than 0.";
+                if (_gRnaSize < Main.MinSpacerSize || _gRnaSize > Main.MaxSpacerSize) return $"Spacer size must be between {Main.MinSpacerSize} and {Main.MaxSpacerSize}.";
                 if (_seedStart < 0) return "Seed start must be between 0 and spacer size - 1.";
                 if (_seedEnd < 0) return "Seed end must be between 0 and spacer size - 1.";
                 if (_seedStart >= _gRnaSize || _seedEnd >= _gRnaSize) return $"Seed range must stay within 0 to {_gRnaSize - 1}.";
@@ -172,7 +184,9 @@ namespace DiseaseMutationsApp.Pages
                 }
             }
 
-            if (CanFetchData) StartRun();
+            // A link only fills the form: a run starts on an explicit click. Opening a link used to start NCBI and Bowtie
+            // work on the server at once.
+            _linkBanner = true;
         }
 
         protected override async Task OnAfterRenderAsync(bool firstRender)
@@ -211,6 +225,7 @@ namespace DiseaseMutationsApp.Pages
         {
             if (!CanFetchData) return;
             _restoredBanner = false;
+            _linkBanner = false;
             SaveSession();
             Runner.TryStart(_hgvs, new RunParameters(_gRnaSize, _seedStart, _seedEnd));
         }

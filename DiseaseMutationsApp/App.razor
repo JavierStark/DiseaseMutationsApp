@@ -21,7 +21,9 @@
     <link href="css/base.css" rel="stylesheet" />
     <link href="css/components.css" rel="stylesheet" />
     <link rel="icon" type="image/svg+xml" href="favicon.svg" />
-    <HeadOutlet />
+    <title>Diana</title>
+    @* Interactive like Routes (prerender off): a static HeadOutlet never receives the pages' <PageTitle>, so every tab was untitled. *@
+    <HeadOutlet @rendermode="@(new InteractiveServerRenderMode(prerender: false))" />
 </head>
 
 <body>

@@ -111,6 +111,9 @@ public sealed partial class AnalysisRunner : IAsyncDisposable
     }
 
     /// <summary>Splits the input box into distinct, trimmed entries.</summary>
+    /// <summary>Most inputs one run accepts: each rsID can expand to dozens of variants, each costing an NCBI fetch and a Bowtie run.</summary>
+    public const int MaxInputs = 50;
+
     public static List<string> ParseInputs(string? raw) =>
         (raw ?? "")
             .Split(new[] { ',', '\n', '\r', ';' }, StringSplitOptions.RemoveEmptyEntries)
@@ -128,7 +131,7 @@ public sealed partial class AnalysisRunner : IAsyncDisposable
         {
             if (_disposed || IsBusy) return false;
             var inputs = ParseInputs(rawInput);
-            if (inputs.Count == 0) return false;
+            if (inputs.Count == 0 || inputs.Count > MaxInputs) return false;
 
             var runId = ++RunId;
             Parameters = parameters;
