@@ -20,6 +20,11 @@ hits=$(grep -nE '^FROM [a-z]|^\s+image: [a-z]' Dockerfile Dockerfile.bowtie-base
 [ -z "$hits" ] || report "image without @sha256 digest:
 $hits"
 
+# 2b. CI job images must be pinned by digest too.
+hits=$(grep -nE '^s+image: ' .gitlab-ci.yml 2>/dev/null | grep -vE ':' || true)
+[ -z "$hits" ] || report "CI image without  digest:
+$hits"
+
 # 3. pip installs must pin an exact version (==).
 hits=$(grep -nE 'pip3? install' Dockerfile Dockerfile.bowtie-base 2>/dev/null | grep -vE '^[^:]+:[0-9]+:\s*#' | grep -vE '==' || true)
 [ -z "$hits" ] || report "unpinned pip install:

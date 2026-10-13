@@ -33,6 +33,11 @@ public class E2EEnvironment
             SkipReason = "Chromium is not installed for this Playwright version. Install it once with: " +
                          "set E2E_INSTALL_BROWSERS=1 and run `dotnet test DiseaseMutationsApp.E2E` again.";
         }
+        catch (PlaywrightException ex)
+        {
+            // For example a CI image without the system libraries Chromium needs: skip, with the reason, instead of failing.
+            SkipReason = "Chromium could not be started: " + ex.Message.Split((char)10)[0];
+        }
     }
 
     private static async Task<IBrowser> LaunchAsync()

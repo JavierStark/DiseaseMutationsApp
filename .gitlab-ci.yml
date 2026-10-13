@@ -15,7 +15,9 @@ pins:
   before_script: [apk add --no-cache bash grep]
   script: [bash scripts/check-pins.sh]
 
-# Pure tests: no container, no native dependencies. Integration tests needing ViennaRNA skip themselves.
+# Pure tests: no container, no native dependencies. Integration tests needing ViennaRNA skip themselves. The browser tests
+# (DiseaseMutationsApp.E2E) are part of the solution but skip themselves when Chromium is not installed, which is the case
+# on these runners; run them locally (see README "Testing").
 test:
   stage: test
   image: mcr.microsoft.com/dotnet/sdk:9.0.306-bookworm-slim@sha256:81f6d622fe21ed9d31375167f62a3538ff4d6835f9d5e6da9c2defa8a84b7687
@@ -26,9 +28,17 @@ test:
   script:
     - dotnet restore --locked-mode
     - dotnet build --no-restore -c Release
-    - dotnet test --no-build -c Release --collect:"XPlat Code Coverage" --logger "junit;LogFilePath=$CI_PROJECT_DIR/test-results.xml" -- NUnit.TestOutputXml=TestResults
-  coverage: '/Total\s*\|\s*(\d+(?:\.\d+)?)/'
+    - dotnet test --no-build -c Release --collect:"XPlat Code Coverage" --logger "junit;LogFilePath=$CI_PROJECT_DIR/test-results-{assembly}.xml" -- NUnit.TestOutputXml=TestResults
+    # coverlet writes Cobertura XML, not a console table: print the line rate in the form the coverage regex below reads.
+    - |
+      f=$(find DiseaseMutationsAppTests -name coverage.cobertura.xml | head -1)
+      rate=$(grep -o 'line-rate="[0-9.]*"' "$f" | head -1 | grep -o '[0-9.]*')
+      awk -v r="$rate" 'BEGIN { printf "Total | %.1f%%\n", r * 100 }'
+  coverage: '/Total\s*\|\s*(\d+(?:\.\d+)?)%/'
   artifacts:
     when: always
     reports:
-      junit: test-results.xml
+      junit: test-results-*.xml
+      coverage_report:
+        coverage_format: cobertura
+        path: DiseaseMutationsAppTests/TestResults/**/coverage.cobertura.xml
