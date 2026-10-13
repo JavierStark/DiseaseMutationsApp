@@ -154,6 +154,8 @@ let reverse (sequence: string) =
 let getOrderedgRna (seedStart: int) (seedEnd: int) (window: int) (sequence: string) (mutationStart: int) (mutationLength: int) (bowtieService: gRNA.Services.BowtieService) (cancellationToken: System.Threading.CancellationToken) : Task<gRNAResult list> =
     task {
         let subsequences = slidingWindow sequence window
+        // A sequence shorter than the spacer has no window: nothing to align or fold (Bowtie rejects an empty read list).
+        if List.isEmpty subsequences then return [] else
         let results =
             subsequences
             |> List.mapi (fun i subsequence ->

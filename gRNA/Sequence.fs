@@ -13,6 +13,13 @@ let complementary (sequence: string) =
     |> Seq.toArray
     |> System.String
 
+/// Reverse complement (the other strand read 5'->3').
+let reverseComplement (sequence: string) =
+    complementary sequence
+    |> Seq.rev
+    |> Seq.toArray
+    |> System.String
+
 type Sequence(id: string, data: string) =
     member _.Id = id
     member _.Data = data
