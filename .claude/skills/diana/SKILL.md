@@ -108,7 +108,7 @@ Bowtie is looked up under `/work/bowtie/` and `doctor`/`design` fail with exit 3
 ## 5. Command cheat sheet (every line below was run against the real image)
 
 ```bash
-grna --help                                                   # top-level usage (exit 0). Subcommands have no --help.
+grna --help   (or: grna <command> --help)                    # usage (exit 0)
 grna doctor [--network]                                       # PASS/WARN/FAIL lines; exit 0 healthy, 3 otherwise
 grna resolve rs334 [rs... ]                                   # stdout: "<rsID>\t<HGVS>" per notation
 grna design --hgvs 'NC_000017.11:g.7674220C>T'                # CSV report to stdout (default --format csv)
@@ -132,17 +132,20 @@ session `.json`. Exact formats, output schemas, resume rules and pooling details
    report into a file named `T` and fails on the truncated `...7674220C` (exit 2). Use single quotes in bash and PowerShell.
 2. **stdout is data, stderr is progress.** `design` prints `ok   <hgvs>` / `FAIL <hgvs>: <reason>` on stderr; `pool`
    prints its summary on stderr. Redirect/parse stdout only. Never allocate a TTY (`docker run -t`/`exec -t`), it merges them.
-3. **Exit codes:** 0 ok, 1 failure (including *partial* batch failure: rows for the successes are still written),
-   2 bad input/arguments, 3 missing native dependency (run `doctor`), 4 upstream failure (NCBI). 125 from the wrappers
+3. **Exit codes:** 0 ok, 1 failure (including *partial* batch failure: rows for the successes are still written; when
+   *every* variant fails the code is that of the first failed variant in input order),
+   2 bad input/arguments (malformed HGVS, wrong reference base, a `c.` position, spacer outside 18-60, an unknown option), 3 missing native dependency (run `doctor`), 4 upstream failure (NCBI). 125 from the wrappers
    or `docker run` = Docker problem (e.g. image not built).
 4. **A failed `design` still prints the CSV header** (and provenance line). Check the exit code, not just whether output exists.
-5. **Unknown options are silently ignored** (`--capasity 2` runs with the default 5), and an unknown `--flag` swallows
-   the next token as its value. Only `--complement`, `--network` and `--help` are value-less flags. Spell options exactly.
+5. **Typos are rejected, not ignored.** An unknown option (`--capasity 2`) or a flag that does not apply to the command
+   exits 2 and names it. Only `--complement`, `--network` and `--help` are value-less flags; there is no `--opt=value` form.
 6. **Resume semantics.** With `--input` + `--out <file>.csv` + csv format, an existing report is appended to and variants
-   already in it (keyed by RS ID + HGVS, *not* strand or parameters) are skipped. Use a new `--out` file when changing
-   `--spacer`, `--seed` or `--complement`, or the run silently skips everything / mixes parameters.
-7. **`--complement` analyses one strand only.** For both strands run twice with different `--out` files.
-8. **Don't change the container working directory** without the two `GRNA_BOWTIE_*` overrides (section 4C).
+   already in it (keyed by RS ID + HGVS + strand) are skipped. A report made with a different `--spacer` or `--seed` is
+   refused (exit 2): use a new `--out` file when changing those. Running the other strand (`--complement`) into the same
+   file is fine and appends its rows.
+7. **`--complement` analyses one strand per run:** the opposite strand (the reverse complement, read 5'->3'). For both
+   strands run twice; the same `--out` file works. An alignment count of 0 means "no genomic match" and ranks best (common for indels).
+8. **Container working directory:** the image now sets `GRNA_BOWTIE_BINARY` and `GRNA_BOWTIE_INDEX` itself, so `-w` is safe; the overrides in section 4C only matter for an older image or a custom build.
 9. **JSON escapes `>`** as `>` in `hgvs`. Use a real JSON parser (`jq`, `ConvertFrom-Json`), not grep.
 10. **In PowerShell, prefer `--out` over `>`.** It writes UTF-8 without BOM exactly like the web export; PowerShell
     redirection re-encodes native output.

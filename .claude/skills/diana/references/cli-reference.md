@@ -21,16 +21,15 @@ grna                           usage text, exit 2
 grna <unknown>                 "Unknown command", usage on stderr, exit 2
 ```
 
-There is no per-command help: `grna design --help` is parsed as a flag that `design` ignores, so it fails with
-`error: design needs exactly one of --hgvs or --input.` (exit 2).
+`grna <command> --help` (or `-h`) prints the same usage text and exits 0.
 
 ### Argument parsing (important, it is minimal)
 
 - `--name value` pairs, in any order, anywhere after the command.
 - Value-less flags: **only** `--complement`, `--network`, `--help`. Every other `--x` consumes the next token as its value.
-- **Unknown options are accepted and ignored.** A typo (`--capasity 2`, `--spacr 20`) is silent and the default is used.
-- A misspelled flag (`--complment`) swallows the next token: `design --complment --hgvs X` sets `complment=--hgvs`, leaves
-  `X` positional and fails with "needs exactly one of --hgvs or --input".
+- **Unknown options are rejected.** A typo (`--capasity 2`, `--spacr 20`, `--complment`) exits 2 with
+  `error: Unknown option --capasity for 'pool'.`, and a flag that does not apply to the command (`pool --count 5 --complement`)
+  exits 2 as well. Nothing falls back silently to a default.
 - An option at the end with no value: `error: Option --out needs a value.` (exit 2).
 - No `--opt=value` syntax: `--spacer=28` becomes an unknown option named `spacer=28` and needs a value after it.
 
@@ -46,14 +45,14 @@ There is no per-command help: `grna design --help` is parsed as a flag that `des
 | Code | Meaning | Typical cause |
 |---|---|---|
 | 0 | ok | |
-| 1 | failure | partial batch failure; unexpected exception (e.g. some malformed HGVS such as `garbage` crash the parser instead of raising an input error); Ctrl-C (`cancelled.`) |
-| 2 | bad input | argument errors, invalid HGVS that the parser rejects, `--seed` out of range, unreadable input file |
+| 1 | failure | partial batch failure; unexpected exception; Ctrl-C (`cancelled.`) |
+| 2 | bad input | argument errors and unknown options; invalid HGVS (no colon, no change, reversed range, lower-case or IUPAC alleles, a stated reference base that differs from the real sequence, a `c.` position, repeat notation); `--spacer` outside 18-60; `--seed` out of range; unreadable or empty input file; `pool --capacity 0`; a resumed report made with another spacer/seed |
 | 3 | missing native dependency | Bowtie binary/index or Python/ViennaRNA unusable; `doctor` with any FAIL |
 | 4 | upstream failure | NCBI / dbSNP HTTP failure, child process returned unparseable output |
 | 125 | (wrapper scripts / `docker run`) | Docker failed: image missing, daemon down |
 
-For `design`: if **every** job failed, the code comes from the last error's type (2/3/4, else 1); if **some** failed,
-it is 1 and the successful rows are still emitted.
+For `design`: if **every** job failed, the code comes from the type of the **first failed variant in input order** (2/3/4, else 1);
+if **some** failed, it is 1 and the successful rows are still emitted.
 
 ### Environment variables (read by the library)
 
@@ -118,9 +117,9 @@ grna design --input <file|session.json> [--spacer 28] [--seed 10-17] [--compleme
 |---|---|---|
 | `--hgvs` | | exactly one of `--hgvs` / `--input`. An rsID here is also accepted and expanded. |
 | `--input` | | text list or web-app session `.json` (detected by `.json` extension) |
-| `--spacer` | 28 (or the session's) | spacer length, > 0 |
+| `--spacer` | 28 (or the session's) | spacer length, 18 to 60, else exit 2 |
 | `--seed` | `10-17` (or the session's) | `start-end`, inclusive, 0-based in the spacer; must satisfy `0 <= start <= end < spacer` else exit 2 |
-| `--complement` | off | analyse the complement strand instead of the normal one (one strand per run) |
+| `--complement` | off | design against the opposite strand (the reverse complement, read 5'->3') instead of the reference strand; one strand per run |
 | `--format` | `csv` | `csv`, `json` or `tsv` (case-insensitive); anything else exit 2 |
 | `--out` | stdout | output file |
 | `--concurrency` | 2 | variants in flight, clamped to 1-4. Bowtie is serialised per process anyway, so >2 rarely helps. |
@@ -129,10 +128,13 @@ Explicit `--spacer`/`--seed` override the values stored in a session file.
 
 ### Inputs
 
-- **HGVS**: e.g. `NC_000017.11:g.7674220C>T`, `NM_000546.6:c.215_217del`, `...delinsAG`, `...dup`, `...insA`, `...inv`
-  (see README "HGVS examples"). `Repeat` notations parse but cannot be analysed. Always quote them in the shell.
-- **rsIDs**: an item starting with `rs` + digit is resolved via dbSNP first; each `NG_` notation becomes its own job.
-  Bare digits are **not** treated as rsIDs.
+- **HGVS**: e.g. `NC_000017.11:g.7674220C>T`, `NC_000017.11:g.7674220_7674222del`, `...delinsAG`, `...dup`, `...insA`, `...inv`
+  (see README "HGVS examples"). Only `g.`, `m.` and `n.` positions are designed. **`c.` positions are refused** (they count from
+  the coding start, which is not converted yet), and so are repeat, conversion and translocation notations. The stated
+  reference base (or `del`/`dup`/`inv` sequence) must equal the real one, alleles must be upper-case A/C/G/T, and a deletion
+  longer than the spacer leaves no window and is refused. Always quote HGVS in the shell.
+- **rsIDs**: an item that is exactly `rs` + digits is resolved via dbSNP first; each `NG_` notation becomes its own job.
+  Bare digits are **not** treated as rsIDs, and `rs` or `rs12x` is a malformed variant (exit 2).
 - **Text file** (`--input variants.txt`): split on newlines, `,` and `;`; trimmed; empty and `#`-prefixed items
   dropped; duplicates removed (first occurrence order kept).
 - **Session JSON** (saved by the web app's *Save session*):
@@ -154,10 +156,12 @@ roughly linearly divided by concurrency; don't promise timings, measure.
 Active only when **all** hold: `--input` given, format `csv`, `--out` given, and the `--out` file already exists with rows.
 Then:
 
-- Existing rows are keyed by `RS ID|HGVS`; jobs with a matching key are skipped; new rows are **appended** (no new header).
+- Existing rows are keyed by `RS ID|HGVS|Strand`; jobs with a matching key are skipped; new rows are **appended** (no new header).
+  An existing but empty file simply starts a fresh report.
 - Variants that failed last time are absent from the file, so a plain re-run retries exactly those.
-- The key ignores strand, spacer and seed, and the original provenance line is kept. **Changing `--complement`,
-  `--spacer` or `--seed` against an existing report silently skips everything already present.** Use a new `--out`.
+- The report's provenance line (`# Diana report; spacer=..; seed=..-..`) is compared with the current `--spacer`/`--seed`:
+  **a different spacer or seed is refused (exit 2)**, so rows made with different parameters are never mixed. Use a new `--out`.
+  Running the other strand (`--complement`) into the same file is fine: its variants have a different key and are appended.
 - `--hgvs` runs, json/tsv formats and stdout output always overwrite / never resume.
 
 ## `grna fold`

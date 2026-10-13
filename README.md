@@ -19,7 +19,10 @@ in the DNA you would order, and exports an order-ready oligo CSV.
 ### Diana: guide design (`/`)
 
 - **Inputs**: HGVS (`NC_000017.11:g.7674220C>T`) and rsIDs (`rs334`), several at once. An rsID is resolved to its HGVS
-  notations and each is analysed on both strands: a normal tab and a complement (`C`) tab.
+  notations and each is analysed on both strands: a normal tab and a complement (`C`) tab, designed from the reverse complement
+  (the opposite strand read 5'->3'). Variants are checked before any work starts: malformed codes, lower-case or IUPAC alleles, a
+  reference base that differs from the real sequence, `c.` (coding-sequence) positions (not converted yet: use `g.`) and repeat
+  notation are refused with a message. Limits: spacer size 18-60, at most 50 inputs per run.
 - **Results** per variant: original and mutated sequences (mutation highlighted, copy as FASTA), two ranked spacer tables
   (sortable, filterable, paged, with an alignment-risk chip), the complete gRNA (scaffold + chosen spacer), ViennaRNA
   structure and a FORNA diagram link.
@@ -32,7 +35,7 @@ in the DNA you would order, and exports an order-ready oligo CSV.
   order-ready **oligo CSV** (DNA, optional T7 promoter, top/bottom pairs, plate wells addressed like the pooling plan).
 - **Files and sessions**: load inputs from a plain list, a Diana CSV report or a saved session; *Save session* downloads a
   JSON document (inputs, spacer/seed, shortlist) that `grna design --input session.json` reads too.
-- **Permalinks**: *Copy link to this design* encodes `?hgvs=...&spacer=28&seed=10-17`; opening it starts the run.
+- **Permalinks**: *Copy link to this design* encodes `?hgvs=...&spacer=28&seed=10-17`; opening it fills in the form (also `?rs=`) and you press **Run analysis**; a link never starts a run on its own.
 - **CSV report**: per rsID or all at once, with the spacer/seed parameters in a leading `#` line and a `Strand` column.
 
 ### Guide Pooling (`/pooling`)
@@ -62,7 +65,10 @@ grna pool --guides report.csv --capacity 5 --plate 96 --model auto --out plan.cs
 ```
 
 `design --format csv` emits the same schema as the web export, so a CLI report pastes straight into the Pooling tab. Exit codes
-distinguish bad input (2), a missing native dependency (3) and an upstream failure (4).
+distinguish bad input (2), a missing native dependency (3) and an upstream failure (4). Unknown options are rejected
+(a typo is never silently ignored) and `--help` works after any command. A resumed report (`--out` pointing at an existing
+report) must have been made with the same spacer and seed, and only a variant already present on the same strand is skipped.
+When every variant fails the exit code is that of the first failed variant in input order; a mixed run exits 1.
 
 ## Architecture
 
@@ -131,7 +137,7 @@ with `GRNA_BOWTIE_BINARY`, `GRNA_BOWTIE_INDEX`, `GRNA_PYTHON`, then `dotnet run 
 
 ## Using Diana
 
-1. Enter variants (comma-separated) and the spacer size and seed range (defaults 28 and 10-17, inclusive, 0-based in the spacer).
+1. Enter variants (comma-separated) and the spacer size and seed range (defaults 28 and 10-17, inclusive, 0-based in the spacer; spacer size 18 to 60).
 2. **Run analysis**. rsIDs resolve first, then variants are analysed two at a time. Cancel the run, or one variant, any time.
 3. Pick a tab per input; for rsIDs a second strip lists each resolved variant on both strands. Tabs use arrow keys.
 4. Press **Use** on a spacer to build the complete gRNA, copy it, fold it, or add it to the shortlist.
@@ -147,7 +153,9 @@ If a variant fails it shows the reason and a **Retry this variant** button; othe
 - **GC content**: raw GC percentage, two decimals.
 - **Homopolymers**: runs of 4 or more identical bases; 0 is best.
 - **Alignments**: Bowtie hits of the DNA window (up to 2 mismatches). 1 is a unique target; the count saturates at 6, shown as
-  "6+ saturated".
+  "6+ saturated". **0 means "no genomic match" and is ranked best, on purpose** (the team's rule): it is common for insertions,
+  duplications and deletions, whose junction windows do not exist in the genome, so for those variants the alignment criterion
+  does not separate candidates (see [BIOLOGICAL_REPORT.md](BIOLOGICAL_REPORT.md) section 4.2c).
 - **Energy**: minimum free energy (kcal/mol) of the *complete* gRNA (scaffold + spacer); closer to zero is preferred.
 - **Score**: 0-1, from the rank after sorting by (Alignments, Energy, GC score, Homopolymers); ties share a rank.
 
@@ -161,9 +169,9 @@ target window, as RNA).
 ### HGVS examples
 
 ```
-NC_000017.11:g.7674220C>T          substitution      NM_000546.6:c.215_217delinsAG   deletion-insertion
-NM_000546.6:c.215_217del           deletion          NM_000546.6:c.215_217dup        duplication
-NM_000546.6:c.215_216insA          insertion         NM_000546.6:c.215_217inv        inversion
+NC_000017.11:g.7674220C>T          substitution      NC_000017.11:g.7674220_7674222delinsAG   deletion-insertion
+NC_000017.11:g.7674220_7674222del  deletion          NC_000017.11:g.7674220_7674222dup        duplication
+NC_000017.11:g.7674220_7674221insA insertion         NC_000017.11:g.7674220_7674222inv        inversion
 ```
 
 ## Project layout
@@ -173,7 +181,7 @@ DiseaseMutationsApp/   Blazor Server app (Pages, Components, Services, Shared, w
 gRNA/                  F# library
 gRNA.Cli/              the grna command-line tool
 DiseaseMutationsAppTests/  NUnit + bUnit tests
-docs/                  about-the-name, runtime-contract, using-the-library, running-as-a-service, design-system
+docs/                  about-the-name, runtime-contract, using-the-library, design-system, review-findings
 examples/standalone.fsx    run the library from F# Interactive
 scripts/check-pins.sh      dependency pinning gate
 Dockerfile, Dockerfile.bowtie-base, docker-compose.yml, start.sh, start.ps1
@@ -187,9 +195,10 @@ dotnet restore --locked-mode
 dotnet test
 ```
 
-Tests need no container and no network: the library's pure logic (scoring, parsing, pooling and decoding, CSV round trips),
-the `AnalysisRunner` (concurrency bound, cancellation, per-variant cancel, timeouts, retry) against a fake pipeline, and the
-components with bUnit. `RnaFoldIntegrationTests` run the real ViennaRNA when `python3` and `RNA` are available and skip
+Tests need no container and no network: the library's pure logic (scoring, parsing, validation, pooling and decoding, CSV round trips),
+the `grna` CLI driven in-process (exit codes, option checking, resume), the `AnalysisRunner` (concurrency bound, cancellation,
+per-variant cancel, timeouts, retry) against a fake pipeline, and the components with bUnit, including markup checks for the
+accessibility defects found with axe-core. `RnaFoldIntegrationTests` run the real ViennaRNA when `python3` and `RNA` are available and skip
 otherwise. The GitLab pipeline (`.gitlab-ci.yml`) runs the pinning gate and these tests; it builds no images, so run `grna doctor` in the locally built image yourself.
 
 ## Data and large files
@@ -221,7 +230,10 @@ Start with `/diagnostics` or `grna doctor`: each failing check names its remedy.
 ## Security
 
 Single-tenant local tool: no authentication, bound to loopback by default, `Production` mode in the container (no stack traces),
-non-root user. If you publish it, put an authenticating reverse proxy in front.
+non-root user. If you publish it, put an authenticating reverse proxy in front. `/healthz` returns each check's detail (which
+contains file-system paths) only to loopback callers; from the host through Docker a request arrives from the bridge, so use
+`/diagnostics` or `grna doctor` there. The optional FORNA diagram is loaded only when you ask for it and receives the gRNA
+sequence over plain http (its server does not offer https); the interface says so. Variants you enter are logged only at Debug level.
 
 ## Contributing
 
@@ -256,7 +268,7 @@ We checked each resource's own citation guidance (July-October 2026) and cite ac
 | ViennaRNA | Main references: Lorenz et al. 2011 and Hofacker et al. 1994 (feature-specific papers are suggested, not required) | 2, 3 |
 | forna | Kerpedjiev et al. 2015 | 4 |
 | dbSNP | Cite the *Nucleic Acids Research* paper (Phan et al. 2025); to point at a single variant, cite its accession (e.g. rs334) | 5 |
-| NCBI (sequences, E-utilities, Variation Services) | Acknowledge NCBI/NLM; automated clients should send `tool` and `email` (we send `tool=gRNA` and `email=$GRNA_NCBI_CONTACT`) | 6-8 |
+| NCBI (sequences, E-utilities, Variation Services) | Acknowledge NCBI/NLM; automated clients should send `tool` and `email` (we send `tool=gRNA` and `email=$GRNA_NCBI_CONTACT` with sequence downloads; the Variation Services lookup sends neither) | 6-8 |
 | GRCh38 | Cite the assembly (Schneider et al. 2017) | 9 |
 | HGVS nomenclature | Cite den Dunnen et al. 2016 rather than the web site | 10 |
 
@@ -280,7 +292,8 @@ We checked each resource's own citation guidance (July-October 2026) and cite ac
 
 ## Future enhancements
 
-- Re-enable OMIM to rsID conversion if a CAPTCHA-resistant approach appears (blocked upstream; `gRNA/Omim.fs` is excluded from the build).
+- OMIM to rsID conversion if a CAPTCHA-resistant approach appears (blocked upstream; the earlier scraper was removed from the repository, see git history).
+- Coding-sequence (`c.`) positions: convert them with the CDS start from the NCBI record. Today they are refused, because using them as plain sequence indexes would design around the wrong position.
 - Run history and design comparison (reopen or diff earlier runs with different spacer/seed).
 - Enzyme presets with a configurable scaffold: today the 36 nt Cas13 scaffold and the 28 / 10-17 defaults are fixed, and
   presets for other Cas variants need their scaffolds and seed windows verified against the literature first.

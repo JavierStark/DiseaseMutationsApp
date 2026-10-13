@@ -47,7 +47,9 @@ RUN echo "45c58c69a10577e84e459e6b76d6c8f17ab030a5510d4b6399e6434228a9eaca  /app
 
 ENV ASPNETCORE_URLS=http://+:5000 \
     ASPNETCORE_ENVIRONMENT=Production \
-    GRNA_PYTHON=python3
+    GRNA_PYTHON=python3 \
+    GRNA_BOWTIE_BINARY=/app/bowtie/bowtie-align-s \
+    GRNA_BOWTIE_INDEX=/app/bowtie/indexes/GRCh38_noalt_as
 
 USER app
 EXPOSE 5000

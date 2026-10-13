@@ -51,6 +51,8 @@ Main.getBestgRNAFromHGVS : hgvs:string -> grnaSize:int -> seedStart:int -> seedE
                            -> BowtieService -> CancellationToken -> complement:bool -> Task<ResultFromHGVS>
 ```
 
+Before any NCBI or Bowtie work it validates (all failures are `GrnaInputException`): `validateSpacerParameters` (spacer 18-60, seed inside it, constants `MinSpacerSize`/`MaxSpacerSize`), the parsed HGVS, and, once the sequence is fetched, `validateAgainstSequence` (supported coordinates `g.`/`m.`/`n.` - `c.` is refused, supported mutation type, position inside the sequence, adjacent positions for an insertion, stated reference equal to the real one). `complement = true` designs against the opposite strand: `orientForStrand` replaces both sequences by their reverse complement and mirrors the mutation span (`mirrorSpan`).
+
 The function is **curried**; from C# the compiler exposes it as a normal method taking all arguments in order, as
 `GrnaService.GetBestgRNAFromHgvs` shows: `Main.getBestgRNAFromHGVS(hgvs, window, seedStart, seedEnd, bowtie, ct, complement)`.
 `ResultFromHGVS` (note: a different type from the C# record of the same name in `DiseaseMutationsApp.Services`) carries
@@ -60,19 +62,19 @@ while carrying the pre-adjustment alignment and fold values onto the adjusted se
 
 ### `HGVS.HGVS(code)`
 Parsing happens in the **constructor**, so construction is what throws `GrnaInputException`. Members: `Code`, `Accession`,
-`Type`, `Position` (start, end; 1-based), `Mutation` (`MutationType`), `Reference`, `Alternate`, `Count`, `GetMutationLength()`.
+`Type`, `Position` (start, end; 1-based), `Mutation` (`MutationType`), `Reference` (the stated reference base, or the stated `del`/`dup`/`inv` sequence), `Alternate`, `Count`, `GetMutationLength()`.
+The constructor is strict: no colon or no change, position 0 or beyond Int32, a reversed range, lower-case or IUPAC alleles, a substitution that changes nothing, and a non-numeric repeat count all raise `GrnaInputException`. `Repeat`, `Conversion`, `Translocation` and `LargeUnknown` parse but are refused later by `Main.validateAgainstSequence`.
 
 ### `Sequence`
-`Sequence.complementary s` returns the **complement without reversing** (the `(C)` tabs are complement-only; the spacer
-derivation later reverses). `Sequence(id, data).GetMutatedSubsequence(hgvs, left, right)` returns `(mutated, original)`
+`Sequence.complementary s` returns the complement without reversing; `Sequence.reverseComplement s` is the other strand read 5'->3' (used for inversions and for the `(C)` tabs: since 2026-10-13 the complement tab is a real reverse-complement design, see `BIOLOGICAL_REPORT.md` section 4.1.1). `Sequence(id, data).GetMutatedSubsequence(hgvs, left, right)` returns `(mutated, original)`
 with padding. `Repeat` parses but `GetMutatedSubsequence` throws `NotImplementedException`.
 
 ### `SequenceRepository.SequenceRepository.GetSequence(accession[, ct])`
 Fetches FASTA from NCBI E-utilities. Cached (bounded, insertion-ordered), concurrency-safe, one in-flight fetch per
-accession, failures not cached.
+accession, failures not cached. The body goes through `parseFasta`, which accepts exactly one FASTA record of letters (upper-cased) and raises `GrnaUpstreamException` for anything else (an HTML/JSON error page, an empty body, a second record).
 
 ### `SNP.getHgvsNotationsAsync rsNumber ct`
-Resolves an rsID (digits, no `rs`). Returns `[]` for "no `NG_` mapping"; raises `GrnaUpstreamException` for HTTP failure.
+Resolves an rsID (digits only, no `rs`; anything else raises `GrnaInputException` before a request is made). Returns `[]` for "no `NG_` mapping"; raises `GrnaUpstreamException` for HTTP failure.
 `NM_`/`NC_` notations are not returned.
 
 ### `SpacerFinder`
@@ -108,11 +110,10 @@ can implicate innocent guides at the intersections of their pools; those are rep
 
 ## Known limitations
 
-- `Repeat` parses but cannot be applied (`NotImplementedException`).
-- There is **no reference-allele validation**: a wrong accession version silently yields a plausible but wrong mutated sequence.
-- Lowercase/soft-masked and IUPAC bases are not normalised: `complementary` passes them through, and GC/homopolymer
-  counting is uppercase-only.
-- `GetMutationLength` ignores the inserted allele, so `extraNucleotids` can go negative for long deletions.
+- `Repeat` parses; `Main` refuses it with a message (`GrnaInputException`) and `Sequence.GetMutatedSubsequence` itself still throws `NotImplementedException`.
+- The stated reference base is checked against the fetched sequence by `Main.validateAgainstSequence`, but a wrong accession *version* that happens to carry the same base still yields a plausible but different sequence: pin the version.
+- NCBI sequences are upper-cased by `parseFasta`, but IUPAC letters other than ACGT inside a window are not handled by the scoring or the folding step, which will fail for that window.
+- `extraNucleotids` is `max 0 (spacer - mutation length)`. A deletion longer than the spacer leaves no window and is refused with a message; this is a limit of the design, not a solved case.
 - Alignment counts saturate at 6 (`-k 6`).
 - The substitution special rule can legitimately return zero candidates while carrying the pre-adjustment alignment and
   fold values onto the adjusted sequence.

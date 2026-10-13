@@ -81,7 +81,11 @@ Docker's memory just for this app: it is not needed, and over-provisioning the V
 
 One routine, three surfaces. It checks: working directory, Bowtie binary (present, executable, version), Bowtie index
 (resolved base), Python + ViennaRNA import and version, optionally NCBI reachability, and available memory. `/healthz`
-returns JSON and HTTP 503 when any required check fails; the container `HEALTHCHECK` uses it.
+returns JSON and HTTP 503 when any required check fails; the container `HEALTHCHECK` uses it. Each check's `detail` and
+`remedy` (which contain file-system paths) are returned only to loopback callers; anyone else gets the verdict and each check's
+name and status. A request from the host into a Docker container arrives from the bridge, not from loopback, so use
+`/diagnostics` or `grna doctor` for the details there. The image sets `GRNA_BOWTIE_BINARY` and `GRNA_BOWTIE_INDEX`, so `grna`
+finds Bowtie from any working directory.
 
 ## Registry (optional)
 
