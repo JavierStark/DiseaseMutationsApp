@@ -18,6 +18,9 @@ let loadJsonFromUrlAsync (url: string) (cancellationToken: System.Threading.Canc
 
 let getHgvsNotationsAsync (rsNumber: string) (cancellationToken: System.Threading.CancellationToken) : Task<string list> =
     task {
+        // The number goes into a URL path: digits only (callers strip the "rs").
+        if System.String.IsNullOrEmpty rsNumber || not (rsNumber |> Seq.forall (fun c -> c >= '0' && c <= '9')) then
+            raise (GrnaInputException(sprintf "'%s' is not an rsID number." rsNumber))
         let url = $"https://api.ncbi.nlm.nih.gov/variation/v0/refsnp/{rsNumber}"
         let! jsonString = loadJsonFromUrlAsync url cancellationToken
         

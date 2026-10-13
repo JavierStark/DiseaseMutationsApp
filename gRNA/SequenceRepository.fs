@@ -8,6 +8,20 @@ open System.Threading
 open System.Threading.Tasks
 open gRNA.Sequence
 
+/// Turns an efetch FASTA response into the bare, upper-case sequence. Anything that is not exactly one FASTA record
+/// (an HTML or JSON error page, an empty body, a second record) raises GrnaUpstreamException, so it can never be
+/// designed against as if it were a genome.
+let parseFasta (id: string) (content: string) : string =
+    let lines = content.Replace("\r", "").Split('\n')
+    if lines.Length < 2 || not (lines.[0].StartsWith ">") then
+        raise (GrnaUpstreamException(sprintf "NCBI did not return a FASTA record for %s." id))
+    let sequence = lines |> Array.skip 1 |> String.concat "" |> fun s -> s.Trim().ToUpperInvariant()
+    if sequence.Length = 0 then
+        raise (GrnaUpstreamException(sprintf "NCBI returned an empty sequence for %s." id))
+    match sequence |> Seq.tryFind (fun c -> c < 'A' || c > 'Z') with
+    | Some c -> raise (GrnaUpstreamException(sprintf "NCBI returned an unexpected character '%c' in the sequence of %s." c id))
+    | None -> sequence
+
 type SequenceRepository() =
     static let BASE_URL = "https://eutils.ncbi.nlm.nih.gov/entrez/eutils/efetch.fcgi?db=nuccore&id="
     static let httpClient = new HttpClient(Timeout = TimeSpan.FromMinutes 5.0)
@@ -58,8 +72,5 @@ type SequenceRepository() =
             if not response.IsSuccessStatusCode then
                 raise (GrnaUpstreamException(sprintf "NCBI returned HTTP %d for %s." (int response.StatusCode) id))
             let! content = response.Content.ReadAsStringAsync(cancellationToken)
-            let lines = content.Split('\n')
-            if lines.Length < 2 then
-                raise (GrnaUpstreamException(sprintf "NCBI returned no sequence data for %s." id))
-            return lines |> Array.skip 1 |> String.concat "" |> _.Trim()
+            return parseFasta id content
         }
