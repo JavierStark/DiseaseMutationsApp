@@ -16,10 +16,43 @@ let originalType = "Original"
 let normalStrand = "Normal"
 let complementStrand = "Complement"
 
-/// Quotes a field only when it contains a comma, quote or newline.
+/// Spreadsheets run a field that starts with = + - @ (or a tab / carriage return) as a formula. Such a field is
+/// prefixed with an apostrophe, the convention spreadsheets treat as "text" and hide on display (OWASP CSV injection).
+let neutralise (value: string) =
+    if value.Length > 0 && "=+-@\t\r".IndexOf(value.[0]) >= 0 then "'" + value else value
+
+/// Quotes a field only when it contains a comma, quote or newline, after neutralising formula characters.
 let csvField (value: string) =
+    let value = neutralise value
     if value.IndexOfAny [| ','; '"'; '\n'; '\r' |] < 0 then value
     else "\"" + value.Replace("\"", "\"\"") + "\""
+
+/// Splits one CSV line into fields, honouring quoted fields ("a,b") and doubled quotes inside them.
+let splitCsvLine (line: string) : string list =
+    let fields = ResizeArray<string>()
+    let current = System.Text.StringBuilder()
+    let mutable inQuotes = false
+    let mutable i = 0
+    while i < line.Length do
+        let c = line.[i]
+        if inQuotes then
+            if c = '"' && i + 1 < line.Length && line.[i + 1] = '"' then
+                current.Append '"' |> ignore
+                i <- i + 1
+            elif c = '"' then
+                inQuotes <- false
+            else
+                current.Append c |> ignore
+        elif c = '"' then
+            inQuotes <- true
+        elif c = ',' then
+            fields.Add(current.ToString())
+            current.Clear() |> ignore
+        else
+            current.Append c |> ignore
+        i <- i + 1
+    fields.Add(current.ToString())
+    List.ofSeq fields
 
 let private inv (x: float) = x.ToString(CultureInfo.InvariantCulture)
 
@@ -44,3 +77,8 @@ let row (rsId: string option) (hgvs: string) (sequenceType: string) (isComplemen
 /// A leading comment line recording the parameters so a report can be reproduced.
 let provenance (spacer: int) (seedStart: int) (seedEnd: int) =
     sprintf "# Diana report; spacer=%d; seed=%d-%d; generated=%s" spacer seedStart seedEnd (DateTime.UtcNow.ToString("yyyy-MM-ddTHH:mm:ssZ"))
+
+/// Reads spacer and seed back from a provenance line written by `provenance`; None when the line is not one.
+let tryParseProvenance (line: string) : (int * int * int) option =
+    let m = System.Text.RegularExpressions.Regex.Match(line, @"^#\s*Diana report;\s*spacer=(\d+);\s*seed=(\d+)-(\d+)")
+    if m.Success then Some(int m.Groups.[1].Value, int m.Groups.[2].Value, int m.Groups.[3].Value) else None

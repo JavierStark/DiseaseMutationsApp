@@ -411,6 +411,13 @@
           "FSharp.Core": "[9.0.303, )"
         }
       },
+      "grna.cli": {
+        "type": "Project",
+        "dependencies": {
+          "FSharp.Core": "[9.0.303, )",
+          "gRNA": "[1.0.0, )"
+        }
+      },
       "FSharp.Core": {
         "type": "CentralTransitive",
         "requested": "[9.0.303, )",

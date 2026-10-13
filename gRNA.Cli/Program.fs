@@ -62,6 +62,27 @@ let parseArgs (argv: string list) : Args =
 
     go argv [] Map.empty Set.empty
 
+/// Options and flags each command understands; anything else is a typo and must not be silently ignored.
+let private allowed =
+    Map.ofList
+        [ "doctor", (Set.empty, set [ "network"; "help" ])
+          "resolve", (Set.empty, set [ "help" ])
+          "design", (set [ "hgvs"; "input"; "spacer"; "seed"; "format"; "out"; "concurrency" ], set [ "complement"; "help" ])
+          "fold", (Set.empty, set [ "help" ])
+          "pool", (set [ "guides"; "count"; "capacity"; "plate"; "model"; "out" ], set [ "help" ]) ]
+
+/// Throws BadArgs naming the first option or flag the command does not take.
+let checkKnownOptions (command: string) (args: Args) : unit =
+    match Map.tryFind command allowed with
+    | None -> ()
+    | Some (options, flags) ->
+        for name in args.Options |> Map.toList |> List.map fst do
+            if not (options.Contains name) then
+                raise (BadArgs(sprintf "Unknown option --%s for '%s'. Run `grna --help` for the options." name command))
+        for name in args.Flags do
+            if not (flags.Contains name) then
+                raise (BadArgs(sprintf "Option --%s does not apply to '%s'. Run `grna --help` for the options." name command))
+
 let private opt (args: Args) name = Map.tryFind name args.Options
 
 let private intOpt (args: Args) name (defaultValue: int) =
@@ -102,10 +123,17 @@ let doctor (args: Args) (ct: CancellationToken) : Task<int> =
         return if Diagnostics.isHealthy results then ExitOk else ExitDependency
     }
 
+let private rsPattern = System.Text.RegularExpressions.Regex(@"^rs\d+$", System.Text.RegularExpressions.RegexOptions.IgnoreCase)
+
+/// True for "rs334"; a bare "rs" or "rs12x" is not an rsID.
+let isRsId (input: string) = rsPattern.IsMatch input
+
 let resolve (args: Args) (ct: CancellationToken) : Task<int> =
     task {
         if args.Positional.IsEmpty then raise (BadArgs "resolve needs at least one rsID.")
         for rs in args.Positional do
+            if not (isRsId rs) && not (rs |> Seq.forall Char.IsDigit && rs <> "") then
+                raise (BadArgs(sprintf "'%s' is not an rsID (expected rs334 or 334)." rs))
             let id = if rs.StartsWith("rs", StringComparison.OrdinalIgnoreCase) then rs.Substring 2 else rs
             let! hgvs = SNP.getHgvsNotationsAsync id ct
             if hgvs.IsEmpty then eprintfn "%s: no NG_ notations found" rs
@@ -137,7 +165,7 @@ let private jsonOf (rows: DesignRow list) =
                        energy = g.RnaFoldResult.Energy
                        structure = g.RnaFoldResult.Structure |})
             {| hgvs = r.Hgvs
-               rsId = r.RsId
+               rsId = Option.toObj r.RsId
                strand = if r.Complement then "Complement" else "Normal"
                mutated = cands r.Result.gRNA
                original = cands r.Result.originalGRNA |})
@@ -156,8 +184,9 @@ let private csvOf (rows: DesignRow list) (spacer, seedS, seedE) (includeHeader: 
     sb.ToString()
 
 let private tsvOf (rows: DesignRow list) =
+    // Split each CSV row into fields first: a plain Replace(',', '\t') would also break quoted fields that contain commas.
     (csvOf rows (0, 0, 0) false).Split([| '\n' |], StringSplitOptions.RemoveEmptyEntries)
-    |> Array.map (fun l -> l.TrimEnd('\r').Replace(',', '\t'))
+    |> Array.map (fun l -> l.TrimEnd('\r') |> ReportSchema.splitCsvLine |> String.concat "\t")
     |> String.concat "\n"
     |> fun s -> ReportSchema.header.Replace(',', '\t') + "\n" + s + "\n"
 
@@ -183,8 +212,8 @@ let design (args: Args) (ct: CancellationToken) : Task<int> =
         let sessionSeed = session |> Option.bind (fun (_, _, sd) -> sd)
         let spacer = intOpt args "spacer" (defaultArg sessionSpacer 28)
         let seedS, seedE = parseSeed (defaultArg (opt args "seed") (defaultArg sessionSeed "10-17"))
-        if spacer <= 0 || seedS < 0 || seedE >= spacer || seedS > seedE then
-            raise (BadArgs "Seed must satisfy 0 <= start <= end < spacer.")
+        // Same bounds as the library and the web app (spacer 18-60, seed inside the spacer); a GrnaInputException ends as exit 2.
+        Main.validateSpacerParameters spacer seedS seedE
         let complement = args.Flags.Contains "complement"
         let concurrency = max 1 (min 4 (intOpt args "concurrency" 2))
         let out = opt args "out"
@@ -211,29 +240,40 @@ let design (args: Args) (ct: CancellationToken) : Task<int> =
                 |> List.ofArray
             | _ -> raise (BadArgs "design needs exactly one of --hgvs or --input.")
 
+        if inputs.IsEmpty then
+            raise (BadArgs(sprintf "No variants found in '%s'." (defaultArg (opt args "input") "the input")))
+
         // Resumable batch: with an existing csv report, variants already present are skipped and rows appended.
+        // A variant is identified by rsID, HGVS and strand, and a report made with another spacer/seed cannot be resumed
+        // (its rows would be mixed with rows designed under different parameters).
         let isBatchCsv = opt args "input" |> Option.isSome && format = "csv" && out.IsSome
+        let strandName = if complement then ReportSchema.complementStrand else ReportSchema.normalStrand
+        let existingLines =
+            if isBatchCsv && File.Exists out.Value then File.ReadAllLines out.Value |> Array.filter (fun l -> l.Trim() <> "") else [||]
+        match existingLines |> Array.tryHead |> Option.bind ReportSchema.tryParseProvenance with
+        | Some (sp, ss, se) when (sp, ss, se) <> (spacer, seedS, seedE) ->
+            raise (BadArgs(sprintf "'%s' was made with spacer=%d seed=%d-%d, not spacer=%d seed=%d-%d. Use a new --out file or the same parameters." out.Value sp ss se spacer seedS seedE))
+        | _ -> ()
         let alreadyDone =
-            if isBatchCsv && File.Exists out.Value then
-                File.ReadAllLines out.Value
-                |> Array.filter (fun l -> not (l.StartsWith "#"))
-                |> Array.skip 1
-                |> Array.choose (fun l -> let f = l.Split ',' in if f.Length > 1 then Some(f[0] + "|" + f[1]) else None)
-                |> Set.ofArray
-            else
-                Set.empty
+            existingLines
+            |> Array.filter (fun l -> not (l.StartsWith "#"))
+            |> Array.skip (min 1 (existingLines |> Array.filter (fun l -> not (l.StartsWith "#")) |> Array.length))
+            |> Array.choose (fun l ->
+                match ReportSchema.splitCsvLine l with
+                | rs :: hgvs :: _ :: _ :: _ :: _ :: _ :: _ :: _ :: _ :: _ :: strand :: _ -> Some(rs + "|" + hgvs + "|" + strand)
+                | rs :: hgvs :: _ -> Some(rs + "|" + hgvs + "|" + ReportSchema.normalStrand)   // reports from before the Strand column
+                | _ -> None)
+            |> Set.ofArray
 
         let bowtie = Services.BowtieService()
         let results = System.Collections.Concurrent.ConcurrentBag<int * DesignRow>()
-        let mutable failures = 0
-        let mutable lastError: exn option = None
-        let gate = obj ()
+        let errors = System.Collections.Concurrent.ConcurrentBag<int * exn>()
 
         // Expand rsIDs to HGVS notations (sequentially: pure HTTP, rate limited by NCBI anyway).
         let jobs = ResizeArray<int * string option * string>()
         let mutable idx = 0
         for input in inputs do
-            if input.StartsWith("rs", StringComparison.OrdinalIgnoreCase) && Char.IsDigit(input[2]) then
+            if isRsId input then
                 let! hgvs = SNP.getHgvsNotationsAsync (input.Substring 2) ct
                 if hgvs.IsEmpty then eprintfn "%s: no NG_ notations found" input
                 for h in hgvs do
@@ -245,7 +285,7 @@ let design (args: Args) (ct: CancellationToken) : Task<int> =
 
         let work =
             jobs
-            |> Seq.filter (fun (_, rs, h) -> not (alreadyDone.Contains((defaultArg rs "") + "|" + h)))
+            |> Seq.filter (fun (_, rs, h) -> not (alreadyDone.Contains((defaultArg rs "") + "|" + h + "|" + strandName)))
             |> List.ofSeq
 
         let sem = new SemaphoreSlim(concurrency)
@@ -262,9 +302,7 @@ let design (args: Args) (ct: CancellationToken) : Task<int> =
                         with
                         | :? OperationCanceledException as oce -> raise oce
                         | ex ->
-                            lock gate (fun () ->
-                                failures <- failures + 1
-                                lastError <- Some ex)
+                            errors.Add((i, ex))
                             eprintfn "FAIL %s: %s" h ex.Message
                     finally
                         sem.Release() |> ignore
@@ -284,14 +322,16 @@ let design (args: Args) (ct: CancellationToken) : Task<int> =
         else
             writeOut out body
 
-        if failures > 0 && rows.IsEmpty then
-            match lastError with
+        // Nothing succeeded: the exit code is that of the FIRST failed variant in input order (deterministic, unlike
+        // "whichever task finished last"). Some succeeded, some failed: plain failure, the report holds the successes.
+        if errors.Count > 0 && rows.IsEmpty then
+            match errors |> Seq.sortBy fst |> Seq.map snd |> Seq.tryHead with
             | Some (:? GrnaDependencyException) -> return ExitDependency
             | Some (:? GrnaInputException) -> return ExitBadInput
             | Some (:? GrnaUpstreamException) -> return ExitUpstream
             | _ -> return ExitFailure
         else
-            return (if failures > 0 then ExitFailure else ExitOk)
+            return (if errors.Count > 0 then ExitFailure else ExitOk)
     }
 
 let fold (args: Args) (ct: CancellationToken) : Task<int> =
@@ -323,8 +363,8 @@ let private guidesFromReport (path: string) =
         if not isReport then
             lines |> Array.collect (fun l -> l.Split(',', StringSplitOptions.RemoveEmptyEntries)) |> Array.map _.Trim() |> Array.distinct |> List.ofArray
         else
+            // One guide per variant, in report order: the first strand seen for a variant is the one kept.
             let strandCol = ReportSchema.columns |> List.findIndex ((=) "Strand")
-            let best = Collections.Generic.Dictionary<string, int * string>()
             let strand = Collections.Generic.Dictionary<string, string>()
             let order = ResizeArray<string>()
             for l in lines |> Array.skip 1 do
@@ -332,15 +372,9 @@ let private guidesFromReport (path: string) =
                 if f.Length >= 5 && f[2].Trim() = ReportSchema.mutatedType then
                     let h = f[1].Trim()
                     let s = if f.Length > strandCol then f[strandCol].Trim() else ""
-                    let first = if strand.ContainsKey h then strand[h] = s else (strand[h] <- s; true)
-                    if first then
-                        let rank = match Int32.TryParse(f[3].Trim()) with | true, n -> n | _ -> Int32.MaxValue
-                        match best.TryGetValue h with
-                        | true, (r, _) when r <= rank -> ()
-                        | true, _ -> best[h] <- (rank, f[4].Trim())
-                        | _ ->
-                            best[h] <- (rank, f[4].Trim())
-                            order.Add h
+                    if not (strand.ContainsKey h) then
+                        strand[h] <- s
+                        order.Add h
             List.ofSeq order
 
 let pool (args: Args) (ct: CancellationToken) : Task<int> =
@@ -357,20 +391,23 @@ let pool (args: Args) (ct: CancellationToken) : Task<int> =
             | Some file, None -> guidesFromReport file
             | None, Some c ->
                 match Int32.TryParse c with
-                | true, n when n > 0 -> [ for i in 1..n -> sprintf "Guide %d" i ]
-                | _ -> raise (BadArgs "--count must be a positive integer.")
+                | true, n when n > 0 && n <= Pooling.MaxGuideCount -> [ for i in 1..n -> sprintf "Guide %d" i ]
+                | _ -> raise (BadArgs(sprintf "--count must be an integer from 1 to %d." Pooling.MaxGuideCount))
             | _ -> raise (BadArgs "pool needs exactly one of --guides or --count.")
 
         let v = labels.Length
         if v = 0 then raise (BadArgs "No guides found.")
 
+        // The library rejects impossible sizes with ArgumentException; report those as bad input, never as a crash.
         let model =
-            match (defaultArg (opt args "model") "auto").ToLowerInvariant() with
-            | "auto" -> Pooling.bestModel v capacity
-            | "2df" -> Pooling.TwoDFragmented
-            | "2dm" -> Pooling.TwoDMatrix
-            | "3d" -> Pooling.ThreeD
-            | m -> raise (BadArgs(sprintf "--model must be auto, 2df, 2dm or 3d, got '%s'." m))
+            try
+                match (defaultArg (opt args "model") "auto").ToLowerInvariant() with
+                | "auto" -> Pooling.bestModel v capacity
+                | "2df" -> Pooling.TwoDFragmented
+                | "2dm" -> Pooling.TwoDMatrix
+                | "3d" -> Pooling.ThreeD
+                | m -> raise (BadArgs(sprintf "--model must be auto, 2df, 2dm or 3d, got '%s'." m))
+            with :? ArgumentException as ex -> raise (BadArgs ex.Message)
 
         let plan =
             try Pooling.buildPlan model format v capacity
@@ -399,8 +436,13 @@ let run (argv: string[]) (ct: CancellationToken) : Task<int> =
             return ExitOk
         | cmd :: rest ->
             try
-                let args = parseArgs rest
+                let args = parseArgs (rest |> List.filter (fun a -> a <> "-h"))
+                let wantsHelp = rest |> List.contains "-h" || args.Flags.Contains "help"
+                if not wantsHelp then checkKnownOptions cmd args
                 match cmd with
+                | _ when wantsHelp ->
+                    printfn "%s" usage
+                    return ExitOk
                 | "doctor" -> return! doctor args ct
                 | "resolve" -> return! resolve args ct
                 | "design" -> return! design args ct
