@@ -91,7 +91,7 @@
 .seq-card-mutated { border-left: 4px solid var(--variant-strong); }
 
 /* ===== Results table ===== */
-.grna-table-wrap { overflow-x: auto; border: 1px solid var(--border); border-radius: var(--radius-md); }
+.grna-table-wrap { position: relative; overflow-x: auto; border: 1px solid var(--border); border-radius: var(--radius-md); }
 .grna-table { margin: 0; }
 .grna-table td, .grna-table th { vertical-align: middle; }
 .grna-table .num { text-align: right; font-variant-numeric: tabular-nums; }
