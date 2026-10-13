@@ -291,16 +291,26 @@ let reviewStars (reviewStatus: string) : int =
     | "criteria provided, conflicting interpretations" -> 1
     | _ -> 0
 
+/// The pathogenicity terms of a germline classification. ClinVar joins terms with "/" ("Pathogenic/Likely pathogenic") and
+/// appends other categories after ";" ("Pathogenic; drug response", "Pathogenic/Likely pathogenic; risk factor"), so only the
+/// part before the first ";" says how pathogenic the variant is.
+let private pathogenicityTerms (classification: string) : string list =
+    let first = (if isNull classification then "" else classification).Split(';').[0].Trim().ToLowerInvariant()
+    first.Split('/') |> Array.map (fun t -> t.Trim()) |> Array.toList
+
+let private isPathogenicTerm (t: string) = t = "pathogenic" || t.StartsWith("pathogenic,", StringComparison.Ordinal)
+let private isLikelyPathogenicTerm (t: string) = t = "likely pathogenic" || t.StartsWith("likely pathogenic,", StringComparison.Ordinal)
+
 /// True when a germline classification satisfies the minimum. Conflicting, uncertain and benign records never count as
-/// pathogenic, even though their text contains "pathogenic".
+/// pathogenic, even though their text contains "pathogenic". Extra categories after a ";" do not matter, so
+/// "Pathogenic; drug response" is pathogenic.
 let meetsSignificance (min: MinSignificance) (classification: string) : bool =
-    let c = (if isNull classification then "" else classification.Trim().ToLowerInvariant())
+    let terms = pathogenicityTerms classification
+    let allPathogenicFamily = terms |> List.forall (fun t -> isPathogenicTerm t || isLikelyPathogenicTerm t)
     match min with
     | AnyClassification -> true
-    | PathogenicOnly -> c = "pathogenic" || c = "pathogenic/likely pathogenic" || c.StartsWith("pathogenic,", StringComparison.Ordinal)
-    | PathogenicOrLikely ->
-        c = "pathogenic" || c = "likely pathogenic" || c = "pathogenic/likely pathogenic"
-        || c.StartsWith("pathogenic,", StringComparison.Ordinal) || c.StartsWith("likely pathogenic,", StringComparison.Ordinal)
+    | PathogenicOnly -> allPathogenicFamily && terms |> List.exists isPathogenicTerm
+    | PathogenicOrLikely -> allPathogenicFamily
 
 let private variantOfRecord (rec': JsonElement) : DiseaseVariant option =
     let uid = str (tryGet "uid" rec')

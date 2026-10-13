@@ -65,11 +65,24 @@ public class LiveDiseaseTests
         {
             Assert.That(result.Variants.Count(), Is.GreaterThan(500));
             Assert.That(result.Truncated, Is.False);
-            Assert.That(result.TotalMatching, Is.GreaterThanOrEqualTo(result.Variants.Count()));
+            Assert.That(result.Variants.Count(), Is.EqualTo(result.TotalMatching), "everything the server matched passes the client-side check too");
             Assert.That(result.Variants.All(v => meetsSignificance(MinSignificance.PathogenicOrLikely, v.Significance)), Is.True);
             Assert.That(countWithRsId(result.Variants) * 100 / result.Variants.Count(), Is.GreaterThan(50), "most records carry a dbSNP cross-reference");
             Assert.That(result.Variants.Count(v => v.Hgvs is not null), Is.GreaterThan(result.Variants.Count() / 2));
             Assert.That(result.Variants.Select(v => v.ClinVarId), Is.Unique);
+        });
+    }
+
+    [Test]
+    public async Task Ncbi_CysticFibrosis_KeepsCompoundClassifications()
+    {
+        var result = await FetchAsync("219700");
+
+        Assert.Multiple(() =>
+        {
+            Assert.That(result.Truncated, Is.False);
+            Assert.That(result.Variants.Count(), Is.EqualTo(result.TotalMatching), "records like 'Pathogenic; drug response' are kept");
+            Assert.That(result.Variants.Any(v => v.Significance.Contains(';')), Is.True, "the compound strings still occur in ClinVar");
         });
     }
 
