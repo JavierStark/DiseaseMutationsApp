@@ -23,7 +23,7 @@
             <Icon Name="@(report.Healthy ? "check" : "alert")" />@(report.Healthy ? "All required checks passed." : "One or more required checks failed.")
             <span class="text-muted ms-2">@report.CheckedAt.ToLocalTime().ToString("T")</span>
         </div>
-        <div class="grna-table-wrap">
+        <div class="grna-table-wrap" tabindex="0" role="region" aria-label="Diagnostic checks, scrollable">
             <table class="table grna-table">
                 <caption class="visually-hidden">Diagnostic checks</caption>
                 <thead><tr><th scope="col">Check</th><th scope="col">Result</th><th scope="col">Detail</th><th scope="col">What to do</th></tr></thead>

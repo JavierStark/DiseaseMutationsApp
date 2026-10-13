@@ -131,3 +131,20 @@ public abstract class E2EBase
         await RunButton.ClickAsync();
     }
 }
+
+public static class AxeHelper
+{
+    /// <summary>Runs axe-core (WCAG 2.0 to 2.2 A and AA rules) on the current page and returns the violations.</summary>
+    public static async Task<List<Deque.AxeCore.Commons.AxeResultItem>> ViolationsAsync(this IPage page)
+    {
+        var results = await Deque.AxeCore.Playwright.PageExtensions.RunAxe(page, new Deque.AxeCore.Commons.AxeRunOptions
+        {
+            RunOnly = new Deque.AxeCore.Commons.RunOnlyOptions
+            {
+                Type = "tag",
+                Values = new List<string> { "wcag2a", "wcag2aa", "wcag21a", "wcag21aa", "wcag22aa" }
+            }
+        });
+        return results.Violations.ToList();
+    }
+}

@@ -70,3 +70,14 @@ window.grnaTabs = {
         });
     }
 };
+
+// Skip link: Blazor intercepts same-page links and only scrolls, so focus never moved into the content and keyboard
+// users stayed where they were. Handle the click in the capture phase, move focus, and keep Blazor out of it.
+document.addEventListener('click', e => {
+    const link = e.target.closest && e.target.closest('a.skip-link');
+    if (!link) return;
+    e.preventDefault();
+    e.stopImmediatePropagation();
+    const main = document.getElementById('main-content');
+    if (main) { main.focus(); main.scrollIntoView(); }
+}, true);
