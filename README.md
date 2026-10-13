@@ -181,7 +181,7 @@ NC_000017.11:g.7674220_7674221insA insertion         NC_000017.11:g.7674220_7674
 ## Project layout
 
 ```
-DiseaseMutationsApp/   Blazor Server app (Pages: Diana, Disease variants, Guide Pooling, Diagnostics; Components, Services, wwwroot)
+DiseaseMutationsApp/   Blazor Server app (Pages: Diana, Disease variants, Guide Pooling, App Status; Components, Services, wwwroot)
 gRNA/                  F# library (DiseaseVariants.fs: Monarch + ClinVar disease search)
 gRNA.Cli/              the grna command-line tool
 DiseaseMutationsAppTests/  NUnit + bUnit tests (library, CLI in-process, components, accessibility markup, opt-in live contract tests)
