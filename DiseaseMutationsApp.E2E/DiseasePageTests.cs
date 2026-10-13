@@ -79,6 +79,34 @@ public class DiseasePageTests : DiseaseE2EBase
         await Expect(Page.GetByRole(AriaRole.Radio)).ToHaveCountAsync(2);
     }
 
+    // Regression: with Bootstrap's floated .form-check the box collapsed to one line while its two-line label overflowed, so the
+    // rows overlapped. No unit test could see it; this measures the real layout.
+    [TestCase(1280)]
+    [TestCase(375)]
+    public async Task MatchRows_ContainTheirText_AndDoNotOverlap(int width)
+    {
+        await Page.SetViewportSizeAsync(width, 900);
+        await GotoAsync("/disease");
+        await FindDiseasesAsync("manymatches");   // ten rows: enough to need the 20 rem scroll list, where flex items shrink
+
+        var boxes = await Page.Locator(".match-item").EvaluateAllAsync<double[][]>(
+            "els => els.map(e => { const r = e.getBoundingClientRect(); const l = e.querySelector('label').getBoundingClientRect(); const i = e.querySelector('input').getBoundingClientRect(); return [r.top, r.bottom, l.bottom, i.left - r.left, l.left - i.right, r.right, l.right]; })");
+
+        Assert.That(boxes, Has.Length.EqualTo(10));
+        Assert.Multiple(() =>
+        {
+            foreach (var b in boxes)
+            {
+                Assert.That(b[2], Is.LessThanOrEqualTo(b[1] + 0.5), "the label stays inside its row");
+                Assert.That(b[3], Is.GreaterThanOrEqualTo(0), "the radio is inside its row");
+                Assert.That(b[4], Is.GreaterThan(0), "the label starts to the right of the radio");
+                Assert.That(b[6], Is.LessThanOrEqualTo(b[5] + 0.5), "the label does not spill out sideways");
+            }
+            for (var i = 1; i < boxes.Length; i++)
+                Assert.That(boxes[i][0], Is.GreaterThanOrEqualTo(boxes[i - 1][1] - 0.5), $"row {i + 1} starts below row {i}");
+        });
+    }
+
     [Test]
     public async Task Search_ChooseAndRead_ShowsTheSummaryAndTheTable()
     {

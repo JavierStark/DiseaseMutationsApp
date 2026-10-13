@@ -69,10 +69,10 @@
                                 @foreach (var m in S.Matches)
                                 {
                                     var inputId = $"match-{m.Id.Replace(':', '-')}";
-                                    <div class="form-check match-item" @key="m.Id">
+                                    <div class="match-item" @key="m.Id">
                                         <input class="form-check-input" type="radio" name="disease-match" id="@inputId"
                                                checked="@(S.SelectedMatchId == m.Id)" disabled="@IsBusy" @onchange="() => SelectMatch(m)" />
-                                        <label class="form-check-label" for="@inputId">
+                                        <label for="@inputId">
                                             <span class="match-name">@m.Name</span>
                                             <span class="match-id font-monospace">@m.Id</span>
                                             <span class="helper-note d-block">@Describe(m)</span>

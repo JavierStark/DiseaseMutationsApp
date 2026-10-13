@@ -5,7 +5,7 @@ namespace DiseaseMutationsApp.E2E;
 
 /// <summary>
 /// Deterministic stand-in for Monarch and NCBI ClinVar. What the user types selects the behaviour:
-/// "sickle" finds one disease with 8 variants (rs334 among them), "fanconi" finds a group that needs its subtypes and has 70
+/// "manymatches" finds 10 diseases (a long list), "sickle" finds one disease with 8 variants (rs334 among them), "fanconi" finds a group that needs its subtypes and has 70
 /// variants (more than Diana takes in one run), "empty" finds a disease without variants, "trunc" one whose list is incomplete,
 /// "nomatch" nothing, "down" fails like an unreachable Monarch, "slowvars" waits until cancelled, and "flaky" fails its first
 /// variant search and then works.
@@ -20,6 +20,9 @@ public sealed class FakeDiseaseSource : IDiseaseVariantSource
         var t = text.ToLowerInvariant();
         if (t.Contains("down")) throw new GrnaUpstreamException("Monarch could not be reached.", Microsoft.FSharp.Core.FSharpOption<Exception>.None);
         if (t.Contains("nomatch")) return Array.Empty<DiseaseMatchDto>();
+        if (t.Contains("manymatches"))   // as many as Monarch returns for a common name: enough to need the scroll list
+            return Enumerable.Range(1, 10).Select(i => new DiseaseMatchDto($"MONDO:00{i:D5}", $"a disease with a fairly long name number {i}",
+                i == 1 ? new[] { "100001" } : Array.Empty<string>(), Array.Empty<string>())).ToList();
         if (t.Contains("fanconi"))
             return new[]
             {
