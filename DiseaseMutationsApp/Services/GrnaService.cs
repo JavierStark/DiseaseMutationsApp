@@ -34,7 +34,7 @@ public class GrnaService : IGrnaAnalysis
     {
         try
         {
-            _logger.LogInformation("Getting best gRNA from HGVS: {Hgvs}, Window: {Window}, Seed: [{SeedStart}, {SeedEnd}], Complement: {Complement}", hgvs, window, seedStart, seedEnd, complement);
+            _logger.LogDebug("Getting best gRNA from HGVS: {Hgvs}, Window: {Window}, Seed: [{SeedStart}, {SeedEnd}], Complement: {Complement}", hgvs, window, seedStart, seedEnd, complement);
 
             var fsharpResult = await Main.getBestgRNAFromHGVS(hgvs, window, seedStart, seedEnd, _bowtieService, cancellationToken, complement);
 
@@ -84,7 +84,7 @@ public class GrnaService : IGrnaAnalysis
     {
         try
         {
-            _logger.LogInformation("Getting HGVS notations from SNP: {RsId}", rsid);
+            _logger.LogDebug("Getting HGVS notations from SNP: {RsId}", rsid);
 
             var fsharpList = await SNP.getHgvsNotationsAsync(rsid, cancellationToken);
             return new List<string>(fsharpList);

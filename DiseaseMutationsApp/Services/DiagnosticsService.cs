@@ -9,6 +9,20 @@ public record DiagnosticsReport(bool Healthy, DateTimeOffset CheckedAt, IReadOnl
 /// <summary>Runs the library's preflight checks (shared with `grna doctor`) with a short cache.</summary>
 public class DiagnosticsService
 {
+    /// <summary>
+    /// What /healthz returns. Loopback callers get the full report; anyone else only the verdict and each check's
+    /// name and status, because the detail and remedy texts contain file-system paths of the host.
+    /// </summary>
+    public static object HealthzPayload(DiagnosticsReport report, bool isLoopback) =>
+        isLoopback
+            ? report
+            : new
+            {
+                healthy = report.Healthy,
+                checkedAt = report.CheckedAt,
+                checks = report.Checks.Select(c => new { name = c.Name, status = c.Status }).ToList()
+            };
+
     private static readonly TimeSpan CacheFor = TimeSpan.FromSeconds(30);
 
     private readonly SemaphoreSlim _gate = new(1, 1);

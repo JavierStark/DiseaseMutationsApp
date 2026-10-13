@@ -67,10 +67,12 @@ if (!app.Environment.IsDevelopment())
 app.UseStaticFiles();
 app.UseAntiforgery();
 
-app.MapGet("/healthz", async (DiagnosticsService diagnostics) =>
+app.MapGet("/healthz", async (HttpContext context, DiagnosticsService diagnostics) =>
 {
     var report = await diagnostics.GetReportAsync(includeNetwork: false);
-    return Results.Json(report, statusCode: report.Healthy ? 200 : 503);
+    // Inside Docker a request from the host arrives from the bridge, not from loopback: use /diagnostics or `grna doctor` there.
+    var isLoopback = context.Connection.RemoteIpAddress is { } ip && System.Net.IPAddress.IsLoopback(ip);
+    return Results.Json(DiagnosticsService.HealthzPayload(report, isLoopback), statusCode: report.Healthy ? 200 : 503);
 });
 
 app.MapRazorComponents<DiseaseMutationsApp.App>()

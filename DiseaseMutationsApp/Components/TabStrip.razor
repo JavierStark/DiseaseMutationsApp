@@ -12,7 +12,7 @@
                     id="@TabId(IdPrefix, key)"
                     class="tabstrip-tab"
                     aria-selected="@(selected ? "true" : "false")"
-                    aria-controls="@PanelId(IdPrefix, key)"
+                    aria-controls="@(selected ? PanelId(IdPrefix, key) : null)"
                     tabindex="@(selected ? 0 : -1)"
                     @onclick="() => Select(key)">
                 @ItemTemplate(item)
