@@ -180,8 +180,9 @@ NC_000017.11:g.7674220_7674221insA insertion         NC_000017.11:g.7674220_7674
 DiseaseMutationsApp/   Blazor Server app (Pages, Components, Services, Shared, wwwroot)
 gRNA/                  F# library
 gRNA.Cli/              the grna command-line tool
-DiseaseMutationsAppTests/  NUnit + bUnit tests
-docs/                  about-the-name, runtime-contract, using-the-library, design-system, review-findings
+DiseaseMutationsAppTests/  NUnit + bUnit tests (library, CLI in-process, components, accessibility markup)
+DiseaseMutationsApp.E2E/   Playwright browser tests against the real UI with a fake pipeline
+docs/                  about-the-name, runtime-contract, using-the-library, design-system, manual-test-plan, review-findings, literature-candidates
 examples/standalone.fsx    run the library from F# Interactive
 scripts/check-pins.sh      dependency pinning gate
 Dockerfile, Dockerfile.bowtie-base, docker-compose.yml, start.sh, start.ps1
@@ -199,7 +200,22 @@ Tests need no container and no network: the library's pure logic (scoring, parsi
 the `grna` CLI driven in-process (exit codes, option checking, resume), the `AnalysisRunner` (concurrency bound, cancellation,
 per-variant cancel, timeouts, retry) against a fake pipeline, and the components with bUnit, including markup checks for the
 accessibility defects found with axe-core. `RnaFoldIntegrationTests` run the real ViennaRNA when `python3` and `RNA` are available and skip
-otherwise. The GitLab pipeline (`.gitlab-ci.yml`) runs the pinning gate and these tests; it builds no images, so run `grna doctor` in the locally built image yourself.
+otherwise. The GitLab pipeline (`.gitlab-ci.yml`) runs the pinning gate (which also covers the CI job images) and these tests,
+publishes the coverage report, and builds no images, so run `grna doctor` in the locally built image yourself.
+
+**Browser tests.** `DiseaseMutationsApp.E2E` serves the real web app with a deterministic fake pipeline (no Bowtie, ViennaRNA or
+NCBI needed) and drives Chromium with Playwright: runs, cancel and retry, limits, permalinks, CSV downloads, the pooling plate map
+and decoder, dark/light theme, a 375 px phone viewport, and an axe-core scan (WCAG 2.0 to 2.2 A/AA) of every page state. They
+skip themselves, with the reason, when Chromium is not installed. To run them locally:
+
+```bash
+E2E_INSTALL_BROWSERS=1 dotnet test DiseaseMutationsApp.E2E   # first time only: downloads Chromium (about 150 MB)
+dotnet test DiseaseMutationsApp.E2E                          # afterwards
+```
+
+**Manual tests.** What automation cannot check (the real index and tools, Docker routes per OS, assistive technology) is in
+[docs/manual-test-plan.md](docs/manual-test-plan.md), with a log of the runs made so far. The findings of the 2026-10-13 review
+are in [docs/review-findings.md](docs/review-findings.md).
 
 ## Data and large files
 
