@@ -59,9 +59,10 @@ type Sequence(id: string, data: string) =
             | MutationType.DeletionInsertion ->
                 data.[limitLeft..actualStart - 1] + hgvs.Alternate + data.[actualEnd..limitRight - 1]
             | MutationType.Inversion ->
-                let reversed = 
-                    data.[actualStart..actualEnd - 1] 
-                    |> Seq.rev 
+                // HGVS inversion = the reverse COMPLEMENT of the segment (den Dunnen et al. 2016).
+                let reversed =
+                    complementary data.[actualStart..actualEnd - 1]
+                    |> Seq.rev
                     |> Seq.toArray 
                     |> System.String
                 data.[limitLeft..actualStart - 1] + reversed + data.[actualEnd..limitRight - 1]

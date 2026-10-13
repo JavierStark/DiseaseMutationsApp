@@ -107,7 +107,7 @@ public class SequenceTests
         var sequence = new Sequence.Sequence("NG_016465.4", seqData);
         var hgvs = new HGVS.HGVS("NG_016465.4:c.5_7inv");
         var (mutated, _) = sequence.GetMutatedSubsequence(hgvs,1,1);
-        Assert.That(mutated, Is.EqualTo("CATGC"));
+        Assert.That(mutated, Is.EqualTo("CTACC")); // HGVS inversion = reverse complement: GTA -> TAC
     }
 
     // [Test]

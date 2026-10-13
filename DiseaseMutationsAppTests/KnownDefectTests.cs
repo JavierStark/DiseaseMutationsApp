@@ -11,7 +11,7 @@ namespace DiseaseMutationsAppTests;
 public class KnownDefectTests
 {
     // H4: an HGVS inversion is the REVERSE COMPLEMENT of the segment (den Dunnen et al. 2016), not just the reverse.
-    [Test, Explicit("known defect H4: inversion is reversed but not complemented")]
+    [Test]
     public void H4_Inversion_IsReverseComplemented()
     {
         var sequence = new Sequence.Sequence("NG_016465.4", "ATGCGTACGTAGCTAGCTAGCTAGCTAGCTAGCTAGCTAGC");
@@ -25,7 +25,7 @@ public class KnownDefectTests
     [TestCase("NC_000017.11:")]
     [TestCase("")]
     [TestCase("rs")]
-    [Explicit("known defect H7: raw exceptions escape HGVS parsing")]
+
     public void H7_MalformedHgvs_ThrowsTypedInputException(string code)
     {
         Assert.Throws<GrnaInputException>(() => _ = new HGVS.HGVS(code));
