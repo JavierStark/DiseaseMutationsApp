@@ -4,7 +4,7 @@ using gRNA;
 namespace DiseaseMutationsAppTests;
 
 /// <summary>
-/// Phase 0 of the project review (docs/review-findings.md). Each test states the DESIRED behaviour for a defect
+/// Phase 0 of the project review. Each test states the DESIRED behaviour for a defect
 /// that was confirmed by a real run or by reading the code. While the defect is open the test carries
 /// [Explicit] with its finding id; the fix removes the attribute. The tests are run once without it to prove they fail.
 /// </summary>

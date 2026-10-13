@@ -185,7 +185,7 @@ gRNA/                  F# library
 gRNA.Cli/              the grna command-line tool
 DiseaseMutationsAppTests/  NUnit + bUnit tests (library, CLI in-process, components, accessibility markup)
 DiseaseMutationsApp.E2E/   Playwright browser tests against the real UI with a fake pipeline
-docs/                  about-the-name, runtime-contract, using-the-library, design-system, manual-test-plan, review-findings, literature-candidates
+docs/                  about-the-name, runtime-contract, using-the-library, design-system, manual-test-plan
 examples/standalone.fsx    run the library from F# Interactive
 scripts/check-pins.sh      dependency pinning gate
 Dockerfile, Dockerfile.bowtie-base, docker-compose.yml, start.sh, start.ps1
@@ -217,8 +217,7 @@ dotnet test DiseaseMutationsApp.E2E                          # afterwards
 ```
 
 **Manual tests.** What automation cannot check (the real index and tools, Docker routes per OS, assistive technology) is in
-[docs/manual-test-plan.md](docs/manual-test-plan.md), with a log of the runs made so far. The findings of the 2026-10-13 review
-are in [docs/review-findings.md](docs/review-findings.md).
+[docs/manual-test-plan.md](docs/manual-test-plan.md), with a log of the runs made so far.
 
 ## Data and large files
 

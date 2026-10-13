@@ -145,8 +145,9 @@ public class DesignPageTests : E2EBase
         await GotoAsync("/");
         var before = await Page.EvaluateAsync<string>("document.documentElement.getAttribute('data-bs-theme')");
         await Page.GetByRole(AriaRole.Button, new() { NameRegex = new("Switch to (light|dark) theme") }).ClickAsync();
+        // The toggle is a server round trip (Blazor event, then JS interop), so wait for the attribute instead of sampling it at once.
+        await Expect(Page.Locator("html")).Not.ToHaveAttributeAsync("data-bs-theme", before);
         var after = await Page.EvaluateAsync<string>("document.documentElement.getAttribute('data-bs-theme')");
-        Assert.That(after, Is.Not.EqualTo(before));
 
         await Page.ReloadAsync();
         await Expect(Page.Locator("h1")).ToBeVisibleAsync();

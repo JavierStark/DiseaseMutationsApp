@@ -119,7 +119,9 @@ public abstract class E2EBase
         // The interactive circuit is ready once the app's own heading has focus (FocusOnNavigate) or the first input accepts text.
         await Expect(Page.Locator("h1")).ToBeVisibleAsync();
         await Page.WaitForFunctionAsync("() => window.Blazor !== undefined");
-        await Page.WaitForTimeoutAsync(300);
+        // The router focuses the page heading through JS interop, which only happens once the circuit is live: from then on
+        // clicks reach the server. (A fixed pause made the first click race the circuit start.)
+        await Page.WaitForFunctionAsync("() => document.activeElement && document.activeElement.tagName === 'H1'");
     }
 
     // ---- shared locators ---------------------------------------------------------------------------

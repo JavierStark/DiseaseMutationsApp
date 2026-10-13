@@ -8,8 +8,8 @@ using Microsoft.Extensions.DependencyInjection;
 namespace DiseaseMutationsAppTests;
 
 /// <summary>
-/// Regression tests for the accessibility defects found with axe-core 4.10.2 on 2026-10-13
-/// (docs/review-findings.md, A2-A5). They assert the markup facts axe checks, so they run without a browser.
+/// Regression tests for the accessibility defects found with axe-core 4.10.2 on 2026-10-13.
+/// They assert the markup facts axe checks, so they run without a browser.
 /// </summary>
 public class AccessibilityTests : BunitContext
 {

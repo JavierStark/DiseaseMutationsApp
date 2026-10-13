@@ -14,7 +14,7 @@ Record every run in section 9. A step that was not run is written as "not run", 
 | Machine | Docker with Compose v2, about 10 GB free disk for a first build, 3 GB RAM for Docker, internet access (NCBI) |
 | Code | the commit under test checked out, `git status` clean; write its short hash in the log |
 | Image | `./start.sh` (or `.\start.ps1`) finished with "Ready", or the image was built with `docker build -t disease-mutations-app:review .` |
-| Reference | `NC_000017.11:g.7674220C>T` (TP53) is used throughout because its expected output is recorded in `docs/review-findings.md` |
+| Reference | `NC_000017.11:g.7674220C>T` (TP53) is used throughout because the expected output of each step below is stated for it |
 
 ## 1. Install and health
 
@@ -130,6 +130,3 @@ Run by Claude Code at the request of the team lead; **not** a replacement for a 
 | 2.10, 2.11 | Run in the browser pane: link fills the form without running; both report buttons offered for an HGVS input (the download itself was covered by the browser tests, not opened in Excel) |
 | everything else | not run |
 
-## 10. Results of the final real-stack pass
-
-See the end of `docs/review-findings.md`.

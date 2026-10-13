@@ -158,7 +158,7 @@ type gRNAResult =
 The key evaluation criteria are:
 
 **a) Guanine-Cytosine (GC) content:**
-* **Concept:** The stability of the gRNA-target DNA duplex is influenced by GC content. Too low a content can result in unstable binding, while too high a content can hinder Cas13 dissociation after cutting. The range used is **40-60%**. *[Needs source: no Cas13-specific GC range was found; 40-60% is reported for DNA-targeting guide design. Treat it as a borrowed heuristic until a Cas13 reference is added, see docs/literature-candidates.md.]*
+* **Concept:** The stability of the gRNA-target DNA duplex is influenced by GC content. Too low a content can result in unstable binding, while too high a content can hinder Cas13 dissociation after cutting. The range used is **40-60%**. *[Needs source: no Cas13-specific GC range was found; 40-60% is reported for DNA-targeting guide design. Treat it as a borrowed heuristic until a Cas13 reference is added.]*
 * **Implementation:** `calculateGCScore` assigns a score of 1.0 when the GC content is inside the ideal range, **boundaries included** (`lower <= GC% <= upper`). Outside that range the score falls back to a value proportional to the distance from the ideal (`gc/40` below, `(100-gc)/40` above), so it always stays within 0-1. (Earlier versions treated the bounds as exclusive, which made exactly 40% GC score 1.5 and outrank a perfect 50% candidate; fixed with boundary tests.)
 
 ```fsharp
@@ -174,7 +174,7 @@ let calculateGCScore (gcContent: float) (lowerThreshold: float, upperThreshold: 
 ```
 
 **b) Presence of homopolymers:**
-* **Concept:** Runs of four or more identical nucleotides (e.g., `AAAA` or `GGGG`) can cause premature termination of gRNA transcription by RNA polymerase III and have been shown to reduce CRISPR efficiency. *[Team decision, 2026-10-13: runs of any of the four bases are counted, not only U. Be aware that the Pol III termination signal reported in the literature is a run of T (U in the RNA), at least four and reliably six, and only matters when the guide is expressed from a Pol III promoter; for A, C and G runs this report has no source yet. See docs/literature-candidates.md.]*
+* **Concept:** Runs of four or more identical nucleotides (e.g., `AAAA` or `GGGG`) can cause premature termination of gRNA transcription by RNA polymerase III and have been shown to reduce CRISPR efficiency. *[Team decision, 2026-10-13: runs of any of the four bases are counted, not only U. Be aware that the Pol III termination signal reported in the literature is a run of T (U in the RNA), at least four and reliably six, and only matters when the guide is expressed from a Pol III promoter; for A, C and G runs this report has no source yet.]*
 * **Implementation:** `countHomopolymers` uses a regular expression to count occurrences of these problematic runs in the RNA alphabet (`A`, `C`, `G`, `U`). A lower count is better.
 
 **c) Off-target analysis with Bowtie:**
@@ -213,7 +213,7 @@ This rigorous selection process ensures the gRNAs recommended by the application
 #### 4.4. Special Rule for Substitution SNPs
 
 **Concept:**
-The intent of the rule is to make a guide more sensitive to a single-base difference between the two alleles of a substitution, by adding one deliberate ("synthetic") mismatch next to the base where the alleles differ, close to the 3' end of the spacer. *[Needs source: the literature that supports synthetic mismatches at these positions, and the choice of `A`/`U` as the replacement, has not yet been added to this report; see docs/review-findings.md.]*
+The intent of the rule is to make a guide more sensitive to a single-base difference between the two alleles of a substitution, by adding one deliberate ("synthetic") mismatch next to the base where the alleles differ, close to the 3' end of the spacer. *[Needs source: the literature that supports synthetic mismatches at these positions, and the choice of `A`/`U` as the replacement, has not yet been added to this report.]*
 
 What the code actually produces, stated exactly because it is easy to read as something stronger: the spacer is designed against the **mutated** sequence, and the rule then changes one more base of it (index `N-4`). The engineered spacer therefore has **one** mismatch against the mutated target (the synthetic one) and **two** against the wild-type target (the synthetic one and the mutation itself at `N-3`). It is not a perfect match to either allele.
 
@@ -323,7 +323,7 @@ This modular, science-grounded approach lets the application design efficient, s
 *Code: `gRNA/Pooling.fs`; UI: the `/pooling` page.*
 
 **Problem.** A disease panel can have hundreds of known variants; screening one guide per well is infeasible. Guides are produced
-in tandem (at most **K** per transcript, a biological limit because longer tandem arrays risk RNA conformations that block Cas13; *[needs source: the limit of 5 is the team's working assumption until a reference is added, see docs/review-findings.md]*)
+in tandem (at most **K** per transcript, a biological limit because longer tandem arrays risk RNA conformations that block Cas13; *[needs source: the limit of 5 is the team's working assumption until a reference is added]*)
 and **pooled**: each guide is placed in **R** wells so that a positive readout still identifies it.
 
 **Models** (V guides, K per well; N = total wells):
