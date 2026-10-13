@@ -52,11 +52,17 @@ let private indexBaseFor (env: GrnaEnvironment) =
 
 /// Runs Bowtie for the given reads and returns the parsed alignments.
 let runBowtieK (env: GrnaEnvironment) (maxHits: int) (mismatches: int) (threads: int) (sequences: string list) (cancellationToken: CancellationToken) : Task<BowtieAlignment list> = task {
+    // No reads, no process (Bowtie rejects an empty read list).
+    if List.isEmpty sequences then return [] else
     let binary = GrnaEnvironment.resolvePath env.BowtieBinary
     let indexBase = indexBaseFor env
+    // The reads travel in a raw file (-r: one per line, numbered in file order exactly like -c) because a
+    // comma-joined list overflows the operating system's argument-length limit for long variants.
+    let readsFile = Path.Combine(Path.GetTempPath(), "grna-reads-" + Guid.NewGuid().ToString("N") + ".txt")
+    File.WriteAllLines(readsFile, sequences)
     let startInfo = ProcessStartInfo()
     startInfo.FileName <- binary
-    for a in [ "-x"; indexBase; "-c"; String.concat "," sequences; "-v"; string mismatches; "-k"; string maxHits; "--threads"; string threads; "--mm" ] do
+    for a in [ "-x"; indexBase; "-v"; string mismatches; "-k"; string maxHits; "--threads"; string threads; "--mm"; "-r"; readsFile ] do
         startInfo.ArgumentList.Add a
     startInfo.RedirectStandardOutput <- true
     startInfo.RedirectStandardError <- true
@@ -98,6 +104,7 @@ let runBowtieK (env: GrnaEnvironment) (maxHits: int) (mismatches: int) (threads:
         return parseBowtieAlignments stdout
     finally
         try if not proc.HasExited then proc.Kill(entireProcessTree = true) with _ -> ()
+        try File.Delete readsFile with _ -> ()
 }
 
 /// Default alignment cap: counts saturate here, which is why the UI labels 6 as "6+".
