@@ -6,7 +6,7 @@ Source of truth: `gRNA.Cli/Program.fs`. Everything here was checked against the 
 ## Contents
 
 - [Global behaviour](#global-behaviour): argument parsing, streams, exit codes, environment, cancellation
-- [`doctor`](#grna-doctor) · [`resolve`](#grna-resolve) · [`design`](#grna-design) · [`fold`](#grna-fold) · [`pool`](#grna-pool)
+- [`doctor`](#grna-doctor) · [`resolve`](#grna-resolve) · [`disease`](#grna-disease) · [`design`](#grna-design) · [`fold`](#grna-fold) · [`pool`](#grna-pool)
 - [Output formats](#output-formats): design CSV/TSV/JSON, pool plan CSV
 - [Scripting recipes](#scripting-recipes)
 
@@ -105,6 +105,39 @@ grna resolve <rsID> [<rsID> ...]
 - stdout: one `<rsID-as-typed>\t<HGVS>` line per notation (e.g. `rs334\tNG_000007.3:g.70614A>T`; rs334 yields 12).
 - Only `NG_` notations are returned. None found: `<rsID>: no NG_ notations found` on stderr, still exit 0.
 - HTTP failure: exit 4. Needs internet only (no Bowtie/Python), so it works natively on any OS.
+
+## `grna disease`
+
+```
+grna disease <name | OMIM number | MONDO id> [--list] [--pick N] [--subtypes]
+             [--min-significance pathogenic-likely|pathogenic|any] [--format rs|csv|tsv|json] [--out file]
+```
+
+Finds the ClinVar variants of a disease and prints their rsIDs. The disease name is looked up in the Monarch Initiative API
+(no key, no CAPTCHA); the variants come from NCBI ClinVar (`elink` OMIM to ClinVar, a server-side classification filter, batched
+`esummary`). It replaces the removed OMIM scraper.
+
+- The query is a free-text name (`"sickle cell disease"`), an OMIM number (`603903`, `OMIM:603903`) or a MONDO id (`MONDO:0011382`).
+  An OMIM number needs no Monarch call. A malformed number or id exits 2 before any request.
+- Several matches for a name: the first is used and a `note:` on stderr says so. `--list` prints the matches
+  (`N<TAB>MONDO id<TAB>name<TAB>OMIM numbers`) and exits 0; `--pick N` chooses one.
+- A parent disease that only has an OMIM *phenotypic series* (Fanconi anemia) is expanded through its direct subtypes
+  automatically (up to 40); `--subtypes` forces that expansion for a disease that has its own OMIM number too.
+- `--min-significance`: `pathogenic-likely` (default: Pathogenic, Likely pathogenic, Pathogenic/Likely pathogenic),
+  `pathogenic`, or `any` (every ClinVar record linked to the disease, including benign and uncertain).
+- `--format rs` (default): one distinct `rsNNN` per line, ready for `grna design --input`. Records without an rsID are left out
+  (stderr says how many); `--format csv|tsv|json` keep them, with a genomic HGVS (GRCh38) derived from ClinVar's canonical SPDI when
+  it is a simple variant. CSV columns: `rsID,HGVS,Gene,Classification,Review status,Stars,ClinVar ID,Variant,Conditions`.
+- At most 3,000 ClinVar records are read per search; when more match, stderr carries a `warning:` and the list is incomplete.
+- stderr also carries progress and the counts (`923 ClinVar records matched; 923 listed, 833 with an rsID, 90 without.`).
+- Exit codes: 0 ok (also when ClinVar has no record: empty output), 2 bad input (no such disease, no numeric OMIM number, bad option),
+  4 Monarch or NCBI failure. Needs internet only, so it works natively on any OS. Counts drift as ClinVar is updated.
+- The list is a set of candidates from ClinVar's classifications, not a clinical statement; check each variant before using it.
+
+```bash
+grna disease 603903 --out sickle.txt                 # contains rs334
+grna design --input sickle.txt --out report.csv      # then design guides for them (Docker image)
+```
 
 ## `grna design`
 
