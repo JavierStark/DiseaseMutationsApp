@@ -162,14 +162,14 @@ public class AccessibilityTests : BunitContext
     [Test]
     public void Healthz_NonLoopback_GetsVerdictAndStatusOnly()
     {
-        var report = new DiagnosticsReport(true, DateTimeOffset.UtcNow, new List<DiagnosticCheck>
+        var report = new AppStatusReport(true, DateTimeOffset.UtcNow, new List<AppStatusCheck>
         {
             new("Bowtie index", "pass", "/app/bowtie/indexes/GRCh38_noalt_as [Bowtie 2 (.bt2)]", ""),
             new("ViennaRNA", "fail", "python3 missing at /usr/bin/python3", "pip install viennarna==2.7.2")
         });
 
-        var remote = JsonSerializer.Serialize(DiagnosticsService.HealthzPayload(report, isLoopback: false));
-        var local = JsonSerializer.Serialize(DiagnosticsService.HealthzPayload(report, isLoopback: true));
+        var remote = JsonSerializer.Serialize(AppStatusService.HealthzPayload(report, isLoopback: false));
+        var local = JsonSerializer.Serialize(AppStatusService.HealthzPayload(report, isLoopback: true));
 
         Assert.Multiple(() =>
         {

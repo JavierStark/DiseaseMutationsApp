@@ -1,4 +1,4 @@
-/// Preflight checks shared by `grna doctor`, the /healthz endpoint and the in-app diagnostics panel.
+/// Preflight checks shared by `grna doctor`, the /healthz endpoint and the App Status page.
 module gRNA.Diagnostics
 
 open System

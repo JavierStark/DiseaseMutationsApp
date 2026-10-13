@@ -6,7 +6,8 @@
 tool, as the competition requires. Source: <https://gitlab.igem.org/2026/software/uma-malaga/diana-grna-designer>.
 
 Diana is a web application and command-line tool for turning disease-related variants (HGVS notations or rsIDs) into ranked
-CRISPR-Cas13 guide RNA spacers, and for planning combinatorial guide pooling onto 96/384-well plates. Spacers are scored for
+CRISPR-Cas13 guide RNA spacers, for finding those variants from a disease (name, OMIM number or MONDO id, through ClinVar), and
+for planning combinatorial guide pooling onto 96/384-well plates. Spacers are scored for
 GC content, homopolymers, off-target alignments (Bowtie) and RNA secondary structure (ViennaRNA), for both the mutated and the
 original (wild-type) sequence. It also flags restriction sites (BsaI, BsmBI, SapI, BbsI, EcoRI, PstI, XbaI, SpeI, EcoRV, NotI)
 in the DNA you would order, and exports an order-ready oligo CSV.
@@ -49,7 +50,7 @@ overlapping multi-hit collisions flagged as ambiguous instead of hidden. The CSV
 Tandem, Well`; slots the layout reserves but that hold no guides are listed as `Empty - do not prepare`. Limits: 100,000 guides
 and 10,000 guides per well.
 
-### Diagnostics (`/diagnostics`, `/healthz`)
+### App Status (`/app-status`, `/healthz`)
 
 The same preflight as `grna doctor`: Bowtie binary and index, Python and ViennaRNA, NCBI reachability, memory.
 
@@ -180,11 +181,11 @@ NC_000017.11:g.7674220_7674221insA insertion         NC_000017.11:g.7674220_7674
 ## Project layout
 
 ```
-DiseaseMutationsApp/   Blazor Server app (Pages, Components, Services, Shared, wwwroot)
-gRNA/                  F# library
+DiseaseMutationsApp/   Blazor Server app (Pages: Diana, Disease variants, Guide Pooling, Diagnostics; Components, Services, wwwroot)
+gRNA/                  F# library (DiseaseVariants.fs: Monarch + ClinVar disease search)
 gRNA.Cli/              the grna command-line tool
-DiseaseMutationsAppTests/  NUnit + bUnit tests (library, CLI in-process, components, accessibility markup)
-DiseaseMutationsApp.E2E/   Playwright browser tests against the real UI with a fake pipeline
+DiseaseMutationsAppTests/  NUnit + bUnit tests (library, CLI in-process, components, accessibility markup, opt-in live contract tests)
+DiseaseMutationsApp.E2E/   Playwright browser tests against the real UI with a fake pipeline and a fake disease source
 docs/                  about-the-name, runtime-contract, using-the-library, design-system, manual-test-plan
 examples/standalone.fsx    run the library from F# Interactive
 scripts/check-pins.sh      dependency pinning gate
@@ -207,8 +208,8 @@ otherwise. The GitLab pipeline (`.gitlab-ci.yml`) runs the pinning gate (which a
 publishes the coverage report, and builds no images, so run `grna doctor` in the locally built image yourself.
 
 **Browser tests.** `DiseaseMutationsApp.E2E` serves the real web app with a deterministic fake pipeline (no Bowtie, ViennaRNA or
-NCBI needed) and drives Chromium with Playwright: runs, cancel and retry, limits, permalinks, CSV downloads, the pooling plate map
-and decoder, dark/light theme, a 375 px phone viewport, and an axe-core scan (WCAG 2.0 to 2.2 A/AA) of every page state. They
+NCBI needed) and drives Chromium with Playwright: runs, cancel and retry, limits, permalinks, CSV downloads, the disease search and
+its hand-off to the Diana page, the pooling plate map and decoder, dark/light theme, a 375 px phone viewport, and an axe-core scan (WCAG 2.0 to 2.2 A/AA) of every page state. They
 skip themselves, with the reason, when Chromium is not installed. To run them locally:
 
 ```bash
@@ -236,7 +237,7 @@ compose file ([`docker-compose.yml`](docker-compose.yml)); the container runs in
 
 ## Troubleshooting
 
-Start with `/diagnostics` or `grna doctor`: each failing check names its remedy.
+Start with `/app-status` or `grna doctor`: each failing check names its remedy.
 
 - **Bowtie index not found**: the base image was not built or a custom `GRNA_BOWTIE_INDEX` is wrong. `./start.sh --rebuild-bowtie`.
 - **ViennaRNA / Python errors**: `pip install viennarna==2.7.2`; check `GRNA_PYTHON`.
@@ -250,7 +251,7 @@ Start with `/diagnostics` or `grna doctor`: each failing check names its remedy.
 Single-tenant local tool: no authentication, bound to loopback by default, `Production` mode in the container (no stack traces),
 non-root user. If you publish it, put an authenticating reverse proxy in front. `/healthz` returns each check's detail (which
 contains file-system paths) only to loopback callers; from the host through Docker a request arrives from the bridge, so use
-`/diagnostics` or `grna doctor` there. The optional FORNA diagram is loaded only when you ask for it and receives the gRNA
+`/app-status` or `grna doctor` there. The optional FORNA diagram is loaded only when you ask for it and receives the gRNA
 sequence over plain http (its server does not offer https); the interface says so. Variants you enter are logged only at Debug level.
 
 ## Contributing

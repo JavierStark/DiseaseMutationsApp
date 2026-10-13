@@ -24,7 +24,7 @@ Record every run in section 9. A step that was not run is written as "not run", 
 | 1.2 | `docker run --rm --entrypoint grna <image> doctor --network` | Every line `[PASS]`, exit 0 |
 | 1.3 | `docker run --rm -w /tmp --entrypoint grna <image> doctor` (another working directory) | Same result as 1.2: the image sets `GRNA_BOWTIE_BINARY` and `GRNA_BOWTIE_INDEX` |
 | 1.4 | `curl -s localhost:5000/healthz` from the host | HTTP 200 and `"healthy":true`; the checks list shows names and statuses only (a request from the host arrives from the Docker bridge, not loopback, so no paths) |
-| 1.5 | Open `http://localhost:5000/diagnostics`, press **Run checks** | Table with all checks passing and the full detail (paths, versions) |
+| 1.5 | Open `http://localhost:5000/app-status`, press **Run checks** | Table with all checks passing and the full detail (paths, versions) |
 | 1.6 | Stop the app (`docker compose down`), start it with `GRNA_BIND=0.0.0.0` | Reachable from another device on the LAN; `/healthz` from that device shows no paths |
 | 1.7 | `docker ps` after 2 minutes | Status `healthy` |
 

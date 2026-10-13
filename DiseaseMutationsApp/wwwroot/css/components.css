@@ -171,7 +171,7 @@ button.pool-well:hover { border-color: var(--variant-strong); }
 .table-cell-center { text-align: center; }
 .sequence-block { font-family: var(--font-mono); background: var(--surface-sunken); border: 1px solid var(--border); }
 
-/* ===== Diagnostics ===== */
+/* ===== App Status ===== */
 .check-pass { color: var(--state-success); }
 .check-warn { color: var(--state-warning); }
 .check-fail { color: var(--state-danger); }

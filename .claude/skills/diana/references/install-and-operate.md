@@ -84,7 +84,7 @@ The CLI needs only the app image, not a running container: `docker run --rm --en
 | Shell in the container | `docker exec -it disease-mutations-app sh` (interactive humans only) |
 | Remove images | `docker compose down && docker image rm disease-mutations-app:latest` (keep the base image unless you really want to re-download the index) |
 
-The web UI: `http://localhost:5000/` (guide design), `/pooling`, `/diagnostics`. `GET /healthz` returns
+The web UI: `http://localhost:5000/` (guide design), `/disease` (find a disease's ClinVar variants and send them to the guide design page; same search as `grna disease`), `/pooling`, `/app-status`. `GET /healthz` returns
 `{"healthy":true,"checkedAt":...,"checks":[{"name","status":"pass|warn|fail","detail","remedy"}]}` with HTTP 200, or 503.
 
 ## Configuration knobs

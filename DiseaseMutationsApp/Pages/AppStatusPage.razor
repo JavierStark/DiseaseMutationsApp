@@ -1,12 +1,12 @@
-@page "/diagnostics"
+@page "/app-status"
 @using DiseaseMutationsApp.Services
-@inject DiagnosticsService Service
+@inject AppStatusService Service
 
-<PageTitle>Diagnostics</PageTitle>
+<PageTitle>App Status</PageTitle>
 
 <div class="container-max-xl">
     <header class="page-header">
-        <h1 class="page-title" tabindex="-1">Diagnostics</h1>
+        <h1 class="page-title" tabindex="-1">App Status</h1>
         <div class="page-rail" aria-hidden="true"></div>
         <p class="page-lede">Checks that the native tools and network access the pipeline depends on are working. The same checks run as <code>grna doctor</code> and at <code>/healthz</code>.</p>
     </header>
@@ -23,9 +23,9 @@
             <Icon Name="@(report.Healthy ? "check" : "alert")" />@(report.Healthy ? "All required checks passed." : "One or more required checks failed.")
             <span class="text-muted ms-2">@report.CheckedAt.ToLocalTime().ToString("T")</span>
         </div>
-        <div class="grna-table-wrap" tabindex="0" role="region" aria-label="Diagnostic checks, scrollable">
+        <div class="grna-table-wrap" tabindex="0" role="region" aria-label="App status checks, scrollable">
             <table class="table grna-table">
-                <caption class="visually-hidden">Diagnostic checks</caption>
+                <caption class="visually-hidden">App status checks</caption>
                 <thead><tr><th scope="col">Check</th><th scope="col">Result</th><th scope="col">Detail</th><th scope="col">What to do</th></tr></thead>
                 <tbody>
                 @foreach (var c in report.Checks)
@@ -44,7 +44,7 @@
 </div>
 
 @code {
-    private DiagnosticsReport? _report;
+    private AppStatusReport? _report;
     private bool _running;
 
     protected override Task OnInitializedAsync() => RunAsync();

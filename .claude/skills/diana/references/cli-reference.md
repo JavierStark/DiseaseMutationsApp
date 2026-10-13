@@ -93,7 +93,7 @@ Healthy image output (verified):
 
 `[Bowtie 2 (.bt2)]` is expected: the binary is Bowtie **1**.3.1 and it reads this `.bt2` index (see
 `docs/runtime-contract.md`, V1). The same checks back `GET /healthz` (JSON, HTTP 503 when unhealthy) and the web
-`/diagnostics` page.
+`/app-status` page.
 
 ## `grna resolve`
 

@@ -95,13 +95,13 @@ public class PoolingPageTests : E2EBase
     }
 }
 
-public class DiagnosticsPageTests : E2EBase
+public class AppStatusPageTests : E2EBase
 {
     [Test]
     public async Task RunChecks_ShowsATable_WithRemedies_ForWhatIsMissingOnThisMachine()
     {
-        await GotoAsync("/diagnostics");
-        await Expect(Page).ToHaveTitleAsync("Diagnostics");
+        await GotoAsync("/app-status");
+        await Expect(Page).ToHaveTitleAsync("App Status");
         await Page.GetByRole(AriaRole.Button, new() { Name = "Run checks" }).ClickAsync();
 
         var table = Page.GetByRole(AriaRole.Table);
@@ -146,12 +146,12 @@ public class AccessibilityScanTests : E2EBase
     }
 
     [Test]
-    public async Task DiagnosticsPage_AfterRunningChecks()
+    public async Task AppStatusPage_AfterRunningChecks()
     {
-        await GotoAsync("/diagnostics");
+        await GotoAsync("/app-status");
         await Page.GetByRole(AriaRole.Button, new() { Name = "Run checks" }).ClickAsync();
         await Expect(Page.GetByRole(AriaRole.Table)).ToBeVisibleAsync();
-        await AssertNoSeriousViolationsAsync("diagnostics page");
+        await AssertNoSeriousViolationsAsync("App Status page");
     }
 
     [Test]
@@ -180,7 +180,7 @@ public class PhoneLayoutTests : E2EBase
 
     [TestCase("/")]
     [TestCase("/pooling")]
-    [TestCase("/diagnostics")]
+    [TestCase("/app-status")]
     public async Task NoHorizontalPageScroll(string path)
     {
         await GotoAsync(path);

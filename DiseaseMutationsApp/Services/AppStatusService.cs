@@ -2,18 +2,18 @@ using gRNA;
 
 namespace DiseaseMutationsApp.Services;
 
-public record DiagnosticCheck(string Name, string Status, string Detail, string Remedy);
+public record AppStatusCheck(string Name, string Status, string Detail, string Remedy);
 
-public record DiagnosticsReport(bool Healthy, DateTimeOffset CheckedAt, IReadOnlyList<DiagnosticCheck> Checks);
+public record AppStatusReport(bool Healthy, DateTimeOffset CheckedAt, IReadOnlyList<AppStatusCheck> Checks);
 
 /// <summary>Runs the library's preflight checks (shared with `grna doctor`) with a short cache.</summary>
-public class DiagnosticsService
+public class AppStatusService
 {
     /// <summary>
     /// What /healthz returns. Loopback callers get the full report; anyone else only the verdict and each check's
     /// name and status, because the detail and remedy texts contain file-system paths of the host.
     /// </summary>
-    public static object HealthzPayload(DiagnosticsReport report, bool isLoopback) =>
+    public static object HealthzPayload(AppStatusReport report, bool isLoopback) =>
         isLoopback
             ? report
             : new
@@ -26,10 +26,10 @@ public class DiagnosticsService
     private static readonly TimeSpan CacheFor = TimeSpan.FromSeconds(30);
 
     private readonly SemaphoreSlim _gate = new(1, 1);
-    private DiagnosticsReport? _cached;
+    private AppStatusReport? _cached;
     private bool _cachedNetwork;
 
-    public async Task<DiagnosticsReport> GetReportAsync(bool includeNetwork, bool forceRefresh = false)
+    public async Task<AppStatusReport> GetReportAsync(bool includeNetwork, bool forceRefresh = false)
     {
         await _gate.WaitAsync();
         try
@@ -44,10 +44,10 @@ public class DiagnosticsService
             var env = GrnaEnvironmentModule.getCurrent();
             var results = await Diagnostics.runAll(env, includeNetwork);
             var checks = results
-                .Select(r => new DiagnosticCheck(r.Name, r.Status.IsPass ? "pass" : r.Status.IsWarn ? "warn" : "fail", r.Detail, r.Remedy))
+                .Select(r => new AppStatusCheck(r.Name, r.Status.IsPass ? "pass" : r.Status.IsWarn ? "warn" : "fail", r.Detail, r.Remedy))
                 .ToList();
 
-            _cached = new DiagnosticsReport(Diagnostics.isHealthy(results), DateTimeOffset.UtcNow, checks);
+            _cached = new AppStatusReport(Diagnostics.isHealthy(results), DateTimeOffset.UtcNow, checks);
             _cachedNetwork = includeNetwork;
             return _cached;
         }
