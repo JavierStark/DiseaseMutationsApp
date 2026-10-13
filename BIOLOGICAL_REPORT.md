@@ -158,7 +158,7 @@ type gRNAResult =
 The key evaluation criteria are:
 
 **a) Guanine-Cytosine (GC) content:**
-* **Concept:** The stability of the gRNA-target DNA duplex is influenced by GC content. Too low a content can result in unstable binding, while too high a content can hinder Cas13 dissociation after cutting. The generally accepted optimal range is **40-60%**.
+* **Concept:** The stability of the gRNA-target DNA duplex is influenced by GC content. Too low a content can result in unstable binding, while too high a content can hinder Cas13 dissociation after cutting. The range used is **40-60%**. *[Needs source: no Cas13-specific GC range was found; 40-60% is reported for DNA-targeting guide design. Treat it as a borrowed heuristic until a Cas13 reference is added, see docs/literature-candidates.md.]*
 * **Implementation:** `calculateGCScore` assigns a score of 1.0 when the GC content is inside the ideal range, **boundaries included** (`lower <= GC% <= upper`). Outside that range the score falls back to a value proportional to the distance from the ideal (`gc/40` below, `(100-gc)/40` above), so it always stays within 0-1. (Earlier versions treated the bounds as exclusive, which made exactly 40% GC score 1.5 and outrank a perfect 50% candidate; fixed with boundary tests.)
 
 ```fsharp
@@ -174,7 +174,7 @@ let calculateGCScore (gcContent: float) (lowerThreshold: float, upperThreshold: 
 ```
 
 **b) Presence of homopolymers:**
-* **Concept:** Runs of four or more identical nucleotides (e.g., `AAAA` or `GGGG`) can cause premature termination of gRNA transcription by RNA polymerase III and have been shown to reduce CRISPR efficiency.
+* **Concept:** Runs of four or more identical nucleotides (e.g., `AAAA` or `GGGG`) can cause premature termination of gRNA transcription by RNA polymerase III and have been shown to reduce CRISPR efficiency. *[Needs source and a caveat: the Pol III termination signal reported in the literature is a run of T (U in the RNA), at least four and reliably six, and only matters when the guide is expressed from a Pol III promoter; the code counts runs of any base. See docs/literature-candidates.md.]*
 * **Implementation:** `countHomopolymers` uses a regular expression to count occurrences of these problematic runs in the RNA alphabet (`A`, `C`, `G`, `U`). A lower count is better.
 
 **c) Off-target analysis with Bowtie:**
