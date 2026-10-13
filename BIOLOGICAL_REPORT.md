@@ -174,7 +174,7 @@ let calculateGCScore (gcContent: float) (lowerThreshold: float, upperThreshold: 
 ```
 
 **b) Presence of homopolymers:**
-* **Concept:** Runs of four or more identical nucleotides (e.g., `AAAA` or `GGGG`) can cause premature termination of gRNA transcription by RNA polymerase III and have been shown to reduce CRISPR efficiency. *[Needs source and a caveat: the Pol III termination signal reported in the literature is a run of T (U in the RNA), at least four and reliably six, and only matters when the guide is expressed from a Pol III promoter; the code counts runs of any base. See docs/literature-candidates.md.]*
+* **Concept:** Runs of four or more identical nucleotides (e.g., `AAAA` or `GGGG`) can cause premature termination of gRNA transcription by RNA polymerase III and have been shown to reduce CRISPR efficiency. *[Team decision, 2026-10-13: runs of any of the four bases are counted, not only U. Be aware that the Pol III termination signal reported in the literature is a run of T (U in the RNA), at least four and reliably six, and only matters when the guide is expressed from a Pol III promoter; for A, C and G runs this report has no source yet. See docs/literature-candidates.md.]*
 * **Implementation:** `countHomopolymers` uses a regular expression to count occurrences of these problematic runs in the RNA alphabet (`A`, `C`, `G`, `U`). A lower count is better.
 
 **c) Off-target analysis with Bowtie:**
