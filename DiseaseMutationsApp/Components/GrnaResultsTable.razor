@@ -68,11 +68,13 @@
                 </tr>
                 </thead>
                 <tbody>
-                @foreach (var g in PageItems)
+                @foreach (var (g, rowIndex) in PageItems.Select((item, index) => (item, index)))
                 {
                     var spacer = g.Sequence;
+                    var rowKey = $"{rowIndex}|{spacer}";   // position + text: identical windows must not share a key
+                    var lociKey = rowKey + "-loci";
                     var risk = AlignmentRisk.Describe(g.Allignments);
-                    <tr class="@(spacer == SelectedSpacer ? "row-selected" : null)" @key="spacer">
+                    <tr class="@(spacer == SelectedSpacer ? "row-selected" : null)" @key="rowKey">
                         <td class="text-nowrap">
                             <button type="button" class="btn btn-sm btn-outline-secondary" @onclick="() => OnCreateGrna.InvokeAsync(spacer)"
                                     aria-pressed="@(spacer == SelectedSpacer ? "true" : "false")" title="Use this spacer to build the complete gRNA">
@@ -103,7 +105,7 @@
                     </tr>
                     @if (_loci.TryGetValue(spacer, out var state))
                     {
-                        <tr class="loci-row" @key="@($"{spacer}-loci")">
+                        <tr class="loci-row" @key="lociKey">
                             <td></td>
                             <td colspan="7">
                                 @if (state.Loading)

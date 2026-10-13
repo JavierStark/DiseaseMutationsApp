@@ -179,3 +179,25 @@ public class AccessibilityTests : BunitContext
         });
     }
 }
+
+/// <summary>Rows were keyed by the spacer text, so two identical windows (repeats, low-complexity DNA) crashed the circuit.</summary>
+public class ResultsTableKeyTests : BunitContext
+{
+    public ResultsTableKeyTests()
+    {
+        JSInterop.Mode = JSRuntimeMode.Loose;
+        Services.AddSingleton(new GrnaService(Microsoft.Extensions.Logging.Abstractions.NullLogger<GrnaService>.Instance, new gRNA.Services.BowtieService()));
+    }
+
+    [Test]
+    public void IdenticalSpacers_RenderAsSeparateRows_WithoutThrowing()
+    {
+        var same = new GRNAResult
+        {
+            Sequence = "AAAAAAAAAAAAAAAAAAAAAAAAAAAA", SeedRegion = "AAAAAAAA", Score = 1, Allignments = 1,
+            RnaFoldResult = new RNAFoldResult { Structure = "....", Energy = -1.0 }, MutationHighlightStart = -1
+        };
+        var cut = Render<GrnaResultsTable>(p => p.Add(c => c.GRNAs, new List<GRNAResult> { same, same with { Rank = 2 }, same with { Rank = 3 } }));
+        Assert.That(cut.FindAll("tbody tr"), Has.Count.EqualTo(3));
+    }
+}

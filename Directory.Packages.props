@@ -13,5 +13,8 @@
     <PackageVersion Include="coverlet.collector" Version="10.1.0" />
     <PackageVersion Include="bunit" Version="2.11.3" />
     <PackageVersion Include="JunitXml.TestLogger" Version="8.0.0" />
+    <!-- End-to-end browser tests (DiseaseMutationsApp.E2E): dev-only, not shipped. -->
+    <PackageVersion Include="Microsoft.Playwright.NUnit" Version="1.62.0" />
+    <PackageVersion Include="Deque.AxeCore.Playwright" Version="4.12.0" />
   </ItemGroup>
 </Project>

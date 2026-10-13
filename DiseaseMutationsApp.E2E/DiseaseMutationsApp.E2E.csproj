@@ -1,0 +1,23 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+    <PropertyGroup>
+        <TargetFramework>net9.0</TargetFramework>
+        <ImplicitUsings>enable</ImplicitUsings>
+        <Nullable>enable</Nullable>
+        <IsPackable>false</IsPackable>
+        <IsTestProject>true</IsTestProject>
+    </PropertyGroup>
+
+    <ItemGroup>
+        <PackageReference Include="Microsoft.NET.Test.Sdk" />
+        <PackageReference Include="NUnit" />
+        <PackageReference Include="NUnit3TestAdapter" />
+        <PackageReference Include="Microsoft.Playwright.NUnit" />
+        <PackageReference Include="Deque.AxeCore.Playwright" />
+    </ItemGroup>
+
+    <ItemGroup>
+        <ProjectReference Include="..\DiseaseMutationsApp\DiseaseMutationsApp.csproj" />
+    </ItemGroup>
+
+</Project>

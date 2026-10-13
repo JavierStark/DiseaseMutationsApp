@@ -259,41 +259,52 @@ namespace DiseaseMutationsApp.Pages
 
         // ===== Export =====
 
+        /// <summary>The variants a tab holds: the resolved notations of an rsID, or the single HGVS that was entered.</summary>
+        private static IEnumerable<HgvsData> ReportLeaves(InputTabData tab) =>
+            tab.Type == InputType.RS
+                ? (IEnumerable<HgvsData>?)tab.ChildHgvsList ?? Array.Empty<HgvsData>()
+                : tab.DirectHgvs is { } direct ? new[] { direct } : Array.Empty<HgvsData>();
+
+        private static bool HasResults(InputTabData tab) => ReportLeaves(tab).Any(h => h.GRNAs is { Count: > 0 });
+
+        private static void AppendTabRows(StringBuilder sb, InputTabData tab)
+        {
+            foreach (var hgvs in ReportLeaves(tab))
+            {
+                GrnaCsvSchema.AppendRows(sb, tab.RsId, hgvs.Hgvs, hgvs.GRNAs, GrnaCsvSchema.MutatedType, hgvs.IsComplement);
+                GrnaCsvSchema.AppendRows(sb, tab.RsId, hgvs.Hgvs, hgvs.OriginalGRNAs, GrnaCsvSchema.OriginalType, hgvs.IsComplement);
+            }
+        }
+
+        /// <summary>One tab's report: the same CSV for an rsID (all its notations) and for a plain HGVS input.</summary>
         private async Task DownloadReport(InputTabData tabData)
         {
-            if (tabData.ChildHgvsList == null || !tabData.ChildHgvsList.Any()) return;
+            if (!ReportLeaves(tabData).Any()) return;
 
             var sb = new StringBuilder();
             AppendProvenance(sb);
             sb.AppendLine(GrnaCsvSchema.Header);
-            foreach (var hgvs in tabData.ChildHgvsList)
-            {
-                GrnaCsvSchema.AppendRows(sb, tabData.RsId, hgvs.Hgvs, hgvs.GRNAs, GrnaCsvSchema.MutatedType, hgvs.IsComplement);
-                GrnaCsvSchema.AppendRows(sb, tabData.RsId, hgvs.Hgvs, hgvs.OriginalGRNAs, GrnaCsvSchema.OriginalType, hgvs.IsComplement);
-            }
+            AppendTabRows(sb, tabData);
 
-            var fileName = $"Report_RS{tabData.RsId}_{DateTime.Now:yyyyMMdd_HHmmss}.csv";
+            var label = tabData.Type == InputType.RS
+                ? $"RS{tabData.RsId}"
+                : System.Text.RegularExpressions.Regex.Replace(tabData.DisplayLabel, "[^A-Za-z0-9._-]", "_");
+            var fileName = $"Report_{label}_{DateTime.Now:yyyyMMdd_HHmmss}.csv";
             await JSRuntime.InvokeVoidAsync("downloadFile", fileName, "text/csv;charset=utf-8", sb.ToString());
         }
 
-        private async Task DownloadAllRsReports()
+        /// <summary>Every input in one file, rsIDs and plain HGVS alike.</summary>
+        private async Task DownloadAllReports()
         {
-            var allRsTabs = _inputTabs.Where(t => t.Type == InputType.RS && t.ChildHgvsList != null).ToList();
-            if (!allRsTabs.Any()) return;
+            var tabs = _inputTabs.Where(HasResults).ToList();
+            if (tabs.Count == 0) return;
 
             var sb = new StringBuilder();
             AppendProvenance(sb);
             sb.AppendLine(GrnaCsvSchema.Header);
-            foreach (var tabData in allRsTabs)
-            {
-                foreach (var hgvs in tabData.ChildHgvsList!)
-                {
-                    GrnaCsvSchema.AppendRows(sb, tabData.RsId, hgvs.Hgvs, hgvs.GRNAs, GrnaCsvSchema.MutatedType, hgvs.IsComplement);
-                    GrnaCsvSchema.AppendRows(sb, tabData.RsId, hgvs.Hgvs, hgvs.OriginalGRNAs, GrnaCsvSchema.OriginalType, hgvs.IsComplement);
-                }
-            }
+            foreach (var tab in tabs) AppendTabRows(sb, tab);
 
-            var fileName = $"Report_AllRS_{DateTime.Now:yyyyMMdd_HHmmss}.csv";
+            var fileName = $"Report_All_{DateTime.Now:yyyyMMdd_HHmmss}.csv";
             await JSRuntime.InvokeVoidAsync("downloadFile", fileName, "text/csv;charset=utf-8", sb.ToString());
         }
 

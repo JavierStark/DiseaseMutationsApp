@@ -30,7 +30,7 @@ hits=$(grep -rnE 'Version="[^"]*[*,[(][^"]*"' --include=*.csproj --include=*.fsp
   | grep -vE '/(obj|bin)/' || true)
 [ -z "$hits" ] || report "NuGet version range or wildcard:
 $hits"
-for proj in gRNA/gRNA.fsproj DiseaseMutationsApp/DiseaseMutationsApp.csproj gRNA.Cli/gRNA.Cli.fsproj DiseaseMutationsAppTests/DiseaseMutationsAppTests.csproj; do
+for proj in gRNA/gRNA.fsproj DiseaseMutationsApp/DiseaseMutationsApp.csproj gRNA.Cli/gRNA.Cli.fsproj DiseaseMutationsAppTests/DiseaseMutationsAppTests.csproj DiseaseMutationsApp.E2E/DiseaseMutationsApp.E2E.csproj; do
   [ -f "$(dirname "$proj")/packages.lock.json" ] || report "missing packages.lock.json for $proj"
 done
 [ -f global.json ] || report "global.json missing"

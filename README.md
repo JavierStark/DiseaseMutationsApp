@@ -36,7 +36,7 @@ in the DNA you would order, and exports an order-ready oligo CSV.
 - **Files and sessions**: load inputs from a plain list, a Diana CSV report or a saved session; *Save session* downloads a
   JSON document (inputs, spacer/seed, shortlist) that `grna design --input session.json` reads too.
 - **Permalinks**: *Copy link to this design* encodes `?hgvs=...&spacer=28&seed=10-17`; opening it fills in the form (also `?rs=`) and you press **Run analysis**; a link never starts a run on its own.
-- **CSV report**: per rsID or all at once, with the spacer/seed parameters in a leading `#` line and a `Strand` column.
+- **CSV report**: per input (rsID or HGVS) or all inputs at once, with the spacer/seed parameters in a leading `#` line and a `Strand` column.
 
 ### Guide Pooling (`/pooling`)
 

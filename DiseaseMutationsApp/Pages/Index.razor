@@ -151,9 +151,8 @@
             @if (_inputTabs.Count > 0)
             {
                 var progress = Runner.GetProgress();
-                var allRsTabs = _inputTabs.Where(t => t.Type == InputType.RS && t.ChildHgvsList != null).ToList();
-                var allRsReady = allRsTabs.Count > 0 && !Runner.IsBusy;
-                var anyRsHasResults = allRsTabs.Any(t => t.ChildHgvsList!.Any(h => h.GRNAs is { Count: > 0 }));
+                var anyHasResults = _inputTabs.Any(HasResults);
+                var reportsReady = anyHasResults && !Runner.IsBusy;
 
                 <div class="run-bar" role="status" aria-live="polite">
                     <span class="run-bar-text">
@@ -169,9 +168,9 @@
                     {
                         <progress max="@progress.Total" value="@progress.Finished" aria-label="Analysis progress"></progress>
                     }
-                    @if (allRsTabs.Count > 0)
+                    @if (anyHasResults)
                     {
-                        <button type="button" class="btn btn-sm btn-outline-secondary" disabled="@(!allRsReady || !anyRsHasResults)" @onclick="DownloadAllRsReports">
+                        <button type="button" class="btn btn-sm btn-outline-secondary" disabled="@(!reportsReady)" @onclick="DownloadAllReports">
                             <Icon Name="download" />Download all reports
                         </button>
                     }
@@ -205,6 +204,11 @@
                         }
                         else if (tab.Type == InputType.HGVS && tab.DirectHgvs != null)
                         {
+                            <div class="d-flex justify-content-end mb-2">
+                                <button type="button" class="btn btn-sm btn-outline-secondary" disabled="@(Runner.IsBusy || !HasResults(tab))" @onclick="() => DownloadReport(tab)">
+                                    <Icon Name="download" />Download report
+                                </button>
+                            </div>
                             <ErrorBoundary @key="tab.DirectHgvs.Id">
                                 <ChildContent>
                                     <HgvsDetailPanel @key="tab.DirectHgvs.Id" Data="tab.DirectHgvs" SeedStart="_seedStart" SeedEnd="_seedEnd" />
