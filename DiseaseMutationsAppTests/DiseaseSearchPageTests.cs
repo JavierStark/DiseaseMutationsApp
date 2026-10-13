@@ -332,7 +332,7 @@ public class DiseaseSearchPageTests : BunitContext
             Assert.That(cut.FindAll("tbody tr"), Has.Count.EqualTo(8));
             Assert.That(text, Does.Contain("8 ClinVar records classified pathogenic or likely pathogenic for OMIM 603903"));
             Assert.That(text, Does.Contain("7 of the 8 listed have an rsID (7 distinct"));
-            Assert.That(text, Does.Contain("the other 1 show a genomic HGVS instead"));
+            Assert.That(text, Does.Contain("; 1 show a genomic HGVS instead"));
             Assert.That(cut.FindAll("tbody tr")[6].TextContent, Does.Contain("NC_000012.12:g.102000007A>G"), "the row without an rsID shows its HGVS");
             Assert.That(cut.Find("a[href='https://www.ncbi.nlm.nih.gov/snp/rs501']"), Is.Not.Null);
             Assert.That(cut.Find("a[href='https://www.ncbi.nlm.nih.gov/clinvar/variation/1001/']"), Is.Not.Null);
@@ -351,6 +351,8 @@ public class DiseaseSearchPageTests : BunitContext
             Assert.That(rows[6].QuerySelector("input[type=checkbox]")!.HasAttribute("disabled"), Is.True, "no rsID and no HGVS: nothing to send");
             Assert.That(rows[6].QuerySelector("input[type=checkbox]")!.GetAttribute("aria-label"), Does.Contain("has no rsID or HGVS to send"));
             Assert.That(rows[6].QuerySelectorAll("button").First().HasAttribute("disabled"), Is.True);
+            Assert.That(System.Text.RegularExpressions.Regex.Replace(cut.Find("p.helper-note[role=status]").TextContent, @"\s+", " "),
+                Does.Contain("1 have neither (for example repeat expansions) and cannot be sent"), "the summary does not call it an HGVS row");
         });
     }
 

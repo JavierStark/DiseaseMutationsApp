@@ -78,6 +78,24 @@ accession, failures not cached. The body goes through `parseFasta`, which accept
 Resolves an rsID (digits only, no `rs`; anything else raises `GrnaInputException` before a request is made). Returns `[]` for "no `NG_` mapping"; raises `GrnaUpstreamException` for HTTP failure.
 `NM_`/`NC_` notations are not returned.
 
+### `DiseaseVariants`
+Finds candidate rsIDs for a disease (see `docs/runtime-contract.md` for the services and limits). Pure functions over JSON text:
+`parseQuery` (name, OMIM number or MONDO id; bad input raises `GrnaInputException`), `parseMonarchSearch`, `parseMonarchEntity`,
+`parseElinkHistory`, `parseEsearch`, `parseEsummary`, `spdiToHgvs` (ClinVar canonical SPDI to a genomic HGVS that `HGVS.HGVS`
+accepts; `None` when it cannot be represented), `reviewStars`, `meetsSignificance`, and the exports `formatRsList`, `formatCsv`,
+`formatTsv`, `formatJson`. The network is `DiseaseVariantClient(http, options, gate)` (`DiseaseVariantClient.Shared` is the
+process-wide one): `FindDiseasesAsync text ct`, `ResolveOmimNumbersAsync disease includeSubtypes ct` and
+`GetVariantsAsync omimNumbers minSignificance progress ct`, which returns a `DiseaseVariantResult` (`Variants`, `TotalMatching`,
+`Truncated`). The `HttpClient` and the clock are injectable, so tests stub the services. A record's `RsId` is `"rs334"` with the prefix.
+
+```fsharp
+let client = gRNA.DiseaseVariants.DiseaseVariantClient.Shared
+let! matches = client.FindDiseasesAsync("sickle cell disease", ct)
+let! resolved = client.ResolveOmimNumbersAsync(matches.Head, false, ct)
+let! result = client.GetVariantsAsync(resolved.OmimNumbers, gRNA.DiseaseVariants.PathogenicOrLikely, null, ct)
+printf "%s" (gRNA.DiseaseVariants.formatRsList result.Variants)   // one rsID per line
+```
+
 ### `SpacerFinder`
 `scaffold`, `slidingWindow`, `calculateGCContent`, `calculateGCScore gc (lower, upper)` (inclusive bounds),
 `countHomopolymers`, `getgRNAResult`, `getOrderedgRna` (the whole ranking, async), `applySubstitutionSpecialRule`,
@@ -118,3 +136,4 @@ can implicate innocent guides at the intersections of their pools; those are rep
 - Alignment counts saturate at 6 (`-k 6`).
 - The substitution special rule carries the pre-adjustment alignment and fold values onto the adjusted sequence (re-running Bowtie and the folding for one changed base was judged redundant).
 - Bowtie is serialised per process.
+- `DiseaseVariants` reads at most 3,000 ClinVar records per search (`Truncated` says so), uses only germline classifications, expands subtypes one level (40 at most), and derives an HGVS only for simple A/C/G/T variants (not 3'-shifted: the same sequence results either way).

@@ -284,9 +284,17 @@ module RNAFoldWrapper =
         // Parses the result to extract structure and energy.
 ```
 
-### 7. OMIM disease mapping and Levenshtein distance (removed)
+### 7. From a disease to variants: the OMIM scraper (removed) and its replacement
 
-An earlier version could start from an OMIM disease number, scrape the allelic-variant tables to find `rs` identifiers, and use Levenshtein distance between phenotype names to filter them. OMIM's site now sits behind a CAPTCHA that blocks the scraper, so the feature was switched off and, on 2026-10-13, its code (`Omim.fs`, `LevenshteinDistance.fs`, a sample dbSNP response) was deleted from the repository; the git history keeps it. Nothing in the application depends on it. Variants are entered as HGVS notations or rsIDs only, and the README lists OMIM-to-rsID conversion under future work.
+An earlier version could start from an OMIM disease number, scrape the allelic-variant tables of omim.org to find `rs` identifiers, and use Levenshtein distance between phenotype names to filter them. OMIM's site now sits behind a CAPTCHA that blocks the scraper, so the feature was switched off and, on 2026-10-13, its code (`Omim.fs`, `LevenshteinDistance.fs`, a sample dbSNP response) was deleted; the git history keeps it.
+
+The same need is now met from different sources (`gRNA/DiseaseVariants.fs`, the `/disease` page and `grna disease`). A disease name, OMIM number or MONDO id is resolved through the Monarch Initiative API (names, OMIM cross-references and subtypes), and the variants are the ClinVar records that NCBI links to those OMIM numbers, kept when ClinVar's germline classification is pathogenic or likely pathogenic (or any classification, on request). What this does and does not claim:
+
+- The scientific content is ClinVar's: its classification and review status are shown as they are, nothing is re-interpreted, and the page says the list is a candidate list, not a clinical statement. ClinVar changes every month, so a count is only true on the day it was read.
+- There is no phenotype-similarity filter any more (the Levenshtein step is gone): the filter is ClinVar's classification, and the link to the disease is NCBI's OMIM-to-ClinVar link, which follows any reference to the OMIM number in a record. Most linked records name the disease among their own conditions (on 2026-10-13: 922 of 923 for OMIM 261600, 1,490 of 1,517 for 219700, 65 of 80 for 603903, 6 of 8 for 143100), but some do not (a transthyretin variant appeared under Huntington disease), so each record's conditions are displayed and none is dropped silently. Records of haplotypes and compound alleles can share one rsID.
+- An OMIM *phenotypic series* (Fanconi anemia) has no numeric OMIM number of its own, so the numbers of its direct subtypes are used (up to 40). Searches stop at 3,000 records and say so.
+- Where ClinVar has no rsID, a genomic HGVS on GRCh38 is derived from its canonical SPDI (substitutions, deletions, insertions, duplications and deletion-insertions of A/C/G/T only). It is left-aligned rather than 3'-shifted, which yields the same sequence; Diana still checks the stated reference base against the real sequence.
+- Whether the guides designed for these variants are good is the job of the rest of the pipeline described in this report; the disease search only proposes inputs.
 
 ### Main Workflow
 

@@ -184,8 +184,10 @@
                                 @{
                                     var withRs = AllVariants.Count(v => v.RsId is not null);
                                     var distinctRs = AllVariants.Where(v => v.RsId is not null).Select(v => v.RsId).Distinct().Count();
+                                    var hgvsOnly = AllVariants.Count(v => v.RsId is null && v.Hgvs is not null);
+                                    var neither = AllVariants.Count(v => v.RsId is null && v.Hgvs is null);
                                 }
-                                @withRs of the @AllVariants.Count listed have an rsID (@distinctRs distinct: haplotype and compound records can share one)@(AllVariants.Count - withRs > 0 ? $"; the other {AllVariants.Count - withRs} show a genomic HGVS instead" : "").
+                                @withRs of the @AllVariants.Count listed have an rsID (@distinctRs distinct: haplotype and compound records can share one)@(hgvsOnly > 0 ? $"; {hgvsOnly} show a genomic HGVS instead" : "")@(neither > 0 ? $"; {neither} have neither (for example repeat expansions) and cannot be sent" : "").
                                 @if (result.SubtypesTotal > 0)
                                 {
                                     <text> Consulted @result.SubtypesChecked of @result.SubtypesTotal subtypes.</text>
@@ -323,7 +325,8 @@
 
                                 <p class="helper-note mt-3 mb-0">
                                     A candidate list built from ClinVar&rsquo;s own classifications (queried live; ClinVar changes every month), not a clinical statement:
-                                    check each variant before relying on it. Data: NCBI ClinVar; disease names and subtypes: Monarch Initiative.
+                                    check each variant before relying on it. ClinVar links a record to an OMIM number through any of its references, so a few records
+                                    are only loosely related to the disease: read the conditions shown under each variant. Data: NCBI ClinVar; disease names and subtypes: Monarch Initiative.
                                 </p>
                             }
                         }

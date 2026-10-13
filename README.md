@@ -38,6 +38,32 @@ in the DNA you would order, and exports an order-ready oligo CSV.
 - **Permalinks**: *Copy link to this design* encodes `?hgvs=...&spacer=28&seed=10-17`; opening it fills in the form (also `?rs=`) and you press **Run analysis**; a link never starts a run on its own.
 - **CSV report**: per input (rsID or HGVS) or all inputs at once, with the spacer/seed parameters in a leading `#` line and a `Strand` column.
 
+### Disease variants (`/disease`)
+
+Start from a disease instead of a variant list. Type a disease name, an OMIM number or a MONDO id, pick the match, and Diana
+reads the ClinVar variants linked to it (the pathogenic and likely pathogenic ones by default) into a sortable, filterable,
+paged table. Tick the ones you want and **send them to the Diana page**: *Send to Diana (replace)* fills its input box, *Add to
+Diana inputs* keeps what is there and drops duplicates, and every row has a one-click send. Nothing runs until you press
+**Run analysis**. Selections can also be copied or downloaded as a list for `grna design --input`.
+
+- **Where the data comes from.** The disease name is looked up in the Monarch Initiative knowledge graph (no key, no CAPTCHA),
+  which also gives a disease's subtypes: a group such as Fanconi anemia has only an OMIM *phenotypic series*, so its numeric OMIM
+  numbers are taken from its subtypes (up to 40). The variants come from NCBI ClinVar through E-utilities (`elink` from OMIM, a
+  server-side classification filter, batched `esummary`), the same NCBI host Diana already uses. This replaces the OMIM scraper
+  that a CAPTCHA ended.
+- **What a row is.** The rsID (linked to dbSNP) or, when ClinVar has none, a genomic HGVS on GRCh38 derived from ClinVar's
+  canonical SPDI, which Diana also accepts. Classification and review status (stars) are ClinVar's own and are not
+  re-interpreted. Haplotype and compound records can share one rsID, so the page also counts distinct rsIDs.
+- **Limits, all stated on the page.** At most 3,000 ClinVar records are read per search (a larger disease is flagged
+  incomplete). Diana takes 50 inputs per run, so a bigger selection can be copied or downloaded but not sent. Some rsIDs have no
+  gene-level `NG_` mapping in dbSNP and will show "No HGVS notations found" on the Diana page.
+- **Not a clinical statement.** It is a candidate list built from ClinVar's classifications, queried live (ClinVar changes
+  every month). Check each variant before relying on it. NCBI links a ClinVar record to an OMIM number through any of its
+  references, so a few records are only loosely related to the disease (measured on 2026-10-13: for PKU 922 of 923 records cite the
+  number in their own conditions, for cystic fibrosis 1,490 of 1,517, for sickle cell 65 of 80, for Huntington disease 6 of 8). The
+  conditions of each record are shown so you can judge; nothing is filtered out on that basis.
+- The same search runs headless: `grna disease 603903 --out sickle.txt`.
+
 ### Guide Pooling (`/pooling`)
 
 Screening a whole variant panel one guide per well is infeasible, so guides are pooled combinatorially: at most K guides per
@@ -58,6 +84,7 @@ The same preflight as `grna doctor`: Bowtie binary and index, Python and ViennaR
 ```
 grna doctor [--network]
 grna resolve rs334
+grna disease "sickle cell disease" --format rs --out sickle.txt   # rsIDs of a disease's pathogenic ClinVar variants
 grna design --hgvs NC_000017.11:g.7674220C>T --spacer 28 --seed 10-17 [--complement] [--format csv|json|tsv]
 grna design --input variants.txt|session.json --out report.csv   # batch, resumable, bounded concurrency
 grna fold "GAUUUAGACUACCCC..."
@@ -81,6 +108,7 @@ When every variant fails the exit code is that of the first failed variant in in
 
 ```
 HGVS / rsID -> NCBI sequence -> sliding windows -> Bowtie (off-targets) + ViennaRNA (folding) -> ranked spacers
+disease name / OMIM / MONDO -> Monarch (names, subtypes) + NCBI ClinVar -> rsIDs or HGVS -> (the input of the line above)
 ```
 
 The Docker setup is two images. The **Bowtie base image** (`Dockerfile.bowtie-base`) downloads and checksum-verifies the
@@ -137,6 +165,8 @@ with `GRNA_BOWTIE_BINARY`, `GRNA_BOWTIE_INDEX`, `GRNA_PYTHON`, then `dotnet run 
 
 ## Using Diana
 
+0. No variant list yet? Open **Disease variants**, find the disease, tick the variants you want and press **Send to Diana**:
+   the inputs below are filled in for you.
 1. Enter variants (comma-separated) and the spacer size and seed range (defaults 28 and 10-17, inclusive, 0-based in the spacer; spacer size 18 to 60).
 2. **Run analysis**. rsIDs resolve first, then variants are analysed two at a time. Cancel the run, or one variant, any time.
 3. Pick a tab per input; for rsIDs a second strip lists each resolved variant on both strands. Tabs use arrow keys.
@@ -216,6 +246,10 @@ E2E_INSTALL_BROWSERS=1 dotnet test DiseaseMutationsApp.E2E   # first time only: 
 dotnet test DiseaseMutationsApp.E2E                          # afterwards
 ```
 
+**Disease search against the real services.** The Monarch and ClinVar client is tested offline against captured real
+responses and a stubbed HTTP layer. `GRNA_LIVE_TESTS=1 dotnet test --filter Category=Live` runs a few contract tests against
+the real services (not part of CI); it is the early warning for an upstream change, which is what ended the OMIM feature.
+
 **Manual tests.** What automation cannot check (the real index and tools, Docker routes per OS, assistive technology) is in
 [docs/manual-test-plan.md](docs/manual-test-plan.md), with a log of the runs made so far.
 
@@ -243,7 +277,11 @@ Start with `/diagnostics` or `grna doctor`: each failing check names its remedy.
 - **"No HGVS notations found" for an rsID**: dbSNP returned no `NG_` mapping (different from a lookup error).
 - **Connection lost banner**: the server keeps the run going for about 10 minutes and the page rejoins automatically.
 - **Slow alignments**: never move the index to a volume (it must stay in the image layer).
-- **NCBI rate limits**: set `GRNA_NCBI_API_KEY` and `GRNA_NCBI_CONTACT`.
+- **NCBI rate limits**: set `GRNA_NCBI_API_KEY` and `GRNA_NCBI_CONTACT` (the disease search uses them too).
+- **"No disease matched"**: Monarch has nothing under that text. Try another spelling, an OMIM number or a MONDO id.
+- **"The list is incomplete"** (Disease variants): more than 3,000 ClinVar records matched. Choose "Pathogenic only" or a more
+  specific disease.
+- **Monarch or NCBI "could not be reached" / HTTP 429**: press **Try again**; with many users behind one address set the NCBI key.
 
 ## Security
 
@@ -251,7 +289,8 @@ Single-tenant local tool: no authentication, bound to loopback by default, `Prod
 non-root user. If you publish it, put an authenticating reverse proxy in front. `/healthz` returns each check's detail (which
 contains file-system paths) only to loopback callers; from the host through Docker a request arrives from the bridge, so use
 `/diagnostics` or `grna doctor` there. The optional FORNA diagram is loaded only when you ask for it and receives the gRNA
-sequence over plain http (its server does not offer https); the interface says so. Variants you enter are logged only at Debug level.
+sequence over plain http (its server does not offer https); the interface says so. Variants you enter are logged only at Debug level. The Disease variants page sends what you type (a disease name or
+number) to the Monarch API and to NCBI (with `tool=gRNA` and `email=$GRNA_NCBI_CONTACT`); no sequence or guide leaves the machine.
 
 ## Contributing
 
@@ -272,7 +311,7 @@ record of contributors and sources.
 
 ## Acknowledgments and references
 
-Bowtie (Langmead et al.), ViennaRNA (Lorenz et al.), forna (Kerpedjiev et al.), NCBI and dbSNP, the Genome Reference Consortium,
+Bowtie (Langmead et al.), ViennaRNA (Lorenz et al.), forna (Kerpedjiev et al.), NCBI, dbSNP and ClinVar, the Monarch Initiative, the Genome Reference Consortium,
 the HGVS nomenclature, and the CRISPR community. Licenses for these components are stated in
 [THIRD-PARTY-NOTICES.md](THIRD-PARTY-NOTICES.md).
 
@@ -289,6 +328,8 @@ We checked each resource's own citation guidance (July-October 2026) and cite ac
 | NCBI (sequences, E-utilities, Variation Services) | Acknowledge NCBI/NLM; automated clients should send `tool` and `email` (we send `tool=gRNA` and `email=$GRNA_NCBI_CONTACT` with sequence downloads; the Variation Services lookup sends neither) | 6-8 |
 | GRCh38 | Cite the assembly (Schneider et al. 2017) | 9 |
 | HGVS nomenclature | Cite den Dunnen et al. 2016 rather than the web site | 10 |
+| ClinVar | Attribute ClinVar as the data source in publications and websites, and cite a ClinVar publication (its documentation lists them); it notes the data are not for direct diagnostic use | 16 |
+| Monarch Initiative | We found no citation page of its own; we cite its 2024 *Nucleic Acids Research* paper. OMIM numbers appear only as identifiers: no OMIM content is fetched | 17 |
 
 ### References
 
@@ -307,16 +348,19 @@ We checked each resource's own citation guidance (July-October 2026) and cite ac
 13. Bryson, J. W. (2025). Array Assembler Provides Greatly Simplified crRNA Array Design for CRISPR Cas12 and Cas13 Variants. *ACS Synthetic Biology*. https://doi.org/10.1021/acssynbio.5c00100
 14. Karimi, M. et al. (2025). Integrating AI and CRISPR Cas13a for rapid detection of tomato brown rugose fruit virus. *Scientific Reports*, 15(1). https://doi.org/10.1038/s41598-025-11405-z
 15. Gruber, A. R., Lorenz, R., Bernhart, S. H., Neuböck, R., & Hofacker, I. L. (2008). The Vienna RNA websuite. *Nucleic Acids Research*, 36(Web Server issue). https://doi.org/10.1093/nar/gkn188
+16. Landrum, M. J., Chitipiralla, S., Kaur, K., Brown, G., Chen, C., Hart, J., Hoffman, D., Jang, W., Liu, C., Maddipatla, Z., Maiti, R., Mitchell, J., Rezaie, T., Riley, G., Song, G., Yang, J., Ziyabari, L., Russette, A., & Kattman, B. L. (2025). ClinVar: updates to support classifications of both germline and somatic variants. *Nucleic Acids Research*, 53(D1). https://doi.org/10.1093/nar/gkae1090
+17. Putman, T. E., Schaper, K., Matentzoglu, N., et al. (2024). The Monarch Initiative in 2024: an analytic platform integrating phenotypes, genes and diseases across species. *Nucleic Acids Research*, 52(D1), D938-D949. https://doi.org/10.1093/nar/gkad1082
 
 ## Future enhancements
 
-- OMIM to rsID conversion if a CAPTCHA-resistant approach appears (blocked upstream; the earlier scraper was removed from the repository, see git history).
+- Disease variants: add the rsIDs ClinVar lacks through the ClinGen Allele Registry, expand subtypes more than one level, read
+  more than 3,000 records, and include somatic and oncogenicity classifications (only germline classifications are used today).
 - Coding-sequence (`c.`) positions: convert them with the CDS start from the NCBI record. Today they are refused, because using them as plain sequence indexes would design around the wrong position.
 - Run history and design comparison (reopen or diff earlier runs with different spacer/seed).
 - Enzyme presets with a configurable scaffold: today the 36 nt Cas13 scaffold and the 28 / 10-17 defaults are fixed, and
   presets for other Cas variants need their scaffolds and seed windows verified against the literature first.
 
-Not planned: additional genome assemblies (each adds ~4 GB to the image), authentication, ClinVar integration.
+Not planned: additional genome assemblies (each adds ~4 GB to the image), authentication.
 
 ## Migration notes
 
