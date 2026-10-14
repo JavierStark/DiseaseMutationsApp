@@ -1,0 +1,622 @@
+{
+ "header": {
+  "type": "esummary",
+  "version": "0.3"
+ },
+ "result": {
+  "uids": [
+   "5016062",
+   "5016061",
+   "5016045",
+   "5012435",
+   "5005024",
+   "4799094",
+   "2768314",
+   "2677441",
+   "15333",
+   "9999999"
+  ],
+  "5016062": {
+   "uid": "5016062",
+   "obj_type": "Deletion",
+   "accession": "VCV005016062",
+   "title": "NM_000277.3(PAH):c.398del (p.Asn133fs)",
+   "variation_set": [
+    {
+     "measure_id": "5123375",
+     "variation_xrefs": [],
+     "variation_name": "NM_000277.3(PAH):c.398del (p.Asn133fs)",
+     "variation_loc": [
+      {
+       "status": "current",
+       "assembly_name": "GRCh38",
+       "chr": "12",
+       "band": "",
+       "start": "102877505",
+       "stop": "102877505",
+       "inner_start": "",
+       "inner_stop": "",
+       "outer_start": "",
+       "outer_stop": "",
+       "display_start": "102877505",
+       "display_stop": "102877505",
+       "assembly_acc_ver": "GCF_000001405.38",
+       "annotation_release": "",
+       "alt": "",
+       "ref": ""
+      }
+     ],
+     "variant_type": "Deletion",
+     "canonical_spdi": "NC_000012.12:102877504:TT:T"
+    }
+   ],
+   "germline_classification": {
+    "description": "Pathogenic",
+    "last_evaluated": "2026/06/21 00:00",
+    "review_status": "criteria provided, single submitter",
+    "trait_set": [
+     {
+      "trait_name": "Phenylketonuria"
+     }
+    ]
+   },
+   "gene_sort": "PAH",
+   "genes": [
+    {
+     "symbol": "PAH",
+     "geneid": "5053",
+     "strand": "-",
+     "source": "submitted"
+    }
+   ],
+   "molecular_consequence_list": [
+    "frameshift variant"
+   ]
+  },
+  "5016061": {
+   "uid": "5016061",
+   "obj_type": "single nucleotide variant",
+   "accession": "VCV005016061",
+   "title": "NM_000277.3(PAH):c.648C>A (p.Tyr216Ter)",
+   "variation_set": [
+    {
+     "measure_id": "5123374",
+     "variation_xrefs": [],
+     "variation_name": "NM_000277.3(PAH):c.648C>A (p.Tyr216Ter)",
+     "variation_loc": [
+      {
+       "status": "current",
+       "assembly_name": "GRCh38",
+       "chr": "12",
+       "band": "",
+       "start": "102855194",
+       "stop": "102855194",
+       "inner_start": "",
+       "inner_stop": "",
+       "outer_start": "",
+       "outer_stop": "",
+       "display_start": "102855194",
+       "display_stop": "102855194",
+       "assembly_acc_ver": "GCF_000001405.38",
+       "annotation_release": "",
+       "alt": "",
+       "ref": ""
+      }
+     ],
+     "variant_type": "single nucleotide variant",
+     "canonical_spdi": "NC_000012.12:102855193:G:T"
+    }
+   ],
+   "germline_classification": {
+    "description": "Pathogenic",
+    "last_evaluated": "2026/06/20 00:00",
+    "review_status": "criteria provided, single submitter",
+    "trait_set": [
+     {
+      "trait_name": "Phenylketonuria"
+     }
+    ]
+   },
+   "gene_sort": "PAH",
+   "genes": [
+    {
+     "symbol": "PAH",
+     "geneid": "5053",
+     "strand": "-",
+     "source": "submitted"
+    }
+   ],
+   "molecular_consequence_list": [
+    "nonsense"
+   ]
+  },
+  "5016045": {
+   "uid": "5016045",
+   "obj_type": "Duplication",
+   "accession": "VCV005016045",
+   "title": "NM_000277.3(PAH):c.474dup (p.Lys159fs)",
+   "variation_set": [
+    {
+     "measure_id": "5123358",
+     "variation_xrefs": [],
+     "variation_name": "NM_000277.3(PAH):c.474dup (p.Lys159fs)",
+     "variation_loc": [
+      {
+       "status": "current",
+       "assembly_name": "GRCh38",
+       "chr": "12",
+       "band": "",
+       "start": "102866630",
+       "stop": "102866631",
+       "inner_start": "",
+       "inner_stop": "",
+       "outer_start": "",
+       "outer_stop": "",
+       "display_start": "102866630",
+       "display_stop": "102866631",
+       "assembly_acc_ver": "GCF_000001405.38",
+       "annotation_release": "",
+       "alt": "",
+       "ref": ""
+      }
+     ],
+     "variant_type": "Duplication",
+     "canonical_spdi": "NC_000012.12:102866630:CC:CCC"
+    }
+   ],
+   "germline_classification": {
+    "description": "Pathogenic",
+    "last_evaluated": "2026/06/17 00:00",
+    "review_status": "criteria provided, single submitter",
+    "trait_set": [
+     {
+      "trait_name": "Phenylketonuria"
+     }
+    ]
+   },
+   "gene_sort": "PAH",
+   "genes": [
+    {
+     "symbol": "PAH",
+     "geneid": "5053",
+     "strand": "-",
+     "source": "submitted"
+    }
+   ],
+   "molecular_consequence_list": [
+    "frameshift variant"
+   ]
+  },
+  "5012435": {
+   "uid": "5012435",
+   "obj_type": "Indel",
+   "accession": "VCV005012435",
+   "title": "NM_000277.3(PAH):c.729_730delinsGGATTT (p.Pro244fs)",
+   "variation_set": [
+    {
+     "measure_id": "5124118",
+     "variation_xrefs": [],
+     "variation_name": "NM_000277.3(PAH):c.729_730delinsGGATTT (p.Pro244fs)",
+     "variation_loc": [
+      {
+       "status": "current",
+       "assembly_name": "GRCh38",
+       "chr": "12",
+       "band": "",
+       "start": "102852927",
+       "stop": "102852928",
+       "inner_start": "",
+       "inner_stop": "",
+       "outer_start": "",
+       "outer_stop": "",
+       "display_start": "102852927",
+       "display_stop": "102852928",
+       "assembly_acc_ver": "GCF_000001405.38",
+       "annotation_release": "",
+       "alt": "",
+       "ref": ""
+      }
+     ],
+     "variant_type": "Indel",
+     "canonical_spdi": "NC_000012.12:102852926:GT:AAATCC"
+    }
+   ],
+   "germline_classification": {
+    "description": "Pathogenic",
+    "last_evaluated": "2023/10/26 00:00",
+    "review_status": "criteria provided, single submitter",
+    "trait_set": [
+     {
+      "trait_name": "Phenylketonuria"
+     }
+    ]
+   },
+   "gene_sort": "PAH",
+   "genes": [
+    {
+     "symbol": "PAH",
+     "geneid": "5053",
+     "strand": "-",
+     "source": "submitted"
+    }
+   ],
+   "molecular_consequence_list": [
+    "frameshift variant"
+   ]
+  },
+  "5005024": {
+   "uid": "5005024",
+   "obj_type": "single nucleotide variant",
+   "accession": "VCV005005024",
+   "title": "NM_000277.3(PAH):c.1336A>G (p.Ser446Gly)",
+   "variation_set": [
+    {
+     "measure_id": "5115337",
+     "variation_xrefs": [],
+     "variation_name": "NM_000277.3(PAH):c.1336A>G (p.Ser446Gly)",
+     "variation_loc": [
+      {
+       "status": "current",
+       "assembly_name": "GRCh38",
+       "chr": "12",
+       "band": "",
+       "start": "102839198",
+       "stop": "102839198",
+       "inner_start": "",
+       "inner_stop": "",
+       "outer_start": "",
+       "outer_stop": "",
+       "display_start": "102839198",
+       "display_stop": "102839198",
+       "assembly_acc_ver": "GCF_000001405.38",
+       "annotation_release": "",
+       "alt": "",
+       "ref": ""
+      }
+     ],
+     "variant_type": "single nucleotide variant",
+     "canonical_spdi": "NC_000012.12:102839197:T:C"
+    }
+   ],
+   "germline_classification": {
+    "description": "Uncertain significance",
+    "last_evaluated": "1/01/01 00:00",
+    "review_status": "criteria provided, single submitter",
+    "trait_set": [
+     {
+      "trait_name": "Phenylketonuria"
+     }
+    ]
+   },
+   "gene_sort": "PAH",
+   "genes": [
+    {
+     "symbol": "PAH",
+     "geneid": "5053",
+     "strand": "-",
+     "source": "submitted"
+    }
+   ],
+   "molecular_consequence_list": [
+    "missense variant"
+   ]
+  },
+  "4799094": {
+   "uid": "4799094",
+   "obj_type": "single nucleotide variant",
+   "accession": "VCV004799094",
+   "title": "NM_000277.3(PAH):c.1065+13C>T",
+   "variation_set": [
+    {
+     "measure_id": "4918843",
+     "variation_xrefs": [],
+     "variation_name": "NM_000277.3(PAH):c.1065+13C>T",
+     "variation_loc": [
+      {
+       "status": "current",
+       "assembly_name": "GRCh38",
+       "chr": "12",
+       "band": "12q23.2",
+       "start": "102844323",
+       "stop": "102844323",
+       "inner_start": "",
+       "inner_stop": "",
+       "outer_start": "",
+       "outer_stop": "",
+       "display_start": "102844323",
+       "display_stop": "102844323",
+       "assembly_acc_ver": "GCF_000001405.38",
+       "annotation_release": "",
+       "alt": "",
+       "ref": ""
+      }
+     ],
+     "variant_type": "single nucleotide variant",
+     "canonical_spdi": "NC_000012.12:102844322:G:A"
+    }
+   ],
+   "germline_classification": {
+    "description": "Likely benign",
+    "last_evaluated": "2026/01/28 00:00",
+    "review_status": "criteria provided, single submitter",
+    "trait_set": [
+     {
+      "trait_name": "Phenylketonuria"
+     }
+    ]
+   },
+   "gene_sort": "PAH",
+   "genes": [
+    {
+     "symbol": "PAH",
+     "geneid": "5053",
+     "strand": "-",
+     "source": "submitted"
+    }
+   ],
+   "molecular_consequence_list": [
+    "intron variant"
+   ]
+  },
+  "2768314": {
+   "uid": "2768314",
+   "obj_type": "Insertion",
+   "accession": "VCV002768314",
+   "title": "NM_000277.3(PAH):c.957_958insTT (p.Lys320fs)",
+   "variation_set": [
+    {
+     "measure_id": "2929482",
+     "variation_xrefs": [
+      {
+       "db_source": "ClinGen",
+       "db_id": "CA2575266826"
+      },
+      {
+       "db_source": "dbSNP",
+       "db_id": "2499617336"
+      }
+     ],
+     "variation_name": "NM_000277.3(PAH):c.957_958insTT (p.Lys320fs)",
+     "variation_loc": [
+      {
+       "status": "current",
+       "assembly_name": "GRCh38",
+       "chr": "12",
+       "band": "12q23.2",
+       "start": "102846906",
+       "stop": "102846907",
+       "inner_start": "",
+       "inner_stop": "",
+       "outer_start": "",
+       "outer_stop": "",
+       "display_start": "102846906",
+       "display_stop": "102846907",
+       "assembly_acc_ver": "GCF_000001405.38",
+       "annotation_release": "",
+       "alt": "",
+       "ref": ""
+      }
+     ],
+     "variant_type": "Insertion",
+     "canonical_spdi": "NC_000012.12:102846906::AA"
+    }
+   ],
+   "germline_classification": {
+    "description": "Pathogenic",
+    "last_evaluated": "2023/10/14 00:00",
+    "review_status": "criteria provided, single submitter",
+    "trait_set": [
+     {
+      "trait_name": "Phenylketonuria"
+     }
+    ]
+   },
+   "gene_sort": "PAH",
+   "genes": [
+    {
+     "symbol": "PAH",
+     "geneid": "5053",
+     "strand": "-",
+     "source": "submitted"
+    }
+   ],
+   "molecular_consequence_list": [
+    "frameshift variant"
+   ]
+  },
+  "2677441": {
+   "uid": "2677441",
+   "obj_type": "single nucleotide variant",
+   "accession": "VCV002677441",
+   "title": "NM_000277.3(PAH):c.578C>T (p.Thr193Ile)",
+   "variation_set": [
+    {
+     "measure_id": "2836311",
+     "variation_xrefs": [
+      {
+       "db_source": "ClinGen",
+       "db_id": "CA16020819"
+      },
+      {
+       "db_source": "dbSNP",
+       "db_id": "2499626242"
+      }
+     ],
+     "variation_name": "NM_000277.3(PAH):c.578C>T (p.Thr193Ile)",
+     "variation_loc": [
+      {
+       "status": "current",
+       "assembly_name": "GRCh38",
+       "chr": "12",
+       "band": "12q23.2",
+       "start": "102855264",
+       "stop": "102855264",
+       "inner_start": "",
+       "inner_stop": "",
+       "outer_start": "",
+       "outer_stop": "",
+       "display_start": "102855264",
+       "display_stop": "102855264",
+       "assembly_acc_ver": "GCF_000001405.38",
+       "annotation_release": "",
+       "alt": "",
+       "ref": ""
+      }
+     ],
+     "variant_type": "single nucleotide variant",
+     "canonical_spdi": "NC_000012.12:102855263:G:A"
+    }
+   ],
+   "germline_classification": {
+    "description": "Conflicting classifications of pathogenicity",
+    "last_evaluated": "2026/02/05 00:00",
+    "review_status": "criteria provided, conflicting classifications",
+    "trait_set": [
+     {
+      "trait_name": "Phenylketonuria"
+     }
+    ]
+   },
+   "gene_sort": "PAH",
+   "genes": [
+    {
+     "symbol": "PAH",
+     "geneid": "5053",
+     "strand": "-",
+     "source": "submitted"
+    }
+   ],
+   "molecular_consequence_list": [
+    "missense variant"
+   ]
+  },
+  "15333": {
+   "uid": "15333",
+   "obj_type": "single nucleotide variant",
+   "accession": "VCV000015333",
+   "title": "NM_000518.5(HBB):c.20A>T (p.Glu7Val)",
+   "variation_set": [
+    {
+     "measure_id": "30372",
+     "variation_xrefs": [
+      {
+       "db_source": "ClinGen",
+       "db_id": "CA125138"
+      },
+      {
+       "db_source": "dbSNP",
+       "db_id": "334"
+      }
+     ],
+     "variation_name": "NM_000518.5(HBB):c.20A>T (p.Glu7Val)",
+     "variation_loc": [
+      {
+       "status": "current",
+       "assembly_name": "GRCh38",
+       "chr": "11",
+       "band": "11p15.4",
+       "start": "5227002",
+       "stop": "5227002",
+       "inner_start": "",
+       "inner_stop": "",
+       "outer_start": "",
+       "outer_stop": "",
+       "display_start": "5227002",
+       "display_stop": "5227002",
+       "assembly_acc_ver": "GCF_000001405.38",
+       "annotation_release": "",
+       "alt": "",
+       "ref": ""
+      }
+     ],
+     "variant_type": "single nucleotide variant",
+     "canonical_spdi": "NC_000011.10:5227001:T:A"
+    }
+   ],
+   "germline_classification": {
+    "description": "Pathogenic",
+    "last_evaluated": "2026/07/01 00:00",
+    "review_status": "criteria provided, multiple submitters, no conflicts",
+    "trait_set": [
+     {
+      "trait_name": "Hereditary persistence of fetal hemoglobin"
+     },
+     {
+      "trait_name": "METHEMOGLOBINEMIA, BETA TYPE"
+     }
+    ]
+   },
+   "gene_sort": "HBB",
+   "genes": [
+    {
+     "symbol": "HBB",
+     "geneid": "3043",
+     "strand": "-",
+     "source": "submitted"
+    },
+    {
+     "symbol": "LOC106099062",
+     "geneid": "106099062",
+     "strand": "+",
+     "source": "submitted"
+    }
+   ],
+   "molecular_consequence_list": [
+    "missense variant"
+   ]
+  },
+  "9999999": {
+   "uid": "9999999",
+   "obj_type": "Deletion",
+   "accession": "VCV005016062",
+   "title": "SYNTHETIC: record with no germline classification",
+   "variation_set": [
+    {
+     "measure_id": "5123375",
+     "variation_xrefs": [],
+     "variation_name": "NM_000277.3(PAH):c.398del (p.Asn133fs)",
+     "variation_loc": [
+      {
+       "status": "current",
+       "assembly_name": "GRCh38",
+       "chr": "12",
+       "band": "",
+       "start": "102877505",
+       "stop": "102877505",
+       "inner_start": "",
+       "inner_stop": "",
+       "outer_start": "",
+       "outer_stop": "",
+       "display_start": "102877505",
+       "display_stop": "102877505",
+       "assembly_acc_ver": "GCF_000001405.38",
+       "annotation_release": "",
+       "alt": "",
+       "ref": ""
+      }
+     ],
+     "variant_type": "Deletion",
+     "canonical_spdi": ""
+    }
+   ],
+   "germline_classification": {
+    "description": "",
+    "last_evaluated": "1/01/01 00:00",
+    "review_status": "",
+    "trait_set": []
+   },
+   "gene_sort": "PAH",
+   "genes": [
+    {
+     "symbol": "PAH",
+     "geneid": "5053",
+     "strand": "-",
+     "source": "submitted"
+    }
+   ],
+   "molecular_consequence_list": [
+    "frameshift variant"
+   ]
+  }
+ }
+}

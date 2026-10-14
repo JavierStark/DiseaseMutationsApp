@@ -1,6 +1,6 @@
 ---
 name: diana
-description: Install, start, stop, health-check and drive Diana (this repository), with a strong focus on its `grna` command-line tool (doctor, resolve, design, fold, pool). Use whenever a task involves building or running the Diana Docker images or web app, running `grna` commands or batch reports, piping CLI output into scripts or other tools, choosing between the Docker and native .NET routes, or troubleshooting an install (Bowtie binary/index, Python/ViennaRNA, NCBI, exit codes).
+description: Install, start, stop, health-check and drive Diana (this repository), with a strong focus on its `grna` command-line tool (doctor, resolve, disease, design, fold, pool). Use whenever a task involves building or running the Diana Docker images or web app, running `grna` commands or batch reports, piping CLI output into scripts or other tools, choosing between the Docker and native .NET routes, or troubleshooting an install (Bowtie binary/index, Python/ViennaRNA, NCBI, exit codes).
 ---
 
 # Diana: install, run and use the `grna` CLI
@@ -21,12 +21,13 @@ Which `grna` subcommands work where:
 |---|---|---|---|---|
 | `pool` | nothing | yes | yes | yes |
 | `resolve` | internet (NCBI dbSNP) | yes | yes | yes |
+| `disease` | internet (Monarch API + NCBI ClinVar) | yes | yes | yes |
 | `fold` | Python 3 + `viennarna==2.7.2` | yes | yes, with setup (see references/install-and-operate.md) | yes, with `pip` |
 | `doctor` | (reports on the others) | yes | runs, reports FAIL for Bowtie | yes |
 | `design` | internet + **Linux** Bowtie binary + ~4 GB GRCh38 index + ViennaRNA | **yes (use this)** | **no** (the committed Bowtie is a Linux ELF) | only with a manually provisioned index |
 
 **Default: use the Docker image** (`disease-mutations-app:latest`). It contains everything, already verified by
-`grna doctor`. Go native only for `pool`/`resolve`/`fold`, or when developing the CLI itself.
+`grna doctor`. Go native only for `pool`/`resolve`/`disease`/`fold`, or when developing the CLI itself.
 
 ## 2. Check the current state before doing anything
 

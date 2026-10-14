@@ -34,6 +34,7 @@ builder.Services.AddSingleton<gRNA.Services.BowtieService>();
 builder.Services.AddScoped<GrnaService>();
 builder.Services.AddScoped<IGrnaAnalysis>(sp => sp.GetRequiredService<GrnaService>());
 builder.Services.AddScoped<PoolingService>();
+builder.Services.AddScoped<IDiseaseVariantSource, DiseaseSearchService>();
 builder.Services.AddSingleton<AppStatusService>();
 
 // Configure Kestrel for long-running bioinformatics operations

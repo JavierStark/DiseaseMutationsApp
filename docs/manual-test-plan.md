@@ -2,7 +2,7 @@
 
 What the automated suites cannot check: the real Bowtie index, ViennaRNA and NCBI, the Docker install routes on each
 operating system, assistive technology, and behaviour over a real network. Run this before a release or after changing the
-algorithm, the Dockerfile or the scripts. The automated checks (`dotnet test`, which includes the 32 browser tests in
+algorithm, the Dockerfile or the scripts. The automated checks (`dotnet test`, which includes the 63 browser tests in
 `DiseaseMutationsApp.E2E`) must be green first.
 
 Record every run in section 9. A step that was not run is written as "not run", never left blank.
@@ -45,6 +45,32 @@ Record every run in section 9. A step that was not run is written as "not run", 
 | 2.10 | Open `http://localhost:5000/?hgvs=NC_000017.11:g.7674220C%3ET&spacer=30&seed=10-17` | Form filled, banner "opened from a link", **no run started**; the run starts only on the button |
 | 2.11 | Download the report with **Download report** (tab) and **Download all reports**, for an HGVS input and for an rsID | CSV opens in Excel with correct accents (UTF-8 BOM); same columns as `grna design --format csv` |
 | 2.12 | Edit a downloaded CSV so an `HGVS` cell starts with `=1+1`, load it again | Nothing is evaluated by the spreadsheet; the cell shows `'=1+1` |
+
+## 2a. Disease variants (real Monarch and NCBI)
+
+Needs only internet access, no Bowtie or ViennaRNA, so steps 2a.1 to 2a.12 also work with `dotnet run --project DiseaseMutationsApp
+--launch-profile http` and `http://localhost:5000/disease`. Counts are what ClinVar held on 2026-10-13 and drift by a few records a
+month: judge the order of magnitude and the behaviour, not the digit.
+
+| # | Step | Expected |
+|---|---|---|
+| 2a.1 | Open `/disease?q=sickle%20cell%20disease` | The box holds `sickle cell disease`, a banner says the link only fills the form, and **nothing is searched** until you press **Find diseases** |
+| 2a.2 | **Find diseases** | About 10 matches; the first is `sickle cell disease MONDO:0011382`, described `OMIM 603903` and preselected; the others say their subtypes will be consulted |
+| 2a.3 | **Find variants** (default classification) | About 80 ClinVar records, 78 with an rsID, 2 showing a genomic HGVS; the summary also gives the distinct rsID count (62) because haplotype records share rsIDs. Type `rs334` in **Contains**: records of the HBB gene appear, among them `NM_000518.5(HBB):c.20A>T` |
+| 2a.4 | Tick three rows and press **Send to Diana (replace)** | You land on the Diana page; the box holds exactly those three codes, a banner says so, and **no run has started**. Pressing **Run analysis** is the usual run (on the Docker route) |
+| 2a.5 | Go back with the navigation; the table and your selection are still there. Tick two more (one already sent) and press **Add to Diana inputs** | The box keeps the first three and adds only the new one; the banner says "1 input added (1 already there)" |
+| 2a.6 | The per-row **Send to Diana** button on a row with no rsID | The row's genomic HGVS (`NC_000011.10:g....`) goes into the box; Diana accepts it |
+| 2a.7 | `phenylketonuria` then **Find variants** | About 923 records, 833 with an rsID. **Pathogenic only** lists fewer |
+| 2a.8 | `cystic fibrosis`, **Find variants**, then **Select all ... matching** | About 1,500 records. The action bar says Diana takes at most 50 inputs and the two send buttons are disabled; **Copy list** and **Download list (.txt)** still work (open the file: one rsID or HGVS per line) |
+| 2a.9 | `Fanconi anemia` | The first match is a group ("phenotypic series PS227650"); **Also search its subtypes** is ticked and cannot be unticked. About 30 s later the summary says "Consulted 22 of 22 subtypes" and, because about 4,500 records match, a warning says the list is **incomplete** (3,000 read) |
+| 2a.10 | `Huntington disease` | 8 records on the day: 3 with an rsID, 3 with only a genomic HGVS, 2 repeat expansions with neither (their checkboxes are disabled, the summary says so). Two records are only loosely related (a TTR variant and a PRNP one): their conditions column shows why, and the page note warns that this happens |
+| 2a.11 | `zzzzqq`; then `OMIM:999999999`; then `OMIM:12ab`; then `22` | "No disease matched"; "No variants at this classification"; two messages "is not an OMIM number" (no request is made for the last two) |
+| 2a.12 | Start a search, press **Cancel** at once; then disconnect the network and search | "Search cancelled." and the page is usable; then a red message naming Monarch or NCBI with **Try again** (it works once the network is back) |
+| 2a.13 | Filter, sort by **Gene** and **Review**, change **Rows**, use **Previous/Next** | Rows change accordingly; the sorted header exposes its direction; the page number returns to 1 after a new filter |
+| 2a.14 | Keyboard only: Tab to a row checkbox, Space, Tab to **Send to Diana (replace)**, Enter | Works; focus order follows the visual order; with a screen reader the selection count is announced |
+| 2a.15 | Narrow the window to about 375 px | The page does not scroll sideways (the table scrolls inside its own box); the selection bar stays usable |
+| 2a.16 | CLI: `grna disease 603903 --out sickle.txt`; `grna disease "Fanconi anemia" --list`; `grna disease 603903 --format csv` | `sickle.txt` holds about 62 distinct `rs...` lines (contains `rs334`); the list shows tab-separated matches; the CSV has the header `rsID,HGVS,Gene,Classification,Review status,Stars,ClinVar ID,Variant,Conditions`. Exit 0; `grna disease zzzzqq` exits 2 |
+| 2a.17 | Docker route: `grna design --input sickle.txt --out report.csv` inside the image | A design report for the rsIDs that dbSNP maps to an `NG_` record; the others are reported "no notations", not as a failure of the run |
 
 ## 3. Command line, real tools
 
@@ -129,4 +155,20 @@ Run by Claude Code at the request of the team lead; **not** a replacement for a 
 | 1.4 | Run: HTTP 200, names and statuses only |
 | 2.10, 2.11 | Run in the browser pane: link fills the form without running; both report buttons offered for an HGVS input (the download itself was covered by the browser tests, not opened in Excel) |
 | everything else | not run |
+
+### 2026-10-13, branch `feature/disease-variants` (Disease variants), native `dotnet run`, real Monarch and NCBI
+
+Run by Claude Code while building the feature; **not** a replacement for a human pass. Docker image and Bowtie/ViennaRNA were not used.
+
+| Step | Result |
+|---|---|
+| 2a.1, 2a.2, 2a.3 | Run in the browser pane: link fills the box without searching; 10 matches, the first `sickle cell disease`; 80 records, 78 with an rsID |
+| 2a.4 | Run: three rows sent with *replace*; the Diana page showed the three codes and the banner, no run started. The run itself was not done (needs the Docker route) |
+| 2a.8 | Partly run: selecting all 64 inputs disabled both send buttons and showed the 50-input message. The copy and download buttons were not clicked in the pane (covered by the browser tests) |
+| 2a.9 | Run: 22 of 22 subtypes, 4,543 matched, 3,000 read, "incomplete" warning, about 30 s |
+| 2a.10 | Run: 8 records (3 rsIDs, 3 HGVS-only, 2 neither); two loosely related records seen (TTR, PRNP) |
+| 2a.11 | Run: the four messages (a first run was spoiled by the hidden pane dropping the websocket and was repeated) |
+| 2a.16 | Run with the built CLI: `grna disease 603903` (62 distinct rsIDs, contains rs334), `--list`, `--format csv`, exit 2 for `zzzzqq` and `OMIM:12ab` |
+| 2a.5, 2a.6, 2a.7 (UI), 2a.12 (real network cut), 2a.13, 2a.14, 2a.15, 2a.17 | not run by hand; 2a.5 to 2a.7, 2a.13 to 2a.15 are covered by the browser tests against a fake source, 2a.7 by the CLI (923 records, 833 with an rsID) |
+| Live contract tests | `GRNA_LIVE_TESTS=1 dotnet test --filter Category=Live`: 9 passed. They found the dropped compound classifications (cystic fibrosis) |
 

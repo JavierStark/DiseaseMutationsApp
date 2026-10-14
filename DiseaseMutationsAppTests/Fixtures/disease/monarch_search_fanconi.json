@@ -1,0 +1,73 @@
+{
+ "limit": 4,
+ "offset": 0,
+ "total": 28,
+ "items": [
+  {
+   "id": "MONDO:0019391",
+   "category": "biolink:Disease",
+   "name": "Fanconi anemia",
+   "xref": [
+    "DOID:13636",
+    "GARD:0006425",
+    "ICD10CM:D61.03",
+    "ICD9:284.09",
+    "MEDGEN:41967",
+    "MESH:D005199",
+    "MedDRA:10055206",
+    "NANDO:1200303",
+    "NANDO:1200891",
+    "NANDO:2200652",
+    "NCIT:C62505",
+    "OMIMPS:227650",
+    "Orphanet:84",
+    "SCTID:30575002",
+    "UMLS:C0015625"
+   ],
+   "namespace": "MONDO",
+   "score": 363.46933
+  },
+  {
+   "id": "MONDO:7770734",
+   "category": "biolink:Disease",
+   "name": "Fanconi anemia, pig",
+   "xref": [
+    "OMIA:003043-9823"
+   ],
+   "namespace": "MONDO",
+   "score": 65.51189
+  },
+  {
+   "id": "MONDO:0009213",
+   "category": "biolink:Disease",
+   "name": "Fanconi anemia complementation group C",
+   "xref": [
+    "DOID:0111087",
+    "GARD:0015168",
+    "MEDGEN:483324",
+    "NCIT:C125704",
+    "OMIM:227645",
+    "UMLS:C3468041"
+   ],
+   "namespace": "MONDO",
+   "score": 54.702866
+  },
+  {
+   "id": "MONDO:0009214",
+   "category": "biolink:Disease",
+   "name": "Fanconi anemia complementation group D2",
+   "xref": [
+    "DOID:0111083",
+    "GARD:0015169",
+    "MEDGEN:463627",
+    "NCIT:C125706",
+    "OMIM:227646",
+    "UMLS:C3160738"
+   ],
+   "namespace": "MONDO",
+   "score": 54.702866
+  }
+ ],
+ "facet_queries": [],
+ "scope": null
+}

@@ -1,0 +1,388 @@
+@page "/disease"
+@using DiseaseMutationsApp.Services
+
+<PageTitle>Disease variants</PageTitle>
+
+<div class="container-max-xl">
+    <header class="page-header">
+        <h1 class="page-title" tabindex="-1">Disease variants</h1>
+        <div class="page-rail" aria-hidden="true"></div>
+        <p class="page-lede">Find the ClinVar variants (rsIDs) linked to a disease, pick the ones you want, and send them to Diana to design guides.</p>
+    </header>
+
+    <div class="row mb-4">
+        <div class="col-lg-9 col-xl-7">
+            <div class="card">
+                <div class="card-body">
+                    <h2 class="card-title section-title"><Icon Name="flask" />1. Find the disease</h2>
+
+                    @if (_linkBanner)
+                    {
+                        <div class="alert alert-info" role="status">
+                            <Icon Name="info" />This page was opened from a link, which only fills in the search box. Press <strong>Find diseases</strong> to search.
+                        </div>
+                    }
+
+                    <form @onsubmit="FindDiseases" @onsubmit:preventDefault="true">
+                        <label for="disease-query" class="form-label">Disease name, OMIM number or MONDO id</label>
+                        <div class="d-flex flex-wrap gap-2">
+                            <input id="disease-query" type="text" class="form-control flex-grow-1 input-grow" maxlength="120" autocomplete="off"
+                                   placeholder="sickle cell disease, 603903 or MONDO:0011382"
+                                   @bind="S.Query" @bind:event="oninput" />
+                            <button type="submit" class="btn btn-primary" disabled="@(!CanFindDiseases)">
+                                <Icon Name="play" />Find diseases
+                            </button>
+                            @if (_busy == Busy.Diseases)
+                            {
+                                <button type="button" class="btn btn-outline-secondary" @onclick="Cancel"><Icon Name="stop" />Cancel</button>
+                            }
+                        </div>
+                        <small class="helper-note mt-2 d-block">
+                            Names are looked up in the Monarch Initiative knowledge graph. An OMIM number is used as it is. Examples:
+                            <span class="font-monospace">phenylketonuria</span>, <span class="font-monospace">cystic fibrosis</span>, <span class="font-monospace">OMIM:603903</span>.
+                        </small>
+                    </form>
+
+                    @if (S.Matches is { Count: 0 })
+                    {
+                        <div class="alert alert-info mt-3 mb-0" role="status">
+                            <div class="alert-heading"><Icon Name="info" />No disease matched</div>
+                            <div>Nothing in Monarch matched <span class="font-monospace">@S.Query</span>. Try another spelling, an OMIM number (for example 261600) or a MONDO id.</div>
+                        </div>
+                    }
+                </div>
+            </div>
+        </div>
+    </div>
+
+    @if (S.Matches is { Count: > 0 })
+    {
+        <div class="row mb-4">
+            <div class="col-lg-9 col-xl-7">
+                <div class="card">
+                    <div class="card-body">
+                        <h2 class="card-title section-title"><Icon Name="settings" />2. Choose and search ClinVar</h2>
+
+                        <fieldset class="mb-3">
+                            <legend class="form-label">@S.Matches.Count disease@(S.Matches.Count == 1 ? "" : "s") found; choose one</legend>
+                            <div class="match-list">
+                                @foreach (var m in S.Matches)
+                                {
+                                    var inputId = $"match-{m.Id.Replace(':', '-')}";
+                                    <div class="match-item" @key="m.Id">
+                                        <input class="form-check-input" type="radio" name="disease-match" id="@inputId"
+                                               checked="@(S.SelectedMatchId == m.Id)" disabled="@IsBusy" @onchange="() => SelectMatch(m)" />
+                                        <label for="@inputId">
+                                            <span class="match-name">@m.Name</span>
+                                            <span class="match-id font-monospace">@m.Id</span>
+                                            <span class="helper-note d-block">@Describe(m)</span>
+                                        </label>
+                                    </div>
+                                }
+                            </div>
+                        </fieldset>
+
+                        @if (SelectedMatch is { } selected)
+                        {
+                            <div class="row g-3 mb-3">
+                                <div class="col-sm-6">
+                                    <label for="min-significance" class="form-label">Classification</label>
+                                    <select id="min-significance" class="form-select" @bind="S.Significance" disabled="@IsBusy">
+                                        <option value="@DiseaseSignificance.PathogenicOrLikely">Pathogenic and likely pathogenic</option>
+                                        <option value="@DiseaseSignificance.PathogenicOnly">Pathogenic only</option>
+                                        <option value="@DiseaseSignificance.Any">Everything ClinVar links (includes benign and uncertain)</option>
+                                    </select>
+                                </div>
+                                <div class="col-sm-6 d-flex align-items-end">
+                                    <div class="form-check mb-2">
+                                        <input id="include-subtypes" class="form-check-input" type="checkbox" @bind="S.IncludeSubtypes"
+                                               disabled="@(IsBusy || selected.NeedsSubtypes)" />
+                                        <label class="form-check-label" for="include-subtypes">
+                                            Also search its subtypes
+                                            @if (selected.NeedsSubtypes)
+                                            {
+                                                <span class="helper-note d-block">Required: this disease is a group with no OMIM number of its own.</span>
+                                            }
+                                        </label>
+                                    </div>
+                                </div>
+                            </div>
+                        }
+
+                        <div class="d-flex flex-wrap gap-2">
+                            <button type="button" class="btn btn-primary" @onclick="FindVariants" disabled="@(!CanFindVariants)">
+                                <Icon Name="play" />Find variants
+                            </button>
+                            @if (_busy == Busy.Variants)
+                            {
+                                <button type="button" class="btn btn-outline-secondary" @onclick="Cancel"><Icon Name="stop" />Cancel</button>
+                            }
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    }
+
+    <div class="run-bar @(_busy == Busy.None && _error is null && _notice is null ? "visually-hidden" : null)" role="status" aria-live="polite" id="disease-status">
+        @if (_busy == Busy.Diseases)
+        {
+            <span class="run-bar-text">Looking up diseases&hellip;</span>
+        }
+        else if (_busy == Busy.Variants)
+        {
+            <span class="run-bar-text">
+                @(_progress is null ? "Starting" : _progress.Stage)&hellip;
+                @if (_progress is { Total: > 0 })
+                {
+                    <text> @_progress.Done of @_progress.Total</text>
+                }
+            </span>
+            @if (_progress is { Total: > 0 })
+            {
+                <progress max="@_progress.Total" value="@_progress.Done" aria-label="Search progress"></progress>
+            }
+        }
+        else if (_notice is not null)
+        {
+            <span class="run-bar-text">@_notice</span>
+        }
+    </div>
+
+    @if (_error is not null)
+    {
+        <div class="alert alert-danger" role="alert">
+            <div class="alert-heading"><Icon Name="alert" />The search did not complete</div>
+            <div>@_error</div>
+            @if (_retry is not null)
+            {
+                <button type="button" class="btn btn-sm btn-outline-secondary mt-2" @onclick="_retry"><Icon Name="retry" />Try again</button>
+            }
+        </div>
+    }
+
+    @if (S.Result is { } result && S.ResultDisease is { } disease)
+    {
+        <ErrorBoundary>
+            <ChildContent>
+                <div class="card mb-4">
+                    <div class="card-body">
+                        <h2 class="card-title section-title mb-2"><Icon Name="table" />3. Variants of @disease.Name</h2>
+
+                        @if (result.OmimNumbers.Count == 0)
+                        {
+                            <div class="alert alert-info mb-0" role="status">
+                                <div class="alert-heading"><Icon Name="info" />No OMIM number to search</div>
+                                <div>Monarch lists no numeric OMIM number for @disease.Name@(result.SubtypesTotal > 0 ? $" or for the {result.SubtypesChecked} of its {result.SubtypesTotal} subtypes that were checked" : "").</div>
+                            </div>
+                        }
+                        else
+                        {
+                            <p class="helper-note" role="status">
+                                @result.TotalMatching ClinVar record@(result.TotalMatching == 1 ? "" : "s")@(string.IsNullOrEmpty(SignificanceLabel) ? "" : $" classified {SignificanceLabel}")
+                                for OMIM @string.Join(", ", result.OmimNumbers.Take(8))@(result.OmimNumbers.Count > 8 ? $" and {result.OmimNumbers.Count - 8} more" : "").
+                                @{
+                                    var withRs = AllVariants.Count(v => v.RsId is not null);
+                                    var distinctRs = AllVariants.Where(v => v.RsId is not null).Select(v => v.RsId).Distinct().Count();
+                                    var hgvsOnly = AllVariants.Count(v => v.RsId is null && v.Hgvs is not null);
+                                    var neither = AllVariants.Count(v => v.RsId is null && v.Hgvs is null);
+                                }
+                                @withRs of the @AllVariants.Count listed have an rsID (@distinctRs distinct: haplotype and compound records can share one)@(hgvsOnly > 0 ? $"; {hgvsOnly} show a genomic HGVS instead" : "")@(neither > 0 ? $"; {neither} have neither (for example repeat expansions) and cannot be sent" : "").
+                                @if (result.SubtypesTotal > 0)
+                                {
+                                    <text> Consulted @result.SubtypesChecked of @result.SubtypesTotal subtypes.</text>
+                                }
+                            </p>
+
+                            @if (result.Truncated)
+                            {
+                                <div class="alert alert-warning" role="alert">
+                                    <div class="alert-heading"><Icon Name="alert" />The list is incomplete</div>
+                                    <div>@result.TotalMatching records matched but only @AllVariants.Count could be read in one search. Choose &ldquo;Pathogenic only&rdquo;, or search a more specific disease.</div>
+                                </div>
+                            }
+
+                            @if (AllVariants.Count == 0)
+                            {
+                                <div class="alert alert-info mb-0" role="status">
+                                    <div class="alert-heading"><Icon Name="info" />No variants at this classification</div>
+                                    <div>ClinVar has no @(string.IsNullOrEmpty(SignificanceLabel) ? "" : SignificanceLabel + " ")record linked to these OMIM numbers. Try &ldquo;Everything ClinVar links&rdquo;.</div>
+                                </div>
+                            }
+                            else
+                            {
+                                <div class="d-flex flex-wrap gap-2 mb-3">
+                                    <button type="button" class="btn btn-sm btn-outline-secondary" @onclick="DownloadAllRsIds"><Icon Name="download" />All rsIDs (.txt)</button>
+                                    <button type="button" class="btn btn-sm btn-outline-secondary" @onclick="DownloadTable"><Icon Name="download" />Table (.csv)</button>
+                                </div>
+
+                                <div class="filter-row" role="search" aria-label="Filter variants">
+                                    <div>
+                                        <label class="form-label" for="variant-filter">Contains</label>
+                                        <input id="variant-filter" type="text" class="form-control form-control-sm filter-wide" placeholder="gene, rs, condition&hellip;"
+                                               @bind="S.FilterText" @bind:event="oninput" @bind:after="FilterChanged" />
+                                    </div>
+                                    <div class="form-check mb-1">
+                                        <input id="only-rs" class="form-check-input" type="checkbox" @bind="S.OnlyWithRsId" @bind:after="FilterChanged" />
+                                        <label class="form-check-label" for="only-rs">Only with an rsID</label>
+                                    </div>
+                                    <div>
+                                        <label class="form-label" for="variant-page-size">Rows</label>
+                                        <select id="variant-page-size" class="form-select form-select-sm" @bind="S.PageSize" @bind:after="PageSizeChanged">
+                                            <option value="10">10</option>
+                                            <option value="25">25</option>
+                                            <option value="50">50</option>
+                                            <option value="100">100</option>
+                                        </select>
+                                    </div>
+                                    @if (FilterActive)
+                                    {
+                                        <button type="button" class="btn btn-sm btn-outline-secondary" @onclick="ClearFilters">Clear filters</button>
+                                    }
+                                    <button type="button" class="btn btn-sm btn-outline-secondary" @onclick="SelectAllMatching" disabled="@(SelectableMatching == 0)">
+                                        Select all @SelectableMatching matching
+                                    </button>
+                                </div>
+
+                                <p class="helper-note" role="status">
+                                    Showing @PageItems.Count() of @View.Count variant@(View.Count == 1 ? "" : "s")@(View.Count != AllVariants.Count ? $" (filtered from {AllVariants.Count})" : "").
+                                    Rows without an rsID can still be sent: Diana accepts their genomic HGVS.
+                                </p>
+
+                                <div class="grna-table-wrap" tabindex="0" role="region" aria-label="Variants, scrollable">
+                                    <table class="table table-hover table-sm grna-table">
+                                        <caption class="visually-hidden">Variants of @disease.Name. Use the checkboxes to select; use the column header buttons to sort.</caption>
+                                        <thead>
+                                        <tr>
+                                            <th scope="col"><span class="visually-hidden">Select</span></th>
+                                            @Header("rsID or HGVS", DiseaseSortColumn.Variant)
+                                            @Header("Gene", DiseaseSortColumn.Gene)
+                                            @Header("ClinVar variant", DiseaseSortColumn.Name)
+                                            @Header("Classification", DiseaseSortColumn.Classification)
+                                            @Header("Review", DiseaseSortColumn.Stars)
+                                            <th scope="col"><span class="visually-hidden">Actions</span></th>
+                                        </tr>
+                                        </thead>
+                                        <tbody>
+                                        @foreach (var v in PageItems)
+                                        {
+                                            var label = v.DianaInput ?? v.Name;
+                                            <tr class="@(S.Selected.Contains(v.ClinVarId) ? "row-selected" : null)" @key="v.ClinVarId">
+                                                <td>
+                                                    <input type="checkbox" class="form-check-input" checked="@S.Selected.Contains(v.ClinVarId)"
+                                                           disabled="@(!IsSelectable(v))"
+                                                           aria-label="@(IsSelectable(v) ? $"Select {label}" : $"{v.Name} has no rsID or HGVS to send")"
+                                                           @onchange="e => ToggleRow(v, (bool)(e.Value ?? false))" />
+                                                </td>
+                                                <td class="seq-cell">
+                                                    @if (v.RsId is not null)
+                                                    {
+                                                        <a href="@DbSnpUrl(v.RsId)" target="_blank" rel="noopener noreferrer">@v.RsId<span class="visually-hidden"> (opens dbSNP)</span></a>
+                                                    }
+                                                    else if (v.Hgvs is not null)
+                                                    {
+                                                        <span title="No rsID in ClinVar; Diana accepts this genomic HGVS">@v.Hgvs</span>
+                                                    }
+                                                    else
+                                                    {
+                                                        <span class="text-muted">none</span>
+                                                    }
+                                                </td>
+                                                <td>@v.Gene</td>
+                                                <td>
+                                                    @v.Name
+                                                    @if (v.Conditions.Count > 0)
+                                                    {
+                                                        <span class="helper-note d-block">@string.Join("; ", v.Conditions.Take(3))@(v.Conditions.Count > 3 ? $"; +{v.Conditions.Count - 3} more" : "")</span>
+                                                    }
+                                                </td>
+                                                <td class="text-nowrap">@(v.Significance.Length == 0 ? "not classified" : v.Significance)</td>
+                                                <td class="text-nowrap" title="@v.ReviewStatus">
+                                                    <span aria-hidden="true">@Stars(v.Stars)</span><span class="visually-hidden">@v.Stars of 4 stars, @v.ReviewStatus</span>
+                                                </td>
+                                                <td class="text-nowrap">
+                                                    <button type="button" class="btn btn-sm btn-outline-secondary btn-icon-only" disabled="@(!IsSelectable(v))"
+                                                            aria-label="Send @label to Diana" title="Add to the Diana inputs" @onclick="() => SendOne(v)">
+                                                        <Icon Name="send" />
+                                                    </button>
+                                                    <a class="btn btn-sm btn-outline-secondary btn-icon-only" href="@ClinVarUrl(v.ClinVarId)" target="_blank" rel="noopener noreferrer"
+                                                       aria-label="Open @v.Name in ClinVar" title="Open in ClinVar"><Icon Name="external" /></a>
+                                                </td>
+                                            </tr>
+                                        }
+                                        </tbody>
+                                    </table>
+                                </div>
+
+                                @if (PageCount > 1)
+                                {
+                                    <div class="pager">
+                                        <button type="button" class="btn btn-sm btn-outline-secondary" disabled="@(S.Page <= 0)" @onclick="() => S.Page--">Previous</button>
+                                        <span>Page @(Math.Clamp(S.Page, 0, PageCount - 1) + 1) of @PageCount</span>
+                                        <button type="button" class="btn btn-sm btn-outline-secondary" disabled="@(S.Page >= PageCount - 1)" @onclick="() => S.Page++">Next</button>
+                                    </div>
+                                }
+
+                                <p class="helper-note mt-3 mb-0">
+                                    A candidate list built from ClinVar&rsquo;s own classifications (queried live; ClinVar changes every month), not a clinical statement:
+                                    check each variant before relying on it. ClinVar links a record to an OMIM number through any of its references, so a few records
+                                    are only loosely related to the disease: read the conditions shown under each variant. Data: NCBI ClinVar; disease names and subtypes: Monarch Initiative.
+                                </p>
+                            }
+                        }
+                    </div>
+                </div>
+            </ChildContent>
+            <ErrorContent>
+                <div class="error-boundary" role="alert"><h3>The results area hit an error</h3><p class="mb-0">The search form above still works. Search again to rebuild the results.</p></div>
+            </ErrorContent>
+        </ErrorBoundary>
+    }
+
+    @if (S.Selected.Count > 0)
+    {
+        var inputs = SelectedInputs;
+        var replaceBlocked = SendBlockedReason(false, inputs.Count);
+        var addBlocked = SendBlockedReason(true, inputs.Count);
+        <div class="selection-bar" role="region" aria-label="Selection">
+            <div class="selection-summary" aria-live="polite">
+                <strong>@inputs.Count</strong> selected<span class="visually-hidden"> to send</span>
+                <button type="button" class="btn btn-sm btn-link" @onclick="ClearSelection">Clear</button>
+            </div>
+            <div class="d-flex flex-wrap gap-2">
+                <button type="button" class="btn btn-primary" disabled="@(replaceBlocked is not null)" @onclick="() => Send(false)">
+                    <Icon Name="send" />Send to Diana (replace)
+                </button>
+                <button type="button" class="btn btn-outline-secondary" disabled="@(addBlocked is not null)" @onclick="() => Send(true)">
+                    <Icon Name="plus" />Add to Diana inputs
+                </button>
+                <button type="button" class="btn btn-outline-secondary" @onclick="CopySelected">
+                    <Icon Name="@(_copied is not null && _copied.StartsWith("Copied") ? "check" : "copy")" />Copy list
+                </button>
+                <button type="button" class="btn btn-outline-secondary" @onclick="DownloadSelected"><Icon Name="download" />Download list (.txt)</button>
+            </div>
+            @if (replaceBlocked is not null || addBlocked is not null)
+            {
+                <small class="text-danger d-block" role="alert">@(replaceBlocked ?? addBlocked)</small>
+            }
+            @if (_copied is not null)
+            {
+                <small class="d-block" role="status">@_copied</small>
+            }
+        </div>
+    }
+</div>
+
+@code {
+    private RenderFragment Header(string label, DiseaseSortColumn column) => __builder =>
+    {
+        var active = S.SortColumn == column;
+        var sort = active ? (S.SortAscending ? "ascending" : "descending") : "none";
+        var icon = active ? (S.SortAscending ? "sort-up" : "sort-down") : "sort";
+        <th scope="col" aria-sort="@sort">
+            <button type="button" class="sort-btn" @onclick="() => SortBy(column)">
+                @label<Icon Name="@icon" />
+            </button>
+        </th>
+    };
+}

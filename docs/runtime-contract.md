@@ -38,6 +38,24 @@ and extracts `NG_` notations with a regex. An rsID with no `NG_` mapping yields 
 HGVS notations found"); an HTTP failure now raises `GrnaUpstreamException` (reported as an error). `NM_`/`NC_` notations
 are intentionally not returned today. This is an API-surface risk of the same kind that already ended OMIM support.
 
+**Disease variants (Monarch + ClinVar).** `DiseaseVariants` (library) calls two services, both without a key:
+- Monarch API v3, `https://api.monarchinitiative.org/v3/api`: `GET /search?q=<text>&category=biolink:Disease&limit=10` (disease
+  names, OMIM cross-references) and `GET /entity/<MONDO id>` (direct subtypes; a group disease such as Fanconi anemia has only an
+  `OMIMPS:` phenotypic series, its numeric `OMIM:` numbers sit on the subtypes). Subtype lookups run 4 at a time, at most 40. We
+  found no published rate limit for Monarch.
+- NCBI E-utilities, always `POST`: `elink` (`dbfrom=omim`, `db=clinvar`, `cmd=neighbor_history`), `esearch` on that history with
+  `#1 AND (clinsig_pathogenic[prop] OR clinsig_likely_pathogenic[prop])` (`retmax` 3000), `esummary` in batches of 200. Every call
+  carries `tool=gRNA`, `email=$GRNA_NCBI_CONTACT` and `api_key=$GRNA_NCBI_API_KEY` when set, and calls are spaced 340 ms apart (110 ms
+  with a key) through one process-wide gate. One retry (2 s) on a network failure, 429 or 5xx; anything else raises
+  `GrnaUpstreamException`, a malformed number or id `GrnaInputException`.
+- Verified on 2026-10-13 against the live services: OMIM 261600 (PKU) 923 pathogenic or likely pathogenic records, 833 with a dbSNP
+  cross-reference, in about 20 s; OMIM 603903 (sickle cell) 80 records, 78 with an rsID, including rs334; cystic fibrosis 1,517
+  records (compound classifications such as `Pathogenic; drug response` occur and are kept); Fanconi anemia 4,543 matched, so the 3,000
+  cap applies. ClinVar's own `[mim]` search field is not the disease number, which is why the `elink` route is used.
+- Monarch's ClinVar-derived edges were measured too and rejected as the variant source: only 22% of PKU variants carried an rsID there.
+- This is an API-surface risk of the same kind that ended OMIM support. The guard is `GRNA_LIVE_TESTS=1 dotnet test --filter Category=Live`
+  (real services, not run in CI), plus parsers that raise `GrnaUpstreamException` on an unexpected shape instead of returning nothing.
+
 ## Why the index lives in the image
 
 Bowtie is started with `--mm` (memory-mapped index). Served from a Docker volume or a bind mount, those reads are
@@ -72,7 +90,8 @@ Docker's memory just for this app: it is not needed, and over-provisioning the V
 | `GRNA_BOWTIE_BINARY` | path to `bowtie-align-s` (default `bowtie/bowtie-align-s`, resolved against the app base directory, then the CWD) |
 | `GRNA_BOWTIE_INDEX` | explicit index base path (no suffix); otherwise the first sorted index under `bowtie/indexes` |
 | `GRNA_PYTHON` | Python executable (default `python3`) |
-| `GRNA_NCBI_API_KEY`, `GRNA_NCBI_CONTACT` | raise the NCBI limit to 10 req/s and identify the tool |
+| `GRNA_NCBI_API_KEY`, `GRNA_NCBI_CONTACT` | raise the NCBI limit to 10 req/s and identify the tool (sequence downloads and the disease search) |
+| `GRNA_LIVE_TESTS=1` | test runs only: enables the contract tests that call the real Monarch and NCBI services |
 | `Analysis__MaxConcurrentVariants` | variants analysed at once (1-4) |
 | `Analysis__VariantTimeoutSeconds` | per-variant timeout (default 600) |
 | `GRNA_MEMORY_LIMIT`, `GRNA_BIND`, `GRNA_MAX_CONCURRENT_VARIANTS`, `GRNA_APP_IMAGE`, `GRNA_BOWTIE_BASE`, `GRNA_REGISTRY` | Compose / `start.sh` knobs |

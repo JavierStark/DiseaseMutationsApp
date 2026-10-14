@@ -184,8 +184,9 @@ public class PhoneLayoutTests : E2EBase
     public async Task NoHorizontalPageScroll(string path)
     {
         await GotoAsync(path);
-        var overflow = await Page.EvaluateAsync<bool>("document.documentElement.scrollWidth > window.innerWidth + 1");
-        Assert.That(overflow, Is.False, path + " scrolls sideways at 375 px");
+        // Not window.innerWidth: mobile emulation widens the layout viewport to fit overflowing content, hiding the problem.
+        var width = await Page.EvaluateAsync<int>("document.documentElement.scrollWidth");
+        Assert.That(width, Is.LessThanOrEqualTo(376), path + " is wider than a 375 px screen");
     }
 
     [Test]

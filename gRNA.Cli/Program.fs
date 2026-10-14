@@ -26,6 +26,8 @@ let usage =
 Usage:
   grna doctor [--network]
   grna resolve <rsID> [<rsID> ...]
+  grna disease <name | OMIM number | MONDO id> [--list] [--pick 1] [--subtypes] [--min-significance pathogenic-likely|pathogenic|any]
+                                              [--format rs|csv|tsv|json] [--out file]
   grna design --hgvs <HGVS> [--spacer 28] [--seed 10-17] [--complement] [--format csv|json|tsv] [--out file]
   grna design --input <list.txt|session.json> --out <report.csv> [--spacer 28] [--seed 10-17] [--complement] [--concurrency 2]
   grna fold <RNA sequence>
@@ -34,7 +36,8 @@ Usage:
 
 Environment: GRNA_BOWTIE_BINARY, GRNA_BOWTIE_INDEX, GRNA_PYTHON, GRNA_NCBI_API_KEY, GRNA_NCBI_CONTACT
 Exit codes: 0 ok, 1 failure, 2 bad input, 3 missing native dependency, 4 upstream failure
-A design report in csv format is accepted unchanged by `grna pool --guides` and by the web Pooling tab."""
+A design report in csv format is accepted unchanged by `grna pool --guides` and by the web Pooling tab.
+`grna disease 603903 --format rs --out sickle.txt` followed by `grna design --input sickle.txt --out report.csv` goes from a disease to guides."""
 
 exception BadArgs of string
 
@@ -44,7 +47,7 @@ type Args =
       Options: Map<string, string>
       Flags: Set<string> }
 
-let private flagNames = set [ "complement"; "network"; "help" ]
+let private flagNames = set [ "complement"; "network"; "help"; "list"; "subtypes" ]
 
 let parseArgs (argv: string list) : Args =
     let rec go (rest: string list) (pos: string list) (opts: Map<string, string>) (flags: Set<string>) =
@@ -67,6 +70,7 @@ let private allowed =
     Map.ofList
         [ "doctor", (Set.empty, set [ "network"; "help" ])
           "resolve", (Set.empty, set [ "help" ])
+          "disease", (set [ "pick"; "min-significance"; "format"; "out" ], set [ "list"; "subtypes"; "help" ])
           "design", (set [ "hgvs"; "input"; "spacer"; "seed"; "format"; "out"; "concurrency" ], set [ "complement"; "help" ])
           "fold", (Set.empty, set [ "help" ])
           "pool", (set [ "guides"; "count"; "capacity"; "plate"; "model"; "out" ], set [ "help" ]) ]
@@ -139,6 +143,83 @@ let resolve (args: Args) (ct: CancellationToken) : Task<int> =
             if hgvs.IsEmpty then eprintfn "%s: no NG_ notations found" rs
             for h in hgvs do printfn "%s\t%s" rs h
         return ExitOk
+    }
+
+/// The Monarch/NCBI client the `disease` command uses. A test replaces it with one over a stubbed HTTP layer.
+let mutable diseaseClient : DiseaseVariants.DiseaseVariantClient = DiseaseVariants.DiseaseVariantClient.Shared
+
+let private diseaseFormats = set [ "rs"; "csv"; "tsv"; "json" ]
+
+let private parseMinSignificance (text: string) : DiseaseVariants.MinSignificance =
+    match text.ToLowerInvariant() with
+    | "pathogenic-likely" -> DiseaseVariants.PathogenicOrLikely
+    | "pathogenic" -> DiseaseVariants.PathogenicOnly
+    | "any" -> DiseaseVariants.AnyClassification
+    | _ -> raise (BadArgs(sprintf "--min-significance must be pathogenic-likely, pathogenic or any, got '%s'." text))
+
+let private describeMatch (m: DiseaseVariants.DiseaseMatch) =
+    let numbers =
+        if not m.OmimNumbers.IsEmpty then "OMIM " + String.Join(", ", m.OmimNumbers)
+        elif not m.PhenotypicSeries.IsEmpty then "phenotypic series " + String.Join(", ", m.PhenotypicSeries) + " (use --subtypes)"
+        else "no OMIM number"
+    sprintf "%s	%s	%s" m.Id m.Name numbers
+
+/// Finds the ClinVar variants of a disease: name, OMIM number or MONDO id in; rsIDs (or a table) out. Every option is
+/// checked before the first request, so a typo costs nothing.
+let disease (args: Args) (ct: CancellationToken) : Task<int> =
+    task {
+        let query =
+            match args.Positional with
+            | [ q ] -> q
+            | [] -> raise (BadArgs "disease needs a disease name, an OMIM number or a MONDO id, for example: grna disease 603903")
+            | _ -> raise (BadArgs "disease takes one search text; put a name with spaces in quotes.")
+        let format = (opt args "format" |> Option.defaultValue "rs").ToLowerInvariant()
+        if not (diseaseFormats.Contains format) then raise (BadArgs(sprintf "--format must be rs, csv, tsv or json, got '%s'." format))
+        let minSignificance = opt args "min-significance" |> Option.defaultValue "pathogenic-likely" |> parseMinSignificance
+        let pick = intOpt args "pick" 1
+        if pick < 1 then raise (BadArgs "--pick must be 1 or more.")
+        DiseaseVariants.parseQuery query |> ignore   // a malformed OMIM number or MONDO id is refused here, before any request
+
+        let! matches = diseaseClient.FindDiseasesAsync(query, ct)
+        if matches.IsEmpty then
+            eprintfn "error: no disease found for '%s'." query
+            return ExitBadInput
+        elif args.Flags.Contains "list" then
+            matches |> List.iteri (fun i m -> printfn "%d	%s" (i + 1) (describeMatch m))
+            return ExitOk
+        elif pick > matches.Length then
+            return raise (BadArgs(sprintf "--pick %d, but only %d matches were found (see --list)." pick matches.Length))
+        else
+            let chosen = matches.[pick - 1]
+            if matches.Length > 1 && not (args.Options.ContainsKey "pick") then
+                eprintfn "note: using match 1 of %d: %s (%s). Use --list to see the others, --pick N to choose." matches.Length chosen.Name chosen.Id
+            let! resolved = diseaseClient.ResolveOmimNumbersAsync(chosen, args.Flags.Contains "subtypes", ct)
+            if resolved.SubtypesTotal > 0 then
+                eprintfn "note: consulted %d of %d subtypes of %s." resolved.SubtypesChecked resolved.SubtypesTotal chosen.Name
+            if resolved.OmimNumbers.IsEmpty then
+                eprintfn "error: %s (%s) has no numeric OMIM number%s." chosen.Name chosen.Id
+                    (if chosen.PhenotypicSeries.IsEmpty || args.Flags.Contains "subtypes" then "" else "; it is a phenotypic series, try --subtypes")
+                return ExitBadInput
+            else
+                eprintfn "Searching ClinVar for OMIM %s ..." (String.Join(", ", resolved.OmimNumbers))
+                let progress =
+                    { new IProgress<DiseaseVariants.VariantProgress> with
+                        member _.Report p = if p.Total > 0 then eprintfn "  %s: %d of %d" p.Stage p.Done p.Total }
+                let! result = diseaseClient.GetVariantsAsync(resolved.OmimNumbers, minSignificance, progress, ct)
+                let withRs = DiseaseVariants.countWithRsId result.Variants
+                eprintfn "%d ClinVar records matched; %d listed, %d with an rsID, %d without." result.TotalMatching result.Variants.Length withRs (result.Variants.Length - withRs)
+                if result.Truncated then
+                    eprintfn "warning: only part of the %d matching records was read, so the list is incomplete. Narrow the search (--min-significance pathogenic) or search the OMIM numbers one at a time." result.TotalMatching
+                if format = "rs" && withRs < result.Variants.Length then
+                    eprintfn "note: records without an rsID are left out of the rs list; --format csv shows their HGVS."
+                let text =
+                    match format with
+                    | "csv" -> DiseaseVariants.formatCsv result.Variants
+                    | "tsv" -> DiseaseVariants.formatTsv result.Variants
+                    | "json" -> DiseaseVariants.formatJson result
+                    | _ -> DiseaseVariants.formatRsList result.Variants
+                writeOut (opt args "out") text
+                return ExitOk
     }
 
 type DesignRow =
@@ -447,6 +528,7 @@ let run (argv: string[]) (ct: CancellationToken) : Task<int> =
                     return ExitOk
                 | "doctor" -> return! doctor args ct
                 | "resolve" -> return! resolve args ct
+                | "disease" -> return! disease args ct
                 | "design" -> return! design args ct
                 | "fold" -> return! fold args ct
                 | "pool" -> return! pool args ct
