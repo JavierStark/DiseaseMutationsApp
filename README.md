@@ -2,15 +2,21 @@
 
 *Diana: precision guide RNA design.* The name is explained in [docs/about-the-name.md](docs/about-the-name.md).
 
-**iGEM Team UMA-Malaga 2026, Software.** This repository (`main` branch) hosts the full source code of the team's software
-tool, as the competition requires. Source: <https://gitlab.igem.org/2026/software/uma-malaga/diana-grna-designer>.
+**iGEM Team UMA-Malaga 2026, Software.** Source: <https://gitlab.igem.org/2026/software/uma-malaga/diana-grna-designer>.
 
-Diana is a web application and command-line tool for turning disease-related variants (HGVS notations or rsIDs) into ranked
-CRISPR-Cas13 guide RNA spacers, for finding those variants from a disease (name, OMIM number or MONDO id, through ClinVar), and
-for planning combinatorial guide pooling onto 96/384-well plates. Spacers are scored for
-GC content, homopolymers, off-target alignments (Bowtie) and RNA secondary structure (ViennaRNA), for both the mutated and the
-original (wild-type) sequence. It also flags restriction sites (BsaI, BsmBI, SapI, BbsI, EcoRI, PstI, XbaI, SpeI, EcoRV, NotI)
-in the DNA you would order, and exports an order-ready oligo CSV.
+Diana is a web application and command-line tool for turning disease-related variants (HGVS notations [10] or rsIDs [5]) into
+ranked CRISPR-Cas13 guide RNA spacers, for finding those variants from a disease (name, OMIM number or MONDO id, through
+ClinVar [16]), and for planning combinatorial guide pooling onto 96/384-well plates. Spacers are scored for
+GC content, homopolymers, off-target alignments (Bowtie [1]) and RNA secondary structure (ViennaRNA [2, 3]), for both the
+mutated and the original (wild-type) sequence. It also flags restriction sites (BsaI, BsmBI, SapI, BbsI, EcoRI, PstI, XbaI,
+SpeI, EcoRV, NotI) in the DNA you would order, and exports an order-ready oligo CSV.
+
+The interface has a sidebar (Builder, Disease variants, Guide Pooling, App Status), a light and a dark theme, a skip link and
+keyboard-operable tabs. Numbers in square brackets point to the [References](#references).
+
+![Diana guide design page, light theme](https://static.igem.wiki/teams/6119/wiki/images/software/v2-readme-light.avif)
+
+![Diana guide design page, dark theme](https://static.igem.wiki/teams/6119/wiki/images/software/v2-readme-dark.avif)
 
 > **AI assistance.** Parts of this code were written with an AI coding assistant and reviewed by the team. Read
 > [.claude/RESPONSIBLE_AI_USE.md](.claude/RESPONSIBLE_AI_USE.md); the team remains responsible for everything committed here.
@@ -26,7 +32,7 @@ in the DNA you would order, and exports an order-ready oligo CSV.
   notation are refused with a message. Limits: spacer size 18-60, at most 50 inputs per run.
 - **Results** per variant: original and mutated sequences (mutation highlighted, copy as FASTA), two ranked spacer tables
   (sortable, filterable, paged, with an alignment-risk chip), the complete gRNA (scaffold + chosen spacer), ViennaRNA
-  structure and a FORNA diagram link.
+  structure and a FORNA [4] diagram link.
 - **Runs**: cancellable (whole run or one variant), bounded-parallel, and they survive navigating to another page. A refresh
   restores your inputs (never results: download the CSV report to keep them).
 - **Off-target loci**: expand any spacer to see where its target window aligns in the genome (chromosome, position, strand,
@@ -39,6 +45,8 @@ in the DNA you would order, and exports an order-ready oligo CSV.
 - **Permalinks**: *Copy link to this design* encodes `?hgvs=...&spacer=28&seed=10-17`; opening it fills in the form (also `?rs=`) and you press **Run analysis**; a link never starts a run on its own.
 - **CSV report**: per input (rsID or HGVS) or all inputs at once, with the spacer/seed parameters in a leading `#` line and a `Strand` column.
 
+![Ranked spacers with off-target loci](https://static.igem.wiki/teams/6119/wiki/images/software/v2-04-builder-offtarget-loci.avif)
+
 ### Disease variants (`/disease`)
 
 Start from a disease instead of a variant list. Type a disease name, an OMIM number or a MONDO id, pick the match, and Diana
@@ -47,11 +55,10 @@ paged table. Tick the ones you want and **send them to the Diana page**: *Send t
 Diana inputs* keeps what is there and drops duplicates, and every row has a one-click send. Nothing runs until you press
 **Run analysis**. Selections can also be copied or downloaded as a list for `grna design --input`.
 
-- **Where the data comes from.** The disease name is looked up in the Monarch Initiative knowledge graph (no key, no CAPTCHA),
+- **Where the data comes from.** The disease name is looked up in the Monarch Initiative knowledge graph [17] (no key needed),
   which also gives a disease's subtypes: a group such as Fanconi anemia has only an OMIM *phenotypic series*, so its numeric OMIM
-  numbers are taken from its subtypes (up to 40). The variants come from NCBI ClinVar through E-utilities (`elink` from OMIM, a
-  server-side classification filter, batched `esummary`), the same NCBI host Diana already uses. This replaces the OMIM scraper
-  that a CAPTCHA ended.
+  numbers are taken from its subtypes (up to 40). The variants come from NCBI ClinVar [16] through E-utilities [7] (`elink` from
+  OMIM, a server-side classification filter, batched `esummary`), the same NCBI host Diana already uses for sequences.
 - **What a row is.** The rsID (linked to dbSNP) or, when ClinVar has none, a genomic HGVS on GRCh38 derived from ClinVar's
   canonical SPDI, which Diana also accepts. Classification and review status (stars) are ClinVar's own and are not
   re-interpreted. Haplotype and compound records can share one rsID, so the page also counts distinct rsIDs.
@@ -60,10 +67,11 @@ Diana inputs* keeps what is there and drops duplicates, and every row has a one-
   gene-level `NG_` mapping in dbSNP and will show "No HGVS notations found" on the Diana page.
 - **Not a clinical statement.** It is a candidate list built from ClinVar's classifications, queried live (ClinVar changes
   every month). Check each variant before relying on it. NCBI links a ClinVar record to an OMIM number through any of its
-  references, so a few records are only loosely related to the disease (measured on 2026-10-13: for PKU 922 of 923 records cite the
-  number in their own conditions, for cystic fibrosis 1,490 of 1,517, for sickle cell 65 of 80, for Huntington disease 6 of 8). The
-  conditions of each record are shown so you can judge; nothing is filtered out on that basis.
+  references, so a few records can be only loosely related to the disease. The conditions of each record are shown so you can
+  judge; nothing is filtered out on that basis. ClinVar notes that its data are not for direct diagnostic use.
 - The same search runs headless: `grna disease 603903 --out sickle.txt`.
+
+![Disease variants: ClinVar variants of a disease](https://static.igem.wiki/teams/6119/wiki/images/software/v2-11-disease-results.avif)
 
 ### Guide Pooling (`/pooling`)
 
@@ -76,9 +84,13 @@ overlapping multi-hit collisions flagged as ambiguous instead of hidden. The CSV
 Tandem, Well`; slots the layout reserves but that hold no guides are listed as `Empty - do not prepare`. Limits: 100,000 guides
 and 10,000 guides per well.
 
+![Guide Pooling: plate map](https://static.igem.wiki/teams/6119/wiki/images/software/v2-13-pooling-plate-map.avif)
+
 ### App Status (`/app-status`, `/healthz`)
 
 The same preflight as `grna doctor`: Bowtie binary and index, Python and ViennaRNA, NCBI reachability, memory.
+
+![App Status](https://static.igem.wiki/teams/6119/wiki/images/software/v2-16-app-status.avif)
 
 ### `grna` command line
 
@@ -184,10 +196,10 @@ If a variant fails it shows the reason and a **Retry this variant** button; othe
 - **GC content**: raw GC percentage, two decimals.
 - **Homopolymers**: runs of 4 or more identical bases; 0 is best.
 - **Alignments**: Bowtie hits of the DNA window (up to 2 mismatches). 1 is a unique target; the count saturates at 6, shown as
-  "6+ saturated". **0 means "no genomic match" and is ranked best, on purpose** (the team's rule): it is common for insertions,
+  "6+ saturated". **0 means "no genomic match" and is ranked best, by design**: it is common for insertions,
   duplications and deletions, whose junction windows do not exist in the genome, so for those variants the alignment criterion
   does not separate candidates (see [BIOLOGICAL_REPORT.md](BIOLOGICAL_REPORT.md) section 4.2c).
-- **Energy**: minimum free energy (kcal/mol) of the *complete* gRNA (scaffold + spacer); closer to zero is preferred.
+- **Energy**: minimum free energy (kcal/mol, Turner 2004 parameters [11]) of the *complete* gRNA (scaffold + spacer); closer to zero is preferred.
 - **Score**: 0-1, from the rank after sorting by (Alignments, Energy, GC score, Homopolymers); ties share a rank.
 
 Substitution variants get the **special rule**: when the mutation lands at the right position near the 3' end, a single
@@ -233,7 +245,7 @@ dotnet test
 Tests need no container and no network: the library's pure logic (scoring, parsing, validation, pooling and decoding, CSV round trips),
 the `grna` CLI driven in-process (exit codes, option checking, resume), the `AnalysisRunner` (concurrency bound, cancellation,
 per-variant cancel, timeouts, retry) against a fake pipeline, and the components with bUnit, including markup checks for the
-accessibility defects found with axe-core. `RnaFoldIntegrationTests` run the real ViennaRNA when `python3` and `RNA` are available and skip
+accessibility requirements. `RnaFoldIntegrationTests` run the real ViennaRNA when `python3` and `RNA` are available and skip
 otherwise. The GitLab pipeline (`.gitlab-ci.yml`) runs the pinning gate (which also covers the CI job images) and these tests,
 publishes the coverage report, and builds no images, so run `grna doctor` in the locally built image yourself.
 
@@ -249,18 +261,16 @@ dotnet test DiseaseMutationsApp.E2E                          # afterwards
 
 **Disease search against the real services.** The Monarch and ClinVar client is tested offline against captured real
 responses and a stubbed HTTP layer. `GRNA_LIVE_TESTS=1 dotnet test --filter Category=Live` runs a few contract tests against
-the real services (not part of CI); it is the early warning for an upstream change, which is what ended the OMIM feature.
+the real services (not part of CI); it is the early warning for an upstream change.
 
 **Manual tests.** What automation cannot check (the real index and tools, Docker routes per OS, assistive technology) is in
-[docs/manual-test-plan.md](docs/manual-test-plan.md), with a log of the runs made so far.
+[docs/manual-test-plan.md](docs/manual-test-plan.md).
 
 ## Data and large files
 
-This repository holds source code only. The GRCh38 Bowtie index (about 3.7 GB) is **not** stored here: the base image downloads it
+This repository holds source code only. The GRCh38 [9] Bowtie index (about 3.7 GB) is **not** stored here: the base image downloads it
 from the public Bowtie index bucket at build time and verifies its SHA-256 (`Dockerfile.bowtie-base`). Only the Bowtie 1.3.1
-binary (about 14 MB, `bowtie/`) and a Windows ViennaRNA wheel (about 2 MB, `DiseaseMutationsApp/`) are committed. Any dataset,
-model or other heavy artifact produced by the team belongs on [Zenodo](https://teams.igem.org/go/deliverables/software/zenodo)
-and should be referenced from this README.
+binary (about 14 MB, `bowtie/`) and a Windows ViennaRNA wheel (about 2 MB, `DiseaseMutationsApp/`) are committed.
 
 ## Configuration
 
@@ -302,35 +312,18 @@ pinned (see the pinning policy in [docs/runtime-contract.md](docs/runtime-contra
 
 ## License
 
-MIT (an OSI-approved open-source license, as iGEM requires), see [LICENSE](LICENSE). The image also contains components under other licenses, notably **Bowtie (Artistic License 2.0)** and
+MIT, see [LICENSE](LICENSE). The image also contains components under other licenses, notably **Bowtie (Artistic License 2.0)** and
 **ViennaRNA (non-commercial-use license)**: see [THIRD-PARTY-NOTICES.md](THIRD-PARTY-NOTICES.md).
 
 ## Authors
 
-iGEM Team UMA-Malaga 2026. Initial work by Javier Torralbo Cortes. The Attributions Form on the team wiki is the authoritative
-record of contributors and sources.
+iGEM Team UMA-Malaga 2026. Initial work by Javier Torralbo Cortes.
 
 ## Acknowledgments and references
 
-Bowtie (Langmead et al.), ViennaRNA (Lorenz et al.), forna (Kerpedjiev et al.), NCBI, dbSNP and ClinVar, the Monarch Initiative, the Genome Reference Consortium,
-the HGVS nomenclature, and the CRISPR community. Licenses for these components are stated in
-[THIRD-PARTY-NOTICES.md](THIRD-PARTY-NOTICES.md).
-
-### What each resource asks us to cite
-
-We checked each resource's own citation guidance (July-October 2026) and cite accordingly:
-
-| Resource | What it asks | Reference |
-|---|---|---|
-| Bowtie | Cite Langmead et al. 2009 | 1 |
-| ViennaRNA | Main references: Lorenz et al. 2011 and Hofacker et al. 1994 (feature-specific papers are suggested, not required) | 2, 3 |
-| forna | Kerpedjiev et al. 2015 | 4 |
-| dbSNP | Cite the *Nucleic Acids Research* paper (Phan et al. 2025); to point at a single variant, cite its accession (e.g. rs334) | 5 |
-| NCBI (sequences, E-utilities, Variation Services) | Acknowledge NCBI/NLM; automated clients should send `tool` and `email` (we send `tool=gRNA` and `email=$GRNA_NCBI_CONTACT` with sequence downloads; the Variation Services lookup sends neither) | 6-8 |
-| GRCh38 | Cite the assembly (Schneider et al. 2017) | 9 |
-| HGVS nomenclature | Cite den Dunnen et al. 2016 rather than the web site | 10 |
-| ClinVar | Attribute ClinVar as the data source in publications and websites, and cite a ClinVar publication (its documentation lists them); it notes the data are not for direct diagnostic use | 16 |
-| Monarch Initiative | We found no citation page of its own; we cite its 2024 *Nucleic Acids Research* paper. OMIM numbers appear only as identifiers: no OMIM content is fetched | 17 |
+Diana builds on Bowtie [1], ViennaRNA [2, 3], forna [4], NCBI resources and dbSNP [5-8], the Genome Reference Consortium
+assembly GRCh38 [9], the HGVS nomenclature [10], ClinVar [16] and the Monarch Initiative [17]. Licenses for these components
+are stated in [THIRD-PARTY-NOTICES.md](THIRD-PARTY-NOTICES.md).
 
 ### References
 
@@ -362,12 +355,6 @@ We checked each resource's own citation guidance (July-October 2026) and cite ac
   presets for other Cas variants need their scaffolds and seed windows verified against the literature first.
 
 Not planned: additional genome assemblies (each adds ~4 GB to the image), authentication.
-
-## Migration notes
-
-The app moved from Blazor WebAssembly plus a separate API to a single Blazor Server process: one container, direct calls into the
-F# library, no HTTP hop. The cost is a persistent circuit (hence the generous reconnect policy and the inputs-only refresh
-persistence) and no static hosting. The earlier CORS setup was removed; nothing in the app uses cross-origin requests.
 
 ## Support
 

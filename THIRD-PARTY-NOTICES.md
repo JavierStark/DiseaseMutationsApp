@@ -16,6 +16,7 @@ lab, the Bowtie and ViennaRNA entries in particular deserve a proper review.
 | **NCBI ClinVar** (through E-utilities `elink`, `esearch`, `esummary`) | Runtime HTTPS calls, same host as the NCBI row above | NCBI data-use policy | ClinVar asks that its data be attributed to ClinVar as the source and notes that they are not for direct diagnostic use. Short excerpts of responses are kept as test fixtures (`DiseaseMutationsAppTests/Fixtures/disease`). Cite Landrum et al. 2025 (README reference 16). |
 | **Bootstrap 5.3.3** (`wwwroot/css/bootstrap`) | Vendored CSS | MIT | Licence header retained in the file. https://github.com/twbs/bootstrap |
 | **IBM Plex Sans 5.1.1** (`wwwroot/fonts`) | `@fontsource/ibm-plex-sans` | SIL OFL 1.1 | `wwwroot/fonts/LICENSE-IBM-Plex-Sans.txt`. SHA256: 400 `db71f8a2...1922`, 600 `31535a91...5eb6`. |
+| **Abril Fatface** (`wwwroot/fonts`) | Latin 400, display headings only | SIL OFL 1.1 | `wwwroot/fonts/LICENSE-Abril-Fatface.txt`. SHA256: 400 `edf7a1f3...bb2eeb68`. |
 | **JetBrains Mono 5.1.1** (`wwwroot/fonts`) | `@fontsource/jetbrains-mono` | SIL OFL 1.1 | `wwwroot/fonts/LICENSE-JetBrains-Mono.txt`. SHA256: 400 `14425ba9...89eb`, 600 `400c6bfd...f147`. |
 | **s5cmd 2.2.2** | Build-time only (downloads the index; not in the final image) | MIT | Checksum-verified in `Dockerfile.bowtie-base`. |
 | **.NET 9 / ASP.NET Core / FSharp.Core 9.0.303** | NuGet + base images | MIT | Versions pinned in `Directory.Packages.props` and the Dockerfiles. |
