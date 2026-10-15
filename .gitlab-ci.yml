@@ -28,7 +28,7 @@ test:
   script:
     - dotnet restore --locked-mode
     - dotnet build --no-restore -c Release
-    - dotnet test --no-build -c Release --collect:"XPlat Code Coverage" --logger "junit;LogFilePath=$CI_PROJECT_DIR/test-results-{assembly}.xml" -- NUnit.TestOutputXml=TestResults
+    - dotnet test DiseaseMutationsAppTests --no-build -c Release --collect:"XPlat Code Coverage" --logger "junit;LogFilePath=$CI_PROJECT_DIR/test-results-{assembly}.xml" -- NUnit.TestOutputXml=TestResults
     # coverlet writes Cobertura XML, not a console table: print the line rate in the form the coverage regex below reads.
     - |
       f=$(find DiseaseMutationsAppTests -name coverage.cobertura.xml | head -1)
