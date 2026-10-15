@@ -127,6 +127,7 @@
                             <th scope="col">Spacer</th>
                             <th scope="col" class="num">Score</th>
                             <th scope="col">Alignments</th>
+                            <th scope="col">Assembly compatibility</th>
                             <th scope="col"><span class="visually-hidden">Remove</span></th>
                         </tr>
                         </thead>
@@ -137,9 +138,10 @@
                             <tr @key="@($"{item.Hgvs}|{item.IsComplement}")">
                                 <td class="font-monospace">@item.Hgvs</td>
                                 <td>@(item.IsComplement ? "Complement" : "Normal")</td>
-                                <td class="seq-cell">@item.Spacer <RestrictionChip Enzymes="RestrictionSites.ForGuide(item.Spacer, _oligoT7)" /></td>
+                                <td class="seq-cell">@item.Spacer @{ var sites = RestrictionSites.ForGuide(item.Spacer, _oligoT7); }<RestrictionChip Enzymes="sites" /></td>
                                 <td class="num">@item.Score.ToString("P0")</td>
                                 <td><span class="risk-chip @risk.CssClass"><span class="risk-glyph" aria-hidden="true"></span>@risk.Label</span></td>
+                                <td><AssemblyCompatibilityBadges Found="sites" ShowLabel="false" /></td>
                                 <td>
                                     <button type="button" class="btn btn-sm btn-outline-secondary btn-icon-only" aria-label="Remove @item.Hgvs from shortlist"
                                             @onclick="() => StateService.RemoveFromShortlist(item.Hgvs, item.IsComplement)"><Icon Name="close" /></button>
