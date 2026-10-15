@@ -50,7 +50,7 @@ keyboard-operable tabs. Numbers in square brackets point to the [References](#re
 - **Permalinks**: *Copy link to this design* encodes `?hgvs=...&spacer=28&seed=10-17`; opening it fills in the form (also `?rs=`) and you press **Run analysis**; a link never starts a run on its own.
 - **CSV report**: per input (rsID or HGVS) or all inputs at once, with the spacer/seed parameters in a leading `#` line and a `Strand` column.
 
-![Ranked spacers with off-target loci](https://static.igem.wiki/teams/6119/wiki/images/software/v4-04-builder-offtarget-loci.avif)
+![Ranked spacers with off-target loci](https://static.igem.wiki/teams/6119/wiki/images/software/v5-04-builder-offtarget-loci.avif)
 
 ### Disease variants (`/disease`)
 
