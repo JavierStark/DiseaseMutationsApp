@@ -6,17 +6,18 @@
     <title>Something went wrong - Diana</title>
     <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
     <style>
-        body { font-family: system-ui, sans-serif; background: #FDF4F9; color: #1C1C1C; display: grid; place-items: center; min-height: 100vh; margin: 0; }
-        main { max-width: 32rem; padding: 2rem; border: 1px solid #EAD2E0; border-left: 4px solid #B31237; border-radius: 8px; background: #fff; }
+        :root { --bg: #FFF9FD; --surface: #FFFFFF; --border: #E6CBDB; --text: #1C1C1C; --text-2: #4A3342; --plum: #A8407E; --plum-ink: #6E2352; --crimson: #B31237; }
+        body { font-family: system-ui, sans-serif; background: var(--bg); color: var(--text); display: grid; place-items: center; min-height: 100vh; margin: 0; }
+        main { max-width: 32rem; padding: 2rem; border: 1px solid var(--border); border-left: 4px solid var(--crimson); border-radius: 8px; background: var(--surface); }
         h1 { margin-top: 0; font-size: 1.5rem; }
-        a { color: #A8407E; }
-        .logo { display: block; width: 3rem; height: auto; margin-bottom: 1rem; border-radius: 6px; }
-        @media (prefers-color-scheme: dark) { body { background: #110C10; color: #FFF9FD; } main { background: #1D161B; border-color: #4B3A46; } a { color: #F9D6E4; } }
+        a { color: var(--plum-ink); }
+        @media (prefers-color-scheme: dark) {
+            :root { --bg: #161214; --surface: #211A1E; --border: #4A3A44; --text: #FFF4FA; --text-2: #E3CFDB; --plum-ink: #F8CCF1; --crimson: #FF8FA6; }
+        }
     </style>
 </head>
 <body>
 <main>
-    <img class="logo" src="/favicon.svg" alt="Diana" />
     <h1>Something went wrong</h1>
     <p>The server hit an unexpected error while handling your request. Your inputs are kept in this browser, so you can go back and try again.</p>
     <p><a href="/">Return to Diana</a></p>

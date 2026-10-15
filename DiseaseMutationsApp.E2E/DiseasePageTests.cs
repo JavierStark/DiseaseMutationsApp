@@ -302,7 +302,7 @@ public class DiseasePageTests : DiseaseE2EBase
         await OpenWithResultsAsync("sickle cell", 8);
         await RowBox("rs334").CheckAsync();
 
-        await NavLink("Diana").ClickAsync();
+        await NavLink("Builder").ClickAsync();
         await Expect(Page.Locator("h1")).ToHaveTextAsync("Diana");
         await NavLink("Disease variants").ClickAsync();
 

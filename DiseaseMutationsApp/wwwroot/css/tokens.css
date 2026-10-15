@@ -2,59 +2,85 @@
  * Design tokens. See docs/design-system.md.
  *
  * Palette semantics (not decoration):
- *   pink  = variant / mutated        mint = reference / original
+ *   plum  = variant / mutated, primary actions, active state
+ *   green = reference / original, target, go
  *   crimson = critical state only (error, destructive, off-target risk)
+ * The hues are sampled from the logo files in wwwroot/img.
  */
-:root {
+:root, [data-bs-theme="light"] {
     /* Brand palette (fixed hues) */
-    --pink-100: #F9D6E4;
-    --pink-500: #E58AAC;
-    --pink-600: #D4568A;
-    --pink-800: #A8407E;
-    --mint-100: #D5F9E6;
-    --mint-500: #8FDDB3;
-    --mint-600: #5FBE8E;
-    --mint-800: #1E5B3F;
+    --ink: #1C1C1C;
+    --plum-100: #F7E3EF;
+    --plum-500: #A8407E;
+    --plum-600: #8E3069;
+    --plum-800: #6E2352;
+    --rose-500: #D4568A;
+    --blush-500: #E88BB0;
+    --petal-100: #F9D6E4;
+    --leaf-100: #E3F6EC;
+    --leaf-500: #5FBF8F;
+    --leaf-600: #3F9F70;
+    --leaf-800: #1E5B3F;
+    --paper: #FDF4F9;
+    --cream: #FFF9FD;
     --crimson-500: #B31237;
     --crimson-800: #600B1E;
 
     /* Surfaces */
-    --bg: #FDF4F9;
+    --bg: var(--cream);
     --surface: #FFFFFF;
-    --surface-sunken: #FAEEF5;
-    --surface-hover: #FCEBF3;
-    --border: #EAD2E0;
-    --border-strong: #CBAEBF;
-    --divider: #F0DDE8;
+    --surface-sunken: #F8EDF4;
+    --surface-hover: #FBEAF3;
+    --border: #E6CBDB;
+    --border-strong: #C79BB6;
+    --divider: #F0E2EB;
 
     /* Text */
-    --text-primary: #1C1C1C;
-    --text-secondary: #46393F;
-    --text-muted: #6A5760;
-    --text-on-accent: #1C1C1C;
+    --text-primary: var(--ink);
+    --text-secondary: #4A3342;
+    --text-muted: #6B5565;
+    --text-on-accent: var(--cream);
 
     /* Semantic roles */
-    --variant: var(--pink-500);
-    --variant-strong: var(--pink-600);
-    --variant-text: var(--pink-800);
-    --variant-bg: #FBEAF2;
-    --reference: var(--mint-500);
-    --reference-strong: var(--mint-600);
-    --reference-text: var(--mint-800);
-    --reference-bg: #EAFBF2;
+    --variant: var(--plum-500);
+    --variant-strong: var(--plum-600);
+    --variant-text: var(--plum-500);
+    --variant-bg: var(--plum-100);
+    --reference: var(--leaf-500);
+    --reference-strong: var(--leaf-600);
+    --reference-text: var(--leaf-800);
+    --reference-bg: var(--leaf-100);
     --critical: var(--crimson-500);
     --critical-text: var(--crimson-500);
 
-    --link: var(--pink-800);
-    --link-hover: var(--crimson-500);
+    /* Solid button fills. Ink on plum is only 3:1, so plum always takes cream text (5.5:1). */
+    --accent-solid: var(--plum-500);
+    --accent-solid-hover: var(--ink);
+    --accent-solid-text: var(--cream);
+    --accent-solid-hover-text: var(--cream);
+    --leaf-solid: var(--leaf-500);
+    --leaf-solid-hover: var(--leaf-600);
+    --leaf-solid-text: var(--ink);
+
+    --link: var(--plum-500);
+    --link-hover: var(--plum-800);
+
+    /* Sidebar: paper in light mode, the plum of the negative logo in dark mode */
+    --sidebar-bg: var(--paper);
+    --sidebar-text: var(--ink);
+    --sidebar-hover: rgba(168, 64, 126, 0.08);
+    --sidebar-active-bg: var(--plum-100);
+    --sidebar-active-text: var(--plum-800);
+    --sidebar-marker: var(--leaf-500);
+    --sidebar-line: var(--border);
 
     /* State */
     --state-info: #2F5E8E;
     --state-info-bg: #EAF2FB;
     --state-info-border: #B7CFE8;
-    --state-success: var(--mint-800);
+    --state-success: var(--leaf-800);
     --state-success-bg: var(--reference-bg);
-    --state-success-border: var(--mint-600);
+    --state-success-border: var(--leaf-600);
     --state-warning: #7A4B00;
     --state-warning-bg: #FFF4DB;
     --state-warning-border: #E5B84B;
@@ -68,10 +94,11 @@
 
     /* Elevation: three steps only, for genuinely floating things */
     --elev-0: none;
-    --elev-1: 0 1px 2px rgba(42, 26, 38, 0.10);
-    --elev-2: 0 6px 18px rgba(42, 26, 38, 0.14);
+    --elev-1: 0 1px 2px rgba(28, 28, 28, 0.10);
+    --elev-2: 0 6px 18px rgba(28, 28, 28, 0.14);
 
     /* Type */
+    --font-display: "Abril Fatface", "Bodoni 72", Didot, Georgia, serif;
     --font-sans: "IBM Plex Sans", system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
     --font-mono: "JetBrains Mono", ui-monospace, "SFMono-Regular", Menlo, Consolas, monospace;
     --text-xs: 0.75rem;
@@ -80,11 +107,11 @@
     --text-lg: 1.125rem;
     --text-xl: 1.375rem;
     --text-2xl: 1.75rem;
-    --text-3xl: 2.25rem;
+    --text-3xl: 2.5rem;
     --weight-regular: 400;
     --weight-strong: 600;
-    --tracking-tight: -0.02em;
-    --tracking-wide: 0.04em;
+    --tracking-tight: -0.01em;
+    --tracking-wide: 0.06em;
 
     /* Spacing and shape */
     --space-1: 0.25rem;
@@ -96,50 +123,66 @@
     --space-7: 3rem;
     --radius-sm: 4px;
     --radius-md: 6px;
-    --radius-lg: 10px;
+    --radius-lg: 8px;
 
     /* Motion: only these properties are ever transitioned */
     --transition: 120ms ease-out;
 
-    /* Sequence annotation */
-    --seq-seed-bg: #F9DCE9;
-    --seq-seed-border: var(--pink-600);
+    /* Sequence annotation: the seed/PAM band is green, mutations are crimson */
+    --seq-seed-bg: var(--leaf-500);
+    --seq-seed-text: var(--ink);
     --seq-mutation: var(--crimson-500);
 }
 
 [data-bs-theme="dark"] {
-    --bg: #110C10;
-    --surface: #1D161B;
-    --surface-sunken: #140E13;
-    --surface-hover: #2B2129;
-    --border: #4B3A46;
-    --border-strong: #735E6C;
-    --divider: #33262F;
+    --bg: #161214;
+    --surface: #211A1E;
+    --surface-sunken: #181316;
+    --surface-hover: #2D2229;
+    --border: #4A3A44;
+    --border-strong: #75596A;
+    --divider: #3A2D35;
 
-    --text-primary: #FFF9FD;
-    --text-secondary: #E6D8E0;
-    --text-muted: #B8A5B0;
-    --text-on-accent: #110C10;
+    --text-primary: #FFF4FA;
+    --text-secondary: #E3CFDB;
+    --text-muted: #BBA3B1;
+    --text-on-accent: var(--ink);
 
-    --variant: #E58AAC;
-    --variant-strong: #F2A6C4;
-    --variant-text: #F9D6E4;
-    --variant-bg: #3B1F31;
-    --reference: #5FBE8E;
-    --reference-strong: #8FDDB3;
-    --reference-text: #B2F2D2;
-    --reference-bg: #19322A;
+    --variant: var(--blush-500);
+    --variant-strong: #F4A6CF;
+    --variant-text: #F8CCF1;
+    --variant-bg: #3A2331;
+    --reference: #7FD9AA;
+    --reference-strong: #8EE6BA;
+    --reference-text: #A6EFCA;
+    --reference-bg: #17322A;
     --critical: #FF8FA6;
     --critical-text: #FF9FB2;
 
-    --link: #F9D6E4;
+    --accent-solid: var(--blush-500);
+    --accent-solid-hover: var(--petal-100);
+    --accent-solid-text: var(--ink);
+    --accent-solid-hover-text: var(--ink);
+    --leaf-solid: #7FD9AA;
+    --leaf-solid-hover: #8EE6BA;
+    --leaf-solid-text: var(--ink);
+
+    --link: #F8CCF1;
     --link-hover: #FFB3C2;
+
+    --sidebar-bg: var(--plum-500);
+    --sidebar-text: var(--cream);
+    --sidebar-hover: rgba(255, 249, 253, 0.10);
+    --sidebar-active-bg: rgba(255, 249, 253, 0.18);
+    --sidebar-active-text: #FFFFFF;
+    --sidebar-marker: #7FD9AA;
+    --sidebar-line: rgba(255, 249, 253, 0.22);
 
     --state-info: #A7CDF5;
     --state-info-bg: #1B2A3A;
     --state-info-border: #3A5A7C;
     --state-success: #B2F2D2;
-    --state-success-bg: #19322A;
+    --state-success-bg: #17322A;
     --state-success-border: #3F7459;
     --state-warning: #F5D27F;
     --state-warning-bg: #3A2E10;
@@ -153,7 +196,7 @@
     --elev-1: 0 1px 2px rgba(0, 0, 0, 0.5);
     --elev-2: 0 8px 22px rgba(0, 0, 0, 0.55);
 
-    --seq-seed-bg: #472740;
-    --seq-seed-border: #E58AAC;
+    --seq-seed-bg: #7FD9AA;
+    --seq-seed-text: var(--ink);
     --seq-mutation: #FF9FB2;
 }

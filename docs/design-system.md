@@ -8,14 +8,11 @@ rather than decoration, and a legible monospace for sequences. Everything lives 
 
 | Family | Hex | Means |
 |---|---|---|
-| Pink `#F9D6E4 / #E58AAC / #D4568A / #A8407E` | variant / **mutated** |
-| Mint `#D5F9E6 / #8FDDB3 / #5FBE8E / #1E5B3F` | reference / **original** |
+| Plum `#A8407E` (+ `#6E2352`–`#F7E3EF` ramp) | variant / **mutated**, primary actions, active nav |
+| Leaf green `#5FBF8F` (+ `#1E5B3F`, `#E3F6EC`) | reference / **original**, target seed band, go actions |
 | Crimson `#B31237 / #600B1E` | **critical state only**: errors, destructive actions, off-target risk |
 
-Ordinary text and links never use crimson. Text-on-accent is the near-black `#1C1C1C` (contrast against `#E58AAC` is
-about 7:1); body text `#1C1C1C` on `#FDF4F9`; muted `#6A5760` (>= 6:1).
-
-The logo (`BrandMark.razor`, `wwwroot/favicon.svg`) is a target pierced by an arrow, drawn only with palette colours: rose rings (`#E58AAC`), mint bullseye (`#5FBE8E`), blush arrow (`#F9D6E4`) on a plum tile (`#1C1219`). One artwork for both themes.
+Ordinary text and links never use crimson. Text is ink `#1C1C1C` on cream `#FFF9FD` (15:1); muted `#6B5565` (>= 6:1). Plum takes cream text (5.5:1); ink on plum is only 3:1, so it is never used there.
 
 ## Tokens
 
@@ -25,14 +22,14 @@ Surfaces `--bg --surface --surface-sunken --surface-hover --border --border-stro
 and the error toast float); type `--font-sans --font-mono --text-xs..3xl`, weights and tracking; spacing `--space-1..7`;
 radii `--radius-sm|md|lg`; motion `--transition` (only colour, background-colour, border-colour, opacity, transform).
 
-Type: IBM Plex Sans (400/600) and JetBrains Mono (400/600), self-hosted (SIL OFL 1.1, `wwwroot/fonts`, no CDN). The
+Type: Abril Fatface (400, display only: page titles and big numbers, the same face as the logotype's family), IBM Plex Sans (400/600) and JetBrains Mono (400/600), self-hosted (SIL OFL 1.1, `wwwroot/fonts`, no CDN). The
 monospace disambiguates `0/O` and `1/l`, which matters for sequences.
 
 ## Dark theme
 
 `[data-bs-theme="dark"]` redefines the same tokens on near-neutral surfaces, so the pastel accents read as colour rather than
-blending into a tinted ground: page `#110C10`, card `#1D161B`, inset `#140E13`, hairline border `#4B3A46` (1.8:1 on a card),
-strong border `#735E6C`. Accents are brightened, not inverted: pink `#E58AAC`, mint `#5FBE8E`, critical `#FF8FA6`. Body, muted
+blending into a tinted ground: page `#0C0C0F`, card `#1C1C22`, inset `#101014`, hairline border `#44444F` (1.8:1 on a card),
+strong border `#6A6A78`. Accents are brightened, not inverted: pink `#F2A9E4`, mint `#8EE6BA`, critical `#FF8FA6`. Body, muted
 and accent text stay above 6:1 on every surface they sit on. The theme is chosen from the OS preference and persisted by the
 app-bar toggle (`localStorage["grna.theme"]`), applied before first paint to avoid a flash.
 
