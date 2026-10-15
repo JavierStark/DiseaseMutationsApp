@@ -9,14 +9,15 @@ ranked CRISPR-Cas13 guide RNA spacers, for finding those variants from a disease
 ClinVar [16]), and for planning combinatorial guide pooling onto 96/384-well plates. Spacers are scored for
 GC content, homopolymers, off-target alignments (Bowtie [1]) and RNA secondary structure (ViennaRNA [2, 3]), for both the
 mutated and the original (wild-type) sequence. It also flags restriction sites (BsaI, BsmBI, SapI, BbsI, EcoRI, PstI, XbaI,
-SpeI, EcoRV, NotI) in the DNA you would order, and exports an order-ready oligo CSV.
+SpeI, EcoRV, NotI) in the DNA you would order, shows whether each guide is compatible with the BioBrick RFC[10] and iGEM Type IIS
+RFC[1000] assembly standards, and exports an order-ready oligo CSV.
 
 The interface has a sidebar (Builder, Disease variants, Guide Pooling, App Status), a light and a dark theme, a skip link and
 keyboard-operable tabs. Numbers in square brackets point to the [References](#references).
 
-![Diana guide design page, light theme](https://static.igem.wiki/teams/6119/wiki/images/software/v2-readme-light.avif)
+![Diana guide design page, light theme](https://static.igem.wiki/teams/6119/wiki/images/software/v4-readme-light.avif)
 
-![Diana guide design page, dark theme](https://static.igem.wiki/teams/6119/wiki/images/software/v2-readme-dark.avif)
+![Diana guide design page, dark theme](https://static.igem.wiki/teams/6119/wiki/images/software/v4-readme-dark.avif)
 
 > **AI assistance.** Parts of this code were written with an AI coding assistant and reviewed by the team. Read
 > [.claude/RESPONSIBLE_AI_USE.md](.claude/RESPONSIBLE_AI_USE.md); the team remains responsible for everything committed here.
@@ -33,6 +34,10 @@ keyboard-operable tabs. Numbers in square brackets point to the [References](#re
 - **Results** per variant: original and mutated sequences (mutation highlighted, copy as FASTA), two ranked spacer tables
   (sortable, filterable, paged, with an alignment-risk chip), the complete gRNA (scaffold + chosen spacer), ViennaRNA
   structure and a FORNA [4] diagram link.
+- **Assembly compatibility**: each guide carries two badges, one per standard. BioBrick RFC[10] requires the DNA to be free of
+  EcoRI, NotI, XbaI, SpeI and PstI sites and iGEM Type IIS RFC[1000] of BsaI and SapI sites; a green badge means compatible, a
+  red one means a site is present (hover it for the enzyme). The badges appear in the results and shortlist tables and in the
+  selected-guide panel, next to the restriction-site chips.
 - **Runs**: cancellable (whole run or one variant), bounded-parallel, and they survive navigating to another page. A refresh
   restores your inputs (never results: download the CSV report to keep them).
 - **Off-target loci**: expand any spacer to see where its target window aligns in the genome (chromosome, position, strand,
@@ -45,7 +50,7 @@ keyboard-operable tabs. Numbers in square brackets point to the [References](#re
 - **Permalinks**: *Copy link to this design* encodes `?hgvs=...&spacer=28&seed=10-17`; opening it fills in the form (also `?rs=`) and you press **Run analysis**; a link never starts a run on its own.
 - **CSV report**: per input (rsID or HGVS) or all inputs at once, with the spacer/seed parameters in a leading `#` line and a `Strand` column.
 
-![Ranked spacers with off-target loci](https://static.igem.wiki/teams/6119/wiki/images/software/v2-04-builder-offtarget-loci.avif)
+![Ranked spacers with off-target loci](https://static.igem.wiki/teams/6119/wiki/images/software/v4-04-builder-offtarget-loci.avif)
 
 ### Disease variants (`/disease`)
 
