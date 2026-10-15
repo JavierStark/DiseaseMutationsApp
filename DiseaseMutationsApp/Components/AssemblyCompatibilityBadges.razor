@@ -1,0 +1,22 @@
+@using DiseaseMutationsApp.Services
+<span class="assembly-compat">
+    @if (ShowLabel)
+    {
+        <span class="assembly-compat-label">Assembly Compatibility:</span>
+    }
+    @foreach (var c in RestrictionSites.Compatibility(Found))
+    {
+        var text = c.IsCompatible
+            ? $"Compatible with {c.Standard.Name}: no sites for {string.Join(", ", c.Standard.Enzymes)}"
+            : $"Not compatible with {c.Standard.Name}: contains a site for {string.Join(", ", c.Blocking)}";
+        <span class="assembly-badge @(c.IsCompatible ? "assembly-ok" : "assembly-bad")" title="@text" aria-label="@text">@c.Standard.Rfc</span>
+    }
+</span>
+
+@code {
+    /// <summary>Enzymes whose recognition site was found in the guide's DNA (see <see cref="RestrictionSites.ForGuide"/>).</summary>
+    /// <summary>Show the "Assembly Compatibility:" prefix; tables drop it because the column header says so.</summary>
+    [Parameter] public bool ShowLabel { get; set; } = true;
+
+    [Parameter] public IReadOnlyList<string> Found { get; set; } = Array.Empty<string>();
+}

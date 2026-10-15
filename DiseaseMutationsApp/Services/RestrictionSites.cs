@@ -2,6 +2,15 @@ namespace DiseaseMutationsApp.Services;
 
 public record RestrictionEnzyme(string Name, string Site);
 
+/// <summary>A cloning standard and the enzymes whose sites must be absent from the DNA for it to be compatible.</summary>
+public record AssemblyStandard(string Rfc, string Name, IReadOnlyList<string> Enzymes);
+
+/// <summary>Whether a sequence is compatible with an assembly standard, and which of its enzymes cut it if not.</summary>
+public record AssemblyCompatibility(AssemblyStandard Standard, IReadOnlyList<string> Blocking)
+{
+    public bool IsCompatible => Blocking.Count == 0;
+}
+
 /// <summary>
 /// Flags recognition sites of common cloning enzymes in DNA that will be ordered, since a site inside the construct
 /// breaks Golden Gate or restriction cloning. Both strands are searched: the Type IIS enzymes are not palindromic.
@@ -21,6 +30,20 @@ public static class RestrictionSites
         new RestrictionEnzyme("EcoRV", "GATATC"),
         new RestrictionEnzyme("NotI", "GCGGCCGC"),
     };
+
+    public static readonly IReadOnlyList<AssemblyStandard> Standards = new[]
+    {
+        new AssemblyStandard("10", "BioBrick RFC[10]", new[] { "EcoRI", "NotI", "XbaI", "SpeI", "PstI" }),
+        new AssemblyStandard("1000", "iGEM Type IIS Assembly RFC[1000]", new[] { "BsaI", "SapI" }),
+    };
+
+    /// <summary>Compatibility of the DNA ordered for this spacer (scaffold + spacer) with each assembly standard.</summary>
+    public static IReadOnlyList<AssemblyCompatibility> CompatibilityForGuide(string spacerRna, bool includeT7 = false) =>
+        Compatibility(ForGuide(spacerRna, includeT7));
+
+    /// <summary>Given the enzymes found in a sequence, which standards it is compatible with.</summary>
+    public static IReadOnlyList<AssemblyCompatibility> Compatibility(IReadOnlyList<string> foundEnzymes) =>
+        Standards.Select(st => new AssemblyCompatibility(st, st.Enzymes.Where(foundEnzymes.Contains).ToList())).ToList();
 
     /// <summary>Names of the enzymes whose site occurs on either strand of the sequence (RNA is read as DNA), in list order.</summary>
     public static IReadOnlyList<string> Find(string sequence)

@@ -79,4 +79,20 @@ public class RestrictionSitesTests
         Assert.That(RestrictionSites.Warning("BsaI"),
             Is.EqualTo("Warning: This DNA sequence includes a restriction site for the enzyme: 'BsaI'"));
     }
+
+    [Test]
+    public void Compatibility_IsGreenOnlyWhenNoEnzymeOfTheStandardCuts()
+    {
+        var none = RestrictionSites.Compatibility(Array.Empty<string>());
+        Assert.That(none.Select(c => c.Standard.Rfc), Is.EqualTo(new[] { "10", "1000" }));
+        Assert.That(none.All(c => c.IsCompatible));
+
+        var bsa = RestrictionSites.Compatibility(new[] { "BsaI" });
+        Assert.That(bsa[0].IsCompatible, Is.True);
+        Assert.That(bsa[1].IsCompatible, Is.False);
+
+        var eco = RestrictionSites.Compatibility(new[] { "EcoRI", "BsmBI", "EcoRV" });
+        Assert.That(eco[0].Blocking, Is.EqualTo(new[] { "EcoRI" }));
+        Assert.That(eco[1].IsCompatible, Is.True);
+    }
 }

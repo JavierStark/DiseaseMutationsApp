@@ -63,6 +63,7 @@
                     @Header("GC %", GrnaSortColumn.GCContent, true)
                     @Header("Homopolymers", GrnaSortColumn.HomopolymerCount, true)
                     @Header("Alignments", GrnaSortColumn.Alignments, false)
+                    <th scope="col">Assembly compatibility</th>
                     @Header("Energy (kcal/mol)", GrnaSortColumn.Energy, true)
                     @Header("Score", GrnaSortColumn.Score, true)
                 </tr>
@@ -94,12 +95,14 @@
                             <SequenceSpan Sequence="@spacer" SeedStart="SeedStart" SeedEnd="SeedEnd"
                                           MutationStart="g.MutationHighlightStart" MutationLength="g.MutationHighlightLength" />
                             <span class="text-muted">3'</span>
-                            <RestrictionChip Enzymes="RestrictionSites.ForGuide(spacer, false)" />
+                            @{ var sites = RestrictionSites.ForGuide(spacer, false); }
+                            <RestrictionChip Enzymes="sites" />
                         </td>
                         <td class="num bar-cell bar-gc" style="--w:@Pct(g.GCScore)"><span>@g.GCScore.ToString("0.##")</span></td>
                         <td class="num">@g.GCContent.ToString("F2")</td>
                         <td class="num">@g.HomopolymerCount</td>
                         <td><span class="risk-chip @risk.CssClass"><span class="risk-glyph" aria-hidden="true"></span>@risk.Label</span></td>
+                        <td><AssemblyCompatibilityBadges Found="sites" ShowLabel="false" /></td>
                         <td class="num">@(g.RnaFoldResult is null ? "n/a" : g.RnaFoldResult.Energy.ToString("F2"))</td>
                         <td class="num bar-cell" style="--w:@Pct(g.Score)"><span>@g.Score.ToString("P0")</span></td>
                     </tr>
@@ -107,7 +110,7 @@
                     {
                         <tr class="loci-row" @key="lociKey">
                             <td></td>
-                            <td colspan="7">
+                            <td colspan="8">
                                 @if (state.Loading)
                                 {
                                     <span class="helper-note" role="status">Looking up genomic loci&hellip;</span>
