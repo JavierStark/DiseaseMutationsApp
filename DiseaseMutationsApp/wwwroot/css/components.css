@@ -9,7 +9,7 @@
 .app-sidebar { background: var(--surface); border-right: 1px solid var(--border); display: flex; flex-direction: column; position: sticky; top: 0; height: 100vh; }
 .app-brand { display: flex; align-items: center; gap: var(--space-3); padding: var(--space-4); color: var(--text-primary); text-decoration: none; font-weight: var(--weight-strong); letter-spacing: var(--tracking-tight); border-bottom: 1px solid var(--divider); }
 .app-brand:hover { color: var(--text-primary); }
-.brand-mark { width: 2rem; height: 2rem; flex: none; }
+.brand-mark { width: 2.25rem; height: 2.25rem; flex: none; }
 .app-nav { display: flex; flex-direction: column; padding: var(--space-3) 0; }
 .app-nav-link { display: flex; align-items: center; gap: var(--space-3); padding: var(--space-3) var(--space-4); color: var(--text-secondary); text-decoration: none; border-left: 2px solid transparent; transition: color var(--transition), background-color var(--transition), border-color var(--transition); }
 .app-nav-link:hover { background: var(--surface-hover); color: var(--text-primary); }

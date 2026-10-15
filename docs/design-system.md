@@ -8,12 +8,14 @@ rather than decoration, and a legible monospace for sequences. Everything lives 
 
 | Family | Hex | Means |
 |---|---|---|
-| Pink `#F6D8F1 / #E68DD8 / #C55CB4 / #8E2E7E` | variant / **mutated** |
-| Mint `#D5F9E6 / #A1EEC6 / #5FBE8E / #1E5B3F` | reference / **original** |
+| Pink `#F9D6E4 / #E58AAC / #D4568A / #A8407E` | variant / **mutated** |
+| Mint `#D5F9E6 / #8FDDB3 / #5FBE8E / #1E5B3F` | reference / **original** |
 | Crimson `#B31237 / #600B1E` | **critical state only**: errors, destructive actions, off-target risk |
 
-Ordinary text and links never use crimson. Text-on-accent is the near-black `#1D0F1A` (contrast against `#E68DD8` is
-about 7:1); body text `#2A1A26` on `#FFF9FD`; muted `#6B5565` (>= 6:1).
+Ordinary text and links never use crimson. Text-on-accent is the near-black `#1C1C1C` (contrast against `#E58AAC` is
+about 7:1); body text `#1C1C1C` on `#FDF4F9`; muted `#6A5760` (>= 6:1).
+
+The logo (`BrandMark.razor`, `wwwroot/favicon.svg`) is a target pierced by an arrow, drawn only with palette colours: rose rings (`#E58AAC`), mint bullseye (`#5FBE8E`), blush arrow (`#F9D6E4`) on a plum tile (`#1C1219`). One artwork for both themes.
 
 ## Tokens
 
@@ -29,8 +31,8 @@ monospace disambiguates `0/O` and `1/l`, which matters for sequences.
 ## Dark theme
 
 `[data-bs-theme="dark"]` redefines the same tokens on near-neutral surfaces, so the pastel accents read as colour rather than
-blending into a tinted ground: page `#0C0C0F`, card `#1C1C22`, inset `#101014`, hairline border `#44444F` (1.8:1 on a card),
-strong border `#6A6A78`. Accents are brightened, not inverted: pink `#F2A9E4`, mint `#8EE6BA`, critical `#FF8FA6`. Body, muted
+blending into a tinted ground: page `#110C10`, card `#1D161B`, inset `#140E13`, hairline border `#4B3A46` (1.8:1 on a card),
+strong border `#735E6C`. Accents are brightened, not inverted: pink `#E58AAC`, mint `#5FBE8E`, critical `#FF8FA6`. Body, muted
 and accent text stay above 6:1 on every surface they sit on. The theme is chosen from the OS preference and persisted by the
 app-bar toggle (`localStorage["grna.theme"]`), applied before first paint to avoid a flash.
 
