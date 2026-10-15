@@ -8,12 +8,11 @@ rather than decoration, and a legible monospace for sequences. Everything lives 
 
 | Family | Hex | Means |
 |---|---|---|
-| Pink `#F6D8F1 / #E68DD8 / #C55CB4 / #8E2E7E` | variant / **mutated** |
-| Mint `#D5F9E6 / #A1EEC6 / #5FBE8E / #1E5B3F` | reference / **original** |
+| Plum `#A8407E` (+ `#6E2352`–`#F7E3EF` ramp) | variant / **mutated**, primary actions, active nav |
+| Leaf green `#5FBF8F` (+ `#1E5B3F`, `#E3F6EC`) | reference / **original**, target seed band, go actions |
 | Crimson `#B31237 / #600B1E` | **critical state only**: errors, destructive actions, off-target risk |
 
-Ordinary text and links never use crimson. Text-on-accent is the near-black `#1D0F1A` (contrast against `#E68DD8` is
-about 7:1); body text `#2A1A26` on `#FFF9FD`; muted `#6B5565` (>= 6:1).
+Ordinary text and links never use crimson. Text is ink `#1C1C1C` on cream `#FFF9FD` (15:1); muted `#6B5565` (>= 6:1). Plum takes cream text (5.5:1); ink on plum is only 3:1, so it is never used there.
 
 ## Tokens
 
@@ -23,7 +22,7 @@ Surfaces `--bg --surface --surface-sunken --surface-hover --border --border-stro
 and the error toast float); type `--font-sans --font-mono --text-xs..3xl`, weights and tracking; spacing `--space-1..7`;
 radii `--radius-sm|md|lg`; motion `--transition` (only colour, background-colour, border-colour, opacity, transform).
 
-Type: IBM Plex Sans (400/600) and JetBrains Mono (400/600), self-hosted (SIL OFL 1.1, `wwwroot/fonts`, no CDN). The
+Type: Abril Fatface (400, display only: page titles and big numbers, the same face as the logotype's family), IBM Plex Sans (400/600) and JetBrains Mono (400/600), self-hosted (SIL OFL 1.1, `wwwroot/fonts`, no CDN). The
 monospace disambiguates `0/O` and `1/l`, which matters for sequences.
 
 ## Dark theme

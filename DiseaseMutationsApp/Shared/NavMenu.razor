@@ -1,20 +1,43 @@
 <a class="app-brand" href="" aria-label="Diana home">
-    <BrandMark />
-    <span class="app-brand-text">Diana</span>
+    <span class="brand-full">
+        <img class="brand-logotype-light" src="img/diana-logotype-positive.svg" alt="" />
+        <img class="brand-logotype-dark" src="img/diana-logotype-negative.svg" alt="" />
+    </span>
+    <span class="brand-mini">
+        <img class="brand-icon-light" src="img/diana-icon-positive.svg" alt="" />
+        <img class="brand-icon-dark" src="img/diana-icon-negative.svg" alt="" />
+    </span>
 </a>
 
 <nav class="app-nav" aria-label="Primary">
-    <NavLink class="app-nav-link" href="" Match="NavLinkMatch.All" title="Diana">
-        <Icon Name="dna" /><span class="app-nav-text">Diana</span>
+    <NavLink class="app-nav-link" href="" Match="NavLinkMatch.All" title="Builder">
+        <img class="nav-mark nav-mark-light" src="img/diana-icon-positive.svg" alt="" />
+        <img class="nav-mark nav-mark-dark" src="img/diana-icon-negative.svg" alt="" />
+        <span class="app-nav-text">Builder</span>
     </NavLink>
     <NavLink class="app-nav-link" href="disease" Match="NavLinkMatch.Prefix" title="Disease variants">
-        <Icon Name="flask" /><span class="app-nav-text">Disease variants</span>
+        <svg class="nav-icon" viewBox="0 0 28 28" aria-hidden="true" focusable="false">
+            <path d="M8 3C8 10 20 10 20 14S8 18 8 25" /><path d="M20 3C20 10 8 10 8 14S20 18 20 25" />
+            <circle class="dot" cx="8" cy="3" r="1.8" /><circle class="dot" cx="20" cy="3" r="1.8" />
+            <circle class="dot" cx="8" cy="25" r="1.8" /><circle class="dot" cx="20" cy="25" r="1.8" />
+            <rect class="leaf" x="9" y="12.6" width="10" height="2.8" rx="1.2" />
+        </svg>
+        <span class="app-nav-text">Disease variants</span>
     </NavLink>
     <NavLink class="app-nav-link" href="pooling" Match="NavLinkMatch.Prefix" title="Guide Pooling">
-        <Icon Name="grid" /><span class="app-nav-text">Guide Pooling</span>
+        <svg class="nav-icon" viewBox="0 0 28 28" aria-hidden="true" focusable="false">
+            <circle cx="8" cy="8" r="3.4" /><circle cx="20" cy="8" r="3.4" /><circle cx="8" cy="20" r="3.4" />
+            <circle class="leaf" cx="20" cy="20" r="3.4" />
+            <circle class="dot" cx="20" cy="8" r="1.4" />
+        </svg>
+        <span class="app-nav-text">Guide Pooling</span>
     </NavLink>
     <NavLink class="app-nav-link" href="app-status" Match="NavLinkMatch.Prefix" title="App Status">
-        <Icon Name="pulse" /><span class="app-nav-text">App Status</span>
+        <svg class="nav-icon" viewBox="0 0 28 28" aria-hidden="true" focusable="false">
+            <path d="M3 15H8L11 7L16 22L19 13H25" />
+            <circle class="dot" cx="3" cy="15" r="1.8" /><circle class="leaf" cx="25" cy="13" r="2.6" />
+        </svg>
+        <span class="app-nav-text">App Status</span>
     </NavLink>
 </nav>
 

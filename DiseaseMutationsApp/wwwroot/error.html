@@ -6,11 +6,14 @@
     <title>Something went wrong - Diana</title>
     <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
     <style>
-        body { font-family: system-ui, sans-serif; background: #FFF9FD; color: #2A1A26; display: grid; place-items: center; min-height: 100vh; margin: 0; }
-        main { max-width: 32rem; padding: 2rem; border: 1px solid #E7D3E2; border-left: 4px solid #B31237; border-radius: 8px; background: #fff; }
+        :root { --bg: #FFF9FD; --surface: #FFFFFF; --border: #E6CBDB; --text: #1C1C1C; --text-2: #4A3342; --plum: #A8407E; --plum-ink: #6E2352; --crimson: #B31237; }
+        body { font-family: system-ui, sans-serif; background: var(--bg); color: var(--text); display: grid; place-items: center; min-height: 100vh; margin: 0; }
+        main { max-width: 32rem; padding: 2rem; border: 1px solid var(--border); border-left: 4px solid var(--crimson); border-radius: 8px; background: var(--surface); }
         h1 { margin-top: 0; font-size: 1.5rem; }
-        a { color: #8E2E7E; }
-        @media (prefers-color-scheme: dark) { body { background: #1A1218; color: #F3E8F0; } main { background: #241A22; border-color: #3F2E3B; } a { color: #E8BFE0; } }
+        a { color: var(--plum-ink); }
+        @media (prefers-color-scheme: dark) {
+            :root { --bg: #161214; --surface: #211A1E; --border: #4A3A44; --text: #FFF4FA; --text-2: #E3CFDB; --plum-ink: #F8CCF1; --crimson: #FF8FA6; }
+        }
     </style>
 </head>
 <body>

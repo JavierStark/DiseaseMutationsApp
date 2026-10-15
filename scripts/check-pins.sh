@@ -21,7 +21,7 @@ hits=$(grep -nE '^FROM [a-z]|^\s+image: [a-z]' Dockerfile Dockerfile.bowtie-base
 $hits"
 
 # 2b. CI job images must be pinned by digest too.
-hits=$(grep -nE '^s+image: ' .gitlab-ci.yml 2>/dev/null | grep -vE ':' || true)
+hits=$(grep -nE '^\s+image: ' .gitlab-ci.yml 2>/dev/null | grep -vE "@sha256:" || true)
 [ -z "$hits" ] || report "CI image without  digest:
 $hits"
 

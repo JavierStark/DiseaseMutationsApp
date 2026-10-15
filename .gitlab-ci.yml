@@ -28,11 +28,11 @@ test:
   script:
     - dotnet restore --locked-mode
     - dotnet build --no-restore -c Release
-    - dotnet test --no-build -c Release --collect:"XPlat Code Coverage" --logger "junit;LogFilePath=$CI_PROJECT_DIR/test-results-{assembly}.xml" -- NUnit.TestOutputXml=TestResults
+    - dotnet test DiseaseMutationsAppTests --no-build -c Release --collect:"XPlat Code Coverage" --logger "junit;LogFilePath=$CI_PROJECT_DIR/test-results-{assembly}.xml" -- NUnit.TestOutputXml=TestResults
     # coverlet writes Cobertura XML, not a console table: print the line rate in the form the coverage regex below reads.
     - |
-      f=$(find DiseaseMutationsAppTests -name coverage.cobertura.xml | head -1)
-      rate=$(grep -o 'line-rate="[0-9.]*"' "$f" | head -1 | grep -o '[0-9.]*')
+      f=$(find DiseaseMutationsAppTests -name coverage.cobertura.xml -print -quit)
+      rate=$(sed -n 's/.*<coverage [^>]*line-rate="\([0-9.]*\)".*/\1/p' "$f" | sed -n 1p)
       awk -v r="$rate" 'BEGIN { printf "Total | %.1f%%\n", r * 100 }'
   coverage: '/Total\s*\|\s*(\d+(?:\.\d+)?)%/'
   artifacts:
