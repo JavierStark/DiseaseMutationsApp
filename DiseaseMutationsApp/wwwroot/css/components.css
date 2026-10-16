@@ -134,8 +134,8 @@
 th[aria-sort="ascending"] .sort-btn .icon, th[aria-sort="descending"] .sort-btn .icon { opacity: 1; color: var(--variant-text); }
 .seq-summary { display: flex; align-items: center; justify-content: space-between; gap: var(--space-3); cursor: pointer; list-style: none; }
 .seq-summary::-webkit-details-marker { display: none; }
-.seq-summary::after { content: "BE"; color: var(--text-muted); transition: transform 0.15s; }
-details[open] > .seq-summary::after { transform: rotate(180deg); }
+.seq-summary::after { content: ""; flex: none; width: 0.5em; height: 0.5em; margin-top: -0.25em; border-right: 2px solid var(--text-muted); border-bottom: 2px solid var(--text-muted); transform: rotate(45deg); transition: transform 0.15s; }
+details[open] > .seq-summary::after { transform: rotate(225deg); margin-top: 0.25em; }
 .grna-collapsible > .seq-summary { border-bottom: 0; }
 .seq-cell { font-family: var(--font-mono); white-space: nowrap; font-size: var(--text-sm); }
 .bar-cell { position: relative; }
