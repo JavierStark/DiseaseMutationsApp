@@ -109,7 +109,7 @@
 
     @if (StateService.Shortlist.Count > 0)
     {
-        <div class="card mb-4">
+        <div class="card mb-4" id="shortlist" tabindex="-1">
             <div class="card-body">
                 <div class="d-flex flex-wrap justify-content-between align-items-center gap-2 mb-3">
                     <h2 class="card-title section-title mb-0" title="@HelpText.Shortlist"><Icon Name="list" />Shortlist <span class="shortlist-badge">@StateService.Shortlist.Count</span></h2>
