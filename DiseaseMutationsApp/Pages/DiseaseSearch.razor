@@ -24,7 +24,7 @@
                     }
 
                     <form @onsubmit="FindDiseases" @onsubmit:preventDefault="true">
-                        <label for="disease-query" class="form-label">Disease name, OMIM number or MONDO id</label>
+                        <label for="disease-query" class="form-label" title="@HelpText.DiseaseQuery">Disease name, OMIM number or MONDO id</label>
                         <div class="d-flex flex-wrap gap-2">
                             <input id="disease-query" type="text" class="form-control flex-grow-1 input-grow" maxlength="120" autocomplete="off"
                                    placeholder="sickle cell disease, 603903 or MONDO:0011382"
@@ -86,7 +86,7 @@
                         {
                             <div class="row g-3 mb-3">
                                 <div class="col-sm-6">
-                                    <label for="min-significance" class="form-label">Classification</label>
+                                    <label for="min-significance" class="form-label" title="@HelpText.Classification">Classification</label>
                                     <select id="min-significance" class="form-select" @bind="S.Significance" disabled="@IsBusy">
                                         <option value="@DiseaseSignificance.PathogenicOrLikely">Pathogenic and likely pathogenic</option>
                                         <option value="@DiseaseSignificance.PathogenicOnly">Pathogenic only</option>
@@ -97,7 +97,7 @@
                                     <div class="form-check mb-2">
                                         <input id="include-subtypes" class="form-check-input" type="checkbox" @bind="S.IncludeSubtypes"
                                                disabled="@(IsBusy || selected.NeedsSubtypes)" />
-                                        <label class="form-check-label" for="include-subtypes">
+                                        <label class="form-check-label" for="include-subtypes" title="@HelpText.Subtypes">
                                             Also search its subtypes
                                             @if (selected.NeedsSubtypes)
                                             {
@@ -218,13 +218,13 @@
 
                                 <div class="filter-row" role="search" aria-label="Filter variants">
                                     <div>
-                                        <label class="form-label" for="variant-filter">Contains</label>
+                                        <label class="form-label" for="variant-filter" title="@HelpText.DiseaseFilter">Contains</label>
                                         <input id="variant-filter" type="text" class="form-control form-control-sm filter-wide" placeholder="gene, rs, condition…"
                                                @bind="S.FilterText" @bind:event="oninput" @bind:after="FilterChanged" />
                                     </div>
                                     <div class="form-check mb-1">
                                         <input id="only-rs" class="form-check-input" type="checkbox" @bind="S.OnlyWithRsId" @bind:after="FilterChanged" />
-                                        <label class="form-check-label" for="only-rs">Only with an rsID</label>
+                                        <label class="form-check-label" for="only-rs" title="@HelpText.OnlyRs">Only with an rsID</label>
                                     </div>
                                     <div>
                                         <label class="form-label" for="variant-page-size">Rows</label>
@@ -255,11 +255,11 @@
                                         <thead>
                                         <tr>
                                             <th scope="col"><span class="visually-hidden">Select</span></th>
-                                            @Header("rsID or HGVS", DiseaseSortColumn.Variant)
-                                            @Header("Gene", DiseaseSortColumn.Gene)
-                                            @Header("ClinVar variant", DiseaseSortColumn.Name)
-                                            @Header("Classification", DiseaseSortColumn.Classification)
-                                            @Header("Review", DiseaseSortColumn.Stars)
+                                            @Header("rsID or HGVS", DiseaseSortColumn.Variant, HelpText.RsOrHgvs)
+                                            @Header("Gene", DiseaseSortColumn.Gene, HelpText.Gene)
+                                            @Header("ClinVar variant", DiseaseSortColumn.Name, HelpText.ClinVarVariant)
+                                            @Header("Classification", DiseaseSortColumn.Classification, HelpText.Classification)
+                                            @Header("Review", DiseaseSortColumn.Stars, HelpText.Review)
                                             <th scope="col"><span class="visually-hidden">Actions</span></th>
                                         </tr>
                                         </thead>
@@ -374,13 +374,13 @@
 </div>
 
 @code {
-    private RenderFragment Header(string label, DiseaseSortColumn column) => __builder =>
+    private RenderFragment Header(string label, DiseaseSortColumn column, string tip) => __builder =>
     {
         var active = S.SortColumn == column;
         var sort = active ? (S.SortAscending ? "ascending" : "descending") : "none";
         var icon = active ? (S.SortAscending ? "sort-up" : "sort-down") : "sort";
-        <th scope="col" aria-sort="@sort">
-            <button type="button" class="sort-btn" @onclick="() => SortBy(column)">
+        <th scope="col" aria-sort="@sort" title="@tip">
+            <button type="button" class="sort-btn" title="@tip" @onclick="() => SortBy(column)">
                 @label<Icon Name="@icon" />
             </button>
         </th>

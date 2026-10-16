@@ -36,9 +36,10 @@ let validateAgainstSequence (hgvs: HGVS.HGVS) (data: string) : unit =
     match hgvs.Type with
     | "g" | "m" | "n" -> ()
     | "c" ->
-        raise (GrnaInputException(
-            "Coding-sequence (c.) positions are counted from the CDS start, which Diana does not convert yet. " +
-            "Use genomic (g.) coordinates, for example the g. notations an rsID resolves to."))
+        // getBestgRNAFromHGVS converts c. positions of a transcript record before this point. A c. position that gets here
+        // was not converted (a genomic record, or a caller that skipped the conversion) and must never be used as an index.
+        HGVS.requireCodingTranscript hgvs.Accession
+        raise (GrnaInputException("Coding-sequence (c.) positions are counted from the CDS start and must be converted to transcript positions before the design; the CDS start of this record is not known here."))
     | t -> raise (GrnaInputException(sprintf "Only g., m. and n. coordinates are supported, got '%s.'." t))
 
     match hgvs.Mutation with
@@ -97,6 +98,17 @@ let calculateMutationSpanInMutated (extraNucleotids: int) (sequenceLength: int) 
 
 let getBestgRNAFromHGVS (hgvsString: string) (grnaSize: int) (seedStart: int) (seedEnd: int) (bowtieService: gRNA.Services.BowtieService) (cancellationToken: System.Threading.CancellationToken) (complement: bool) = task {
     validateSpacerParameters grnaSize seedStart seedEnd
+    // c. positions on a transcript record (NM_...:c.20A>T) are converted to positions of the mRNA (n.70A>T) first.
+    let! hgvsString, conversionNotice =
+        task {
+            match HGVS.tryParseCoding hgvsString with
+            | Some(accession, _) ->
+                HGVS.requireCodingTranscript accession
+                let! cdsStart, cdsEnd = SequenceRepository.SequenceRepository.GetCodingRange(accession, cancellationToken)
+                let converted = HGVS.convertCodingToTranscript cdsStart cdsEnd hgvsString
+                return converted, Some(sprintf "%s was converted to %s: the coding sequence of %s starts at position %d of the transcript, so c.1 is n.%d. The guides are designed on the mRNA itself." hgvsString converted accession cdsStart cdsStart)
+            | None -> return hgvsString, None
+        }
     let hgvsObj = HGVS.HGVS(hgvsString)
     let! sequence = SequenceRepository.SequenceRepository.GetSequence(hgvsObj.Accession)
     validateAgainstSequence hgvsObj sequence.Data
@@ -153,10 +165,16 @@ let getBestgRNAFromHGVS (hgvsString: string) (grnaSize: int) (seedStart: int) (s
         else
             gRNAs, originalGRNAs
 
+    // How well each guide tells the two alleles apart: its DNA target against the closest window of the other allele.
+    // Done after the substitution rule so the engineered spacer is measured as it will be ordered.
+    let gRNAs = SpacerFinder.annotateDiscrimination finalOriginal gRNAs
+    let originalGRNAs = SpacerFinder.annotateDiscrimination finalMutated originalGRNAs
+
     let notices =
-        if isSubstitution then
-            specialRuleNotice hgvsObj sequence.Data.Length grnaSize appliesToMutated appliesToOriginal |> Option.toList
-        else []
+        (conversionNotice |> Option.toList)
+        @ (if isSubstitution then
+               specialRuleNotice hgvsObj sequence.Data.Length grnaSize appliesToMutated appliesToOriginal |> Option.toList
+           else [])
 
     let windowStart, windowEnd = calculateWindow extraNucleotids sequence.Data.Length hgvsObj
 

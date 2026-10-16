@@ -50,6 +50,24 @@
         var mutLenOriginal = Data.Original.Length - 2 * extra;
         var mutLenMutated = Data.Mutated.Length - 2 * extra;
 
+        @if (Data.TargetsMrna == false)
+        {
+            <div class="alert alert-warning mb-3" role="status">
+                <Icon Name="alert" />This tab designs against the strand that is the same as the @(Data.Gene ?? "gene")'s mRNA, so its spacers would <strong>not</strong> bind the mRNA (Cas13 needs a spacer complementary to the RNA). Use the @(Data.IsComplement ? "Normal" : "Complement") tab of this variant.
+            </div>
+        }
+        else if (Data.TargetsMrna == null)
+        {
+            <div class="alert alert-info mb-3" role="status">
+                <Icon Name="info" />@HelpText.OrientationUnknown
+            </div>
+        }
+        @if (Data.GRNAs is { Count: > 0 } mutatedGuides && mutatedGuides.All(g => g.WtMismatches is >= 0 and < 2 && !g.Engineered))
+        {
+            <div class="alert alert-warning mb-3" role="status">
+                <Icon Name="alert" />None of the guides for this sequence can tell the mutated allele from the normal one: each differs from the normal sequence by at most one letter.
+            </div>
+        }
         @foreach (var notice in Data.Notices)
         {
             <div class="alert alert-warning mb-3" role="status">
@@ -123,7 +141,7 @@
         <div class="card complete-grna-card">
             <div class="card-body">
                 <div class="d-flex flex-wrap justify-content-between align-items-center gap-2 mb-3">
-                    <h2 class="card-title section-title mb-0"><Icon Name="flask" />Complete gRNA</h2>
+                    <h2 class="card-title section-title mb-0" title="@HelpText.Scaffold"><Icon Name="flask" />Complete gRNA</h2>
                     @if (Data.SelectedSpacer != null)
                     {
                         <div class="d-flex flex-wrap gap-2">
@@ -221,8 +239,16 @@
             {
                 <span class="font-monospace" title="1-based, inclusive">@locus</span>
             }
-            <span class="tab-strand" title="@(Data.IsComplement ? "Opposite strand: the reverse complement of the reference" : "Reference strand")">@(Data.IsComplement ? "− strand" : "+ strand")</span>
+            <span class="tab-strand" title="@(Data.IsComplement ? HelpText.StrandComplement : HelpText.StrandNormal)">@(Data.IsComplement ? "− strand" : "+ strand")</span>
             <span>@(Data.IsComplement ? "reverse complement, shown 5'→3'" : "reference, shown 5'→3'")</span>
+            @if (Data.TargetsMrna == true)
+            {
+                <span class="tab-mrna" title="@HelpText.TargetsMrna">spacers bind @(Data.Gene ?? "the gene")'s mRNA</span>
+            }
+            else if (Data.TargetsMrna == false)
+            {
+                <span class="tab-strand" title="@HelpText.TargetsAntisense">spacers do not bind the mRNA</span>
+            }
         </p>
     };
 
@@ -235,6 +261,10 @@
     public static IReadOnlyList<GRNAResult> Sorted(List<GRNAResult>? list, GrnaSortColumn column, bool ascending)
     {
         if (list == null || list.Count == 0) return Array.Empty<GRNAResult>();
+        // The engineered spacer (substitution rule) is always listed first, whatever the sort; the ordinary ranking follows.
+        var engineered = list.Where(g => g.Engineered).ToList();
+        if (engineered.Count > 0)
+            return engineered.Concat(Sorted(list.Where(g => !g.Engineered).ToList(), column, ascending)).ToList();
         IEnumerable<GRNAResult> q = column switch
         {
             GrnaSortColumn.Sequence => ascending ? list.OrderBy(g => g.Sequence, StringComparer.Ordinal) : list.OrderByDescending(g => g.Sequence, StringComparer.Ordinal),
@@ -243,6 +273,8 @@
             GrnaSortColumn.HomopolymerCount => ascending ? list.OrderBy(g => g.HomopolymerCount) : list.OrderByDescending(g => g.HomopolymerCount),
             GrnaSortColumn.Alignments => ascending ? list.OrderBy(g => g.Allignments) : list.OrderByDescending(g => g.Allignments),
             GrnaSortColumn.Energy => ascending ? list.OrderBy(g => g.RnaFoldResult?.Energy ?? double.MaxValue) : list.OrderByDescending(g => g.RnaFoldResult?.Energy ?? double.MinValue),
+            GrnaSortColumn.SpacerUnpaired => ascending ? list.OrderBy(g => g.SpacerUnpaired) : list.OrderByDescending(g => g.SpacerUnpaired),
+            GrnaSortColumn.WtMismatches => ascending ? list.OrderBy(g => g.WtMismatches) : list.OrderByDescending(g => g.WtMismatches),
             GrnaSortColumn.Score => ascending ? list.OrderBy(g => g.Score) : list.OrderByDescending(g => g.Score),
             _ => list
         };

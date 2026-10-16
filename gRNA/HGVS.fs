@@ -121,3 +121,51 @@ type HGVS(code: string) =
     member _.GetMutationLength() =
         let start, end' = position
         end' - start + 1
+
+// ---------------------------------------------------------------------------------------------------------------
+// Coding-sequence (c.) positions on a transcript record
+// ---------------------------------------------------------------------------------------------------------------
+
+/// `Some (accession, text after "c.")` when the code is a c. notation, else None.
+let tryParseCoding (code: string) : (string * string) option =
+    let m = Regex.Match(code.Trim(), @"^([^:]+):c\.(.+)$")
+    if m.Success then Some(m.Groups.[1].Value, m.Groups.[2].Value) else None
+
+/// c. positions can be converted only on a transcript record (NM_ / XM_, a protein-coding mRNA), whose sequence has no introns,
+/// so a c. position is just an offset from the start of the coding sequence. On a genomic record (NG_, NC_) the exons are
+/// separated by introns and the conversion would need the exon map, which Diana does not read yet.
+let requireCodingTranscript (accession: string) : unit =
+    if not (accession.StartsWith "NM_" || accession.StartsWith "XM_") then
+        raise (GrnaInputException(sprintf "c. positions can be converted only on a transcript record such as NM_000518.5 (a protein-coding mRNA), not on '%s'. Use the NM_ accession of the transcript, or genomic (g.) coordinates, for example the g. notations an rsID resolves to." accession))
+
+let private codingPosition = Regex(@"^([-*]?)(\d+)([+-]\d+)?")
+
+/// Rewrites `NM_x:c.20A>T` as `NM_x:n.70A>T`, given the 1-based first and last position of the CDS in the transcript.
+/// c.N is cdsStart + N - 1; c.-N is cdsStart - N (5' UTR); c.*N is cdsEnd + N (3' UTR). Intronic offsets (c.123+4) do not
+/// exist in an mRNA and are refused. A code that is not a c. notation is returned unchanged.
+let convertCodingToTranscript (cdsStart: int) (cdsEnd: int) (code: string) : string =
+    match tryParseCoding code with
+    | None -> code
+    | Some(accession, body) ->
+        requireCodingTranscript accession
+        let convert (text: string) : int * string =
+            let m = codingPosition.Match text
+            if not m.Success then
+                raise (GrnaInputException(sprintf "Invalid HGVS format: c. position not found in '%s'" text))
+            if m.Groups.[3].Success then
+                raise (GrnaInputException(sprintf "'%s' has an intronic offset (c.%s). A transcript record has no introns, so such a position cannot be placed on it; use genomic (g.) coordinates." code m.Value))
+            let n = Int32.Parse(m.Groups.[2].Value, Globalization.CultureInfo.InvariantCulture)
+            if n < 1 then raise (GrnaInputException(sprintf "Invalid HGVS format: c.%s (c. positions start at 1; c.-1 is the base before the start codon)" m.Value))
+            let position =
+                match m.Groups.[1].Value with
+                | "-" -> cdsStart - n
+                | "*" -> cdsEnd + n
+                | _ -> cdsStart + n - 1
+            if position < 1 then raise (GrnaInputException(sprintf "c.%s is before the start of %s." m.Value accession))
+            position, text.Substring m.Length
+        let first, afterFirst = convert body
+        if afterFirst.StartsWith "_" then
+            let second, rest = convert (afterFirst.Substring 1)
+            sprintf "%s:n.%d_%d%s" accession first second rest
+        else
+            sprintf "%s:n.%d%s" accession first afterFirst

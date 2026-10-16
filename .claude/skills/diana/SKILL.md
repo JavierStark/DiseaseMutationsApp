@@ -135,7 +135,7 @@ session `.json`. Exact formats, output schemas, resume rules and pooling details
    prints its summary on stderr. Redirect/parse stdout only. Never allocate a TTY (`docker run -t`/`exec -t`), it merges them.
 3. **Exit codes:** 0 ok, 1 failure (including *partial* batch failure: rows for the successes are still written; when
    *every* variant fails the code is that of the first failed variant in input order),
-   2 bad input/arguments (malformed HGVS, wrong reference base, a `c.` position, spacer outside 18-60, an unknown option), 3 missing native dependency (run `doctor`), 4 upstream failure (NCBI). 125 from the wrappers
+   2 bad input/arguments (malformed HGVS, wrong reference base, a `c.` position on a genomic record, spacer outside 18-60, an unknown option), 3 missing native dependency (run `doctor`), 4 upstream failure (NCBI). 125 from the wrappers
    or `docker run` = Docker problem (e.g. image not built).
 4. **A failed `design` still prints the CSV header** (and provenance line). Check the exit code, not just whether output exists.
 5. **Typos are rejected, not ignored.** An unknown option (`--capasity 2`) or a flag that does not apply to the command

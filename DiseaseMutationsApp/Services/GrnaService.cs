@@ -8,7 +8,18 @@ public interface IGrnaAnalysis
     Task<ResultFromHGVS> GetBestgRNAFromHgvs(string hgvs, int window, int seedStart, int seedEnd, bool complement = false, CancellationToken cancellationToken = default);
     Task<List<string>> GetHgvsFromSnp(string rsid, CancellationToken cancellationToken = default);
     string? GetNcbiNuccoreUrl(string hgvs);
+
+    /// <summary>
+    /// The notations of an rsID with their context (gene, orientation, significance). By default only the relevant allele(s)
+    /// on the main RefSeqGene record; <paramref name="allAlleles"/> lists everything dbSNP has. The default implementation
+    /// wraps <see cref="GetHgvsFromSnp"/> and knows nothing about genes.
+    /// </summary>
+    async Task<List<SnpVariantInfo>> GetSnpVariants(string rsid, bool allAlleles, CancellationToken cancellationToken = default) =>
+        (await GetHgvsFromSnp(rsid, cancellationToken)).Select(h => new SnpVariantInfo(h, null, null, true)).ToList();
 }
+
+/// <summary>One notation of an rsID. <see cref="GeneOnPlusStrand"/> says whether the gene is read along the + strand of the accession.</summary>
+public record SnpVariantInfo(string Hgvs, string? Gene, bool? GeneOnPlusStrand, bool Preferred);
 
 /// <summary>
 /// Service that provides direct access to the F# gRNA library functionality.
@@ -76,8 +87,26 @@ public class GrnaService : IGrnaAnalysis
                 Rank = g.Rank,
                 Score = g.Score,
                 MutationHighlightStart = g.MutationHighlightStart,
-                MutationHighlightLength = g.MutationHighlightLength
+                MutationHighlightLength = g.MutationHighlightLength,
+                WtMismatches = g.WtMismatches,
+                Engineered = g.Engineered,
+                ScaffoldIntact = g.ScaffoldIntact,
+                SpacerUnpaired = g.SpacerUnpaired
             })
+            .ToList();
+    }
+
+    public async Task<List<SnpVariantInfo>> GetSnpVariants(string rsid, bool allAlleles, CancellationToken cancellationToken = default)
+    {
+        var variants = await SNP.getVariantsAsync(rsid, cancellationToken);
+        var chosen = allAlleles ? variants.ToList() : variants.Where(v => v.Preferred).ToList();
+        if (chosen.Count == 0 && !allAlleles) chosen = variants.ToList();   // never hide everything
+        return chosen
+            .Select(v => new SnpVariantInfo(
+                v.Hgvs,
+                Microsoft.FSharp.Core.FSharpOption<string>.get_IsSome(v.Gene) ? v.Gene.Value : null,
+                Microsoft.FSharp.Core.FSharpOption<bool>.get_IsSome(v.GeneOnPlusStrand) ? v.GeneOnPlusStrand.Value : null,
+                v.Preferred))
             .ToList();
     }
 
@@ -185,6 +214,14 @@ public record GRNAResult
     public double Score { get; init; }
     public int MutationHighlightStart { get; init; }
     public int MutationHighlightLength { get; init; }
+    /// <summary>Fewest letters in which the spacer's DNA target differs from the other allele (-1 = not computed). 0-1 means the guide cannot tell the alleles apart.</summary>
+    public int WtMismatches { get; init; } = -1;
+    /// <summary>True for the spacer built by the substitution rule (a deliberate extra mismatch next to the variant).</summary>
+    public bool Engineered { get; init; }
+    /// <summary>False when the spacer pulls the scaffold's own hairpin apart in the fold of the complete gRNA.</summary>
+    public bool ScaffoldIntact { get; init; } = true;
+    /// <summary>Share (0-1) of the spacer left unpaired in that fold; -1 = not computed.</summary>
+    public double SpacerUnpaired { get; init; } = -1;
 }
 
 public record ResultFromHGVS

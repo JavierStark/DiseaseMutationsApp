@@ -16,6 +16,8 @@ namespace DiseaseMutationsApp.Services
         public int IndexGRnaSize { get; set; } = 28;
         public int IndexSeedStart { get; set; } = 10;
         public int IndexSeedEnd { get; set; } = 17;
+        /// <summary>List every dbSNP allele and RefSeqGene record of an rsID, not only the relevant ones.</summary>
+        public bool IndexShowAllAlleles { get; set; }
         /// <summary>Replaced wholesale (never mutated in place) so a render never sees a half-built list.</summary>
         public List<InputTabData> IndexInputTabs { get; set; } = new();
         public int IndexActiveTabIndex { get; set; }

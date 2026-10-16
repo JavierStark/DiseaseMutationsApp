@@ -227,19 +227,19 @@ public class SpacerFinderTests
         // directly demonstrates the tuple's field priority: Allignments > Energy > GCScore > Homopolymers.
         var baseline = new SpacerFinder.gRNAResult(
             "AAAA", 1.0, 50.0, 0, "AA", 1,
-            new RNAFoldWrapper.RNAFoldResult("....", -1.0), 0, 0.0, -1, 0);
+            new RNAFoldWrapper.RNAFoldResult("....", -1.0), 0, 0.0, -1, 0, -1, false, true, -1.0);
         var worseHomopolymersOnly = new SpacerFinder.gRNAResult(
             "AAAA", 1.0, 50.0, 5, "AA", 1,
-            new RNAFoldWrapper.RNAFoldResult("....", -1.0), 0, 0.0, -1, 0);
+            new RNAFoldWrapper.RNAFoldResult("....", -1.0), 0, 0.0, -1, 0, -1, false, true, -1.0);
         var worseGcScoreOnly = new SpacerFinder.gRNAResult(
             "AAAA", 0.2, 10.0, 0, "AA", 1,
-            new RNAFoldWrapper.RNAFoldResult("....", -1.0), 0, 0.0, -1, 0);
+            new RNAFoldWrapper.RNAFoldResult("....", -1.0), 0, 0.0, -1, 0, -1, false, true, -1.0);
         var worseEnergyOnly = new SpacerFinder.gRNAResult(
             "AAAA", 1.0, 50.0, 0, "AA", 1,
-            new RNAFoldWrapper.RNAFoldResult("....", -5.0), 0, 0.0, -1, 0);
+            new RNAFoldWrapper.RNAFoldResult("....", -5.0), 0, 0.0, -1, 0, -1, false, true, -1.0);
         var worseAllignmentsOnly = new SpacerFinder.gRNAResult(
             "AAAA", 1.0, 50.0, 0, "AA", 5,
-            new RNAFoldWrapper.RNAFoldResult("....", -1.0), 0, 0.0, -1, 0);
+            new RNAFoldWrapper.RNAFoldResult("....", -1.0), 0, 0.0, -1, 0, -1, false, true, -1.0);
 
         var unordered = new[] { worseAllignmentsOnly, worseEnergyOnly, worseGcScoreOnly, worseHomopolymersOnly, baseline };
         var ordered = unordered.OrderBy(SpacerFinder.sortByResult).ToArray();

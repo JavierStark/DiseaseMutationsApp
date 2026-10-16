@@ -9,7 +9,7 @@ namespace DiseaseMutationsApp.Pages
         RS
     }
 
-    public enum GrnaSortColumn { Sequence, GCScore, GCContent, HomopolymerCount, Alignments, Energy, Score }
+    public enum GrnaSortColumn { Sequence, GCScore, GCContent, HomopolymerCount, Alignments, Energy, Score, WtMismatches, SpacerUnpaired }
 
     /// <summary>Lifecycle of one analysed variant (leaf).</summary>
     public enum LeafStatus { Queued, Running, Ready, Failed, Cancelled }
@@ -38,6 +38,18 @@ namespace DiseaseMutationsApp.Pages
         public Guid Id { get; } = Guid.NewGuid();
         public string Hgvs { get; init; } = string.Empty;
         public bool IsComplement { get; init; }
+
+        /// <summary>The gene dbSNP places the variant in, when the variant came from an rsID.</summary>
+        public string? Gene { get; init; }
+        /// <summary>True when the gene is read along the + strand of the accession; null when unknown (typed HGVS).</summary>
+        public bool? GeneOnPlusStrand { get; init; }
+
+        /// <summary>
+        /// Whether the spacers of this tab are complementary to the gene's mRNA (what Cas13 needs). The "Normal" tab is
+        /// complementary to the + strand, so it targets the mRNA when the gene is read along +; the "Complement" tab when along -.
+        /// Null when the gene orientation is unknown.
+        /// </summary>
+        public bool? TargetsMrna => GeneOnPlusStrand is { } plus ? plus != IsComplement : null;
 
         public LeafStatus Status { get; set; } = LeafStatus.Queued;
         public bool IsLoading => Status is LeafStatus.Queued or LeafStatus.Running;
@@ -89,6 +101,8 @@ namespace DiseaseMutationsApp.Pages
     {
         public double? MinScore { get; set; }
         public int? MaxAlignments { get; set; }
+        /// <summary>Hide guides that differ from the other allele in fewer than this many letters.</summary>
+        public int? MinWtMismatches { get; set; }
         public double? MinGc { get; set; }
         public double? MaxGc { get; set; }
         public string? Contains { get; set; }
@@ -96,11 +110,12 @@ namespace DiseaseMutationsApp.Pages
         public int Page { get; set; }
 
         public bool IsActive =>
-            MinScore.HasValue || MaxAlignments.HasValue || MinGc.HasValue || MaxGc.HasValue || !string.IsNullOrWhiteSpace(Contains);
+            MinScore.HasValue || MaxAlignments.HasValue || MinWtMismatches.HasValue || MinGc.HasValue || MaxGc.HasValue || !string.IsNullOrWhiteSpace(Contains);
 
         public bool Matches(GRNAResult g) =>
             (!MinScore.HasValue || g.Score >= MinScore.Value)
             && (!MaxAlignments.HasValue || g.Allignments <= MaxAlignments.Value)
+            && (!MinWtMismatches.HasValue || g.Engineered || g.WtMismatches < 0 || g.WtMismatches >= MinWtMismatches.Value)
             && (!MinGc.HasValue || g.GCContent >= MinGc.Value)
             && (!MaxGc.HasValue || g.GCContent <= MaxGc.Value)
             && (string.IsNullOrWhiteSpace(Contains) || g.Sequence.Contains(Contains.Trim(), StringComparison.OrdinalIgnoreCase));

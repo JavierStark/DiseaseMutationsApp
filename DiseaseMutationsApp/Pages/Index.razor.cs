@@ -247,6 +247,14 @@ namespace DiseaseMutationsApp.Pages
 
         private void OnInputChanged() => SaveSession();
 
+        private bool _showAllAlleles
+        {
+            get => StateService.IndexShowAllAlleles;
+            set => StateService.IndexShowAllAlleles = value;
+        }
+
+        private void OnShowAllAllelesChanged(ChangeEventArgs e) => _showAllAlleles = e.Value is true;
+
         private void CancelRun() => Runner.Cancel();
 
         private async Task CopyPermalink()

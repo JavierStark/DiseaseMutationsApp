@@ -1,10 +1,23 @@
+@using DiseaseMutationsApp.Services
 @* Status is conveyed by shape + text + aria-label, never by colour alone. *@
 <span class="tab-status status-@StateClass" aria-label="@AriaLabel" title="@Title">
     <span class="status-shape" aria-hidden="true"></span>
     <span class="tab-status-text">@Label</span>
+    @if (!string.IsNullOrEmpty(Gene))
+    {
+        <span class="tab-gene">@Gene</span>
+    }
     @if (IsComplement)
     {
-        <span class="tab-strand" aria-hidden="true">C</span>
+        <span class="tab-strand" aria-hidden="true" title="@HelpText.StrandComplement">C</span>
+    }
+    @if (TargetsMrna == true)
+    {
+        <span class="tab-mrna" title="@HelpText.TargetsMrna">mRNA</span>
+    }
+    else if (TargetsMrna == false)
+    {
+        <span class="tab-strand" title="@HelpText.TargetsAntisense">antisense</span>
     }
     <span class="visually-hidden">@StateText</span>
 </span>
@@ -13,6 +26,10 @@
     [Parameter, EditorRequired] public string Label { get; set; } = "";
     [Parameter] public TabState State { get; set; } = TabState.Ready;
     [Parameter] public bool IsComplement { get; set; }
+    /// <summary>Gene symbol shown next to the label (rsID variants).</summary>
+    [Parameter] public string? Gene { get; set; }
+    /// <summary>True when this tab's spacers bind the gene's mRNA, false when they do not, null when unknown.</summary>
+    [Parameter] public bool? TargetsMrna { get; set; }
 
     private string StateClass => State.ToString().ToLowerInvariant() switch
     {
@@ -30,6 +47,7 @@
         _ => ""
     };
 
-    private string AriaLabel => $"{Label}{(IsComplement ? ", complement strand" : "")}: {StateText}";
-    private string Title => $"{Label}{(IsComplement ? " (complement)" : "")} - {StateText}";
+    private string OrientationText => TargetsMrna switch { true => ", targets the mRNA", false => ", does not target the mRNA (antisense)", _ => "" };
+    private string AriaLabel => $"{Label}{(IsComplement ? ", complement strand" : "")}{OrientationText}: {StateText}";
+    private string Title => $"{Label}{(IsComplement ? " (complement)" : "")}{OrientationText} - {StateText}";
 }

@@ -39,25 +39,29 @@
                     }
 
                     <div class="mb-4">
-                        <label for="hgvs" class="form-label">HGVS or rs codes (comma-separated for several)</label>
+                        <label for="hgvs" class="form-label" title="@HelpText.Variants">HGVS or rs codes (comma-separated for several)</label>
                         <textarea id="hgvs" class="form-control" @bind="_hgvs" @bind:event="oninput" @bind:after="OnInputChanged" rows="4" maxlength="8000"
                                   placeholder="NG_008690.2:g.123012G>T, rs12345"></textarea>
-                        <small class="helper-note mt-2 d-block">One or more variants. An rsID is resolved to its HGVS notations and analysed on both strands.</small>
+                        <small class="helper-note mt-2 d-block">One or more variants. An rsID is resolved to its HGVS notations (by default only the disease-relevant allele on the main gene record) and analysed on both strands; the tab that targets the gene's mRNA comes first.</small>
+                        <div class="form-check mt-2">
+                            <input id="all-alleles" class="form-check-input" type="checkbox" checked="@_showAllAlleles" @onchange="OnShowAllAllelesChanged" />
+                            <label class="form-check-label" for="all-alleles" title="@HelpText.ShowAllAlleles">Show all alleles and gene records of an rsID</label>
+                        </div>
                     </div>
 
                     <fieldset class="mb-4">
-                        <legend class="form-label">Spacer and seed region</legend>
+                        <legend class="form-label" title="@HelpText.SpacerAndSeed">Spacer and seed region</legend>
                         <div class="row g-3">
                             <div class="col-sm-4">
-                                <label for="grna-size" class="form-label">Spacer size</label>
+                                <label for="grna-size" class="form-label" title="@HelpText.SpacerSize">Spacer size</label>
                                 <input id="grna-size" type="number" class="form-control" @bind="_gRnaSize" @bind:after="OnInputChanged" min="@Main.MinSpacerSize" max="@Main.MaxSpacerSize" />
                             </div>
                             <div class="col-sm-4">
-                                <label for="seed-start" class="form-label">Seed start (inclusive)</label>
+                                <label for="seed-start" class="form-label" title="@HelpText.SeedRegion">Seed start (inclusive)</label>
                                 <input id="seed-start" type="number" class="form-control" @bind="_seedStart" @bind:after="OnInputChanged" min="0" max="@(_gRnaSize > 0 ? _gRnaSize - 1 : 0)" />
                             </div>
                             <div class="col-sm-4">
-                                <label for="seed-end" class="form-label">Seed end (inclusive)</label>
+                                <label for="seed-end" class="form-label" title="@HelpText.SeedRegion">Seed end (inclusive)</label>
                                 <input id="seed-end" type="number" class="form-control" @bind="_seedEnd" @bind:after="OnInputChanged" min="0" max="@(_gRnaSize > 0 ? _gRnaSize - 1 : 0)" />
                             </div>
                         </div>
@@ -72,7 +76,7 @@
                     </fieldset>
 
                     <div class="mb-4">
-                        <label for="upload" class="form-label">Load inputs from a file</label>
+                        <label for="upload" class="form-label" title="@HelpText.LoadFile">Load inputs from a file</label>
                         <InputFile id="upload" class="form-control" accept=".txt,.csv,.tsv,.json" OnChange="OnFileSelected" />
                         <small class="helper-note mt-2 d-block">A plain list of HGVS/rsIDs, a Builder CSV report, or a saved session (.json).</small>
                         @if (_uploadMessage != null)
@@ -91,10 +95,10 @@
                                 <Icon Name="stop" />Cancel run
                             </button>
                         }
-                        <button type="button" class="btn btn-outline-secondary btn-lg" @onclick="DownloadSession" disabled="@string.IsNullOrWhiteSpace(_hgvs)">
+                        <button type="button" class="btn btn-outline-secondary btn-lg" title="@HelpText.SaveSession" @onclick="DownloadSession" disabled="@string.IsNullOrWhiteSpace(_hgvs)">
                             <Icon Name="download" />Save session
                         </button>
-                        <button type="button" class="btn btn-outline-secondary btn-lg" @onclick="CopyPermalink" disabled="@string.IsNullOrWhiteSpace(_hgvs)">
+                        <button type="button" class="btn btn-outline-secondary btn-lg" title="@HelpText.Permalink" @onclick="CopyPermalink" disabled="@string.IsNullOrWhiteSpace(_hgvs)">
                             <Icon Name="@(_linkCopied ? "check" : "link")" />@(_linkCopied ? "Link copied" : "Copy link to this design")
                         </button>
                     </div>
@@ -108,10 +112,10 @@
         <div class="card mb-4">
             <div class="card-body">
                 <div class="d-flex flex-wrap justify-content-between align-items-center gap-2 mb-3">
-                    <h2 class="card-title section-title mb-0"><Icon Name="list" />Shortlist <span class="shortlist-badge">@StateService.Shortlist.Count</span></h2>
+                    <h2 class="card-title section-title mb-0" title="@HelpText.Shortlist"><Icon Name="list" />Shortlist <span class="shortlist-badge">@StateService.Shortlist.Count</span></h2>
                     <div class="d-flex flex-wrap align-items-center gap-3">
-                        <div class="form-check mb-0"><input id="oligo-t7" class="form-check-input" type="checkbox" @bind="_oligoT7" /><label class="form-check-label" for="oligo-t7">T7 promoter</label></div>
-                        <div class="form-check mb-0"><input id="oligo-pairs" class="form-check-input" type="checkbox" @bind="_oligoPairs" /><label class="form-check-label" for="oligo-pairs">Top and bottom oligos</label></div>
+                        <div class="form-check mb-0"><input id="oligo-t7" class="form-check-input" type="checkbox" @bind="_oligoT7" /><label class="form-check-label" for="oligo-t7" title="@HelpText.T7">T7 promoter</label></div>
+                        <div class="form-check mb-0"><input id="oligo-pairs" class="form-check-input" type="checkbox" @bind="_oligoPairs" /><label class="form-check-label" for="oligo-pairs" title="@HelpText.Pairs">Top and bottom oligos</label></div>
                         <button type="button" class="btn btn-sm btn-outline-secondary" @onclick="DownloadOligos"><Icon Name="download" />Order CSV (DNA)</button>
                         <button type="button" class="btn btn-sm btn-primary" @onclick="SendShortlistToPooling"><Icon Name="send" />Send to Pooling</button>
                         <button type="button" class="btn btn-sm btn-outline-secondary" @onclick="StateService.ClearShortlist"><Icon Name="trash" />Clear</button>
@@ -123,11 +127,11 @@
                         <thead>
                         <tr>
                             <th scope="col">Variant</th>
-                            <th scope="col">Strand</th>
+                            <th scope="col" title="@HelpText.StrandBoth">Strand</th>
                             <th scope="col">Spacer</th>
-                            <th scope="col" class="num">Score</th>
-                            <th scope="col">Alignments</th>
-                            <th scope="col">Assembly compatibility</th>
+                            <th scope="col" class="num" title="@HelpText.Score">Score</th>
+                            <th scope="col" title="@HelpText.Alignments">Alignments</th>
+                            <th scope="col" title="@HelpText.Assembly">Assembly compatibility</th>
                             <th scope="col"><span class="visually-hidden">Remove</span></th>
                         </tr>
                         </thead>
@@ -244,7 +248,7 @@
                                 <TabStrip TItem="HgvsData" Items="tab.ChildHgvsList" KeyOf="Key" ActiveKey="@Key(activeLeaf)"
                                           ActiveKeyChanged="k => SelectLeaf(tab, k)" IdPrefix="@LeafPrefix(tab)" AriaLabel="@LeafLabel(tab)" Small="true">
                                     <ItemTemplate Context="leaf">
-                                        <TabStatusLabel Label="@leaf.Hgvs" State="StateOf(leaf)" IsComplement="leaf.IsComplement" />
+                                        <TabStatusLabel Label="@leaf.Hgvs" State="StateOf(leaf)" IsComplement="leaf.IsComplement" Gene="@leaf.Gene" TargetsMrna="leaf.TargetsMrna" />
                                     </ItemTemplate>
                                 </TabStrip>
 

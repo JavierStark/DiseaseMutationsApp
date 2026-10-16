@@ -48,7 +48,17 @@ type gRNAResult =
       Rank: int
       Score: float
       MutationHighlightStart: int
-      MutationHighlightLength: int }
+      MutationHighlightLength: int
+      /// Fewest letters in which this spacer's DNA target differs from the closest window of the OTHER allele
+      /// (a mutated-list spacer is compared with the original sequence, an original-list spacer with the mutated one).
+      /// A guide with 0-1 mismatches cannot tell the alleles apart. -1 means "not computed".
+      WtMismatches: int
+      /// True for the spacer built by the substitution rule (one extra, deliberate mismatch next to the variant).
+      Engineered: bool
+      /// True when the scaffold's own hairpin (the one Cas13 recognises) is still formed in the fold of the complete gRNA.
+      ScaffoldIntact: bool
+      /// Share (0-1) of the spacer's letters left unpaired in the fold of the complete gRNA; -1 = not computed.
+      SpacerUnpaired: float }
 
 /// Extracts the seed region substring for a given inclusive [seedStart, seedEnd] range,
 /// clamping into the sequence bounds. Returns "" for an empty sequence or an inverted range.
@@ -83,6 +93,10 @@ let getgRNAResult (seedStart: int) (seedEnd: int) (sequence: string) : gRNAResul
         Score = 0.0
         MutationHighlightStart = -1
         MutationHighlightLength = 0
+        WtMismatches = -1
+        Engineered = false
+        ScaffoldIntact = true
+        SpacerUnpaired = -1.0
     }
 
 let adjustFourthFromEndToAorU (sequence: string) =
@@ -104,9 +118,9 @@ let specialRuleApplies (windowSize: int) (results: gRNAResult list) =
         result.MutationHighlightStart = windowSize - 3
         && result.MutationHighlightLength > 0)
 
-/// Replaces the ranked list by the single mismatch-engineered candidate. When no candidate carries the mutation at
-/// `windowSize - 3` (see `specialRuleApplies`) the ranked list is returned UNCHANGED, never emptied: the caller reports
-/// that the rule did not apply.
+/// Puts the mismatch-engineered candidate FIRST (marked `Engineered`, Rank 1, Score 1.0) and keeps the whole ordinary
+/// ranked list after it, unchanged. When no candidate carries the mutation at `windowSize - 3` (see `specialRuleApplies`)
+/// the ranked list is returned UNCHANGED: the caller reports that the rule did not apply.
 let applySubstitutionSpecialRule (seedStart: int) (seedEnd: int) (windowSize: int) (results: gRNAResult list) =
     let targetMutationIndex = windowSize - 3
 
@@ -123,11 +137,41 @@ let applySubstitutionSpecialRule (seedStart: int) (seedEnd: int) (windowSize: in
             RnaFoldResult = selected.RnaFoldResult
             MutationHighlightStart = selected.MutationHighlightStart
             MutationHighlightLength = selected.MutationHighlightLength
+            Engineered = true
+            ScaffoldIntact = selected.ScaffoldIntact
+            SpacerUnpaired = selected.SpacerUnpaired
             Rank = 1
             Score = 1.0 })
     |> function
-        | Some adjusted -> [ adjusted ]
+        | Some adjusted -> adjusted :: results
         | None -> results
+
+/// The DNA window a spacer was derived from: spacer = reverse(complement(window)) with T to U.
+let windowOfSpacer (spacer: string) =
+    spacer.Replace('U', 'T') |> Sequence.reverseComplement
+
+/// Fewest differing letters between `window` and any same-length window of `other`; the window length itself when
+/// `other` is shorter than the window (nothing to compare with).
+let minMismatchesAgainst (window: string) (other: string) =
+    let n = window.Length
+    if n = 0 || other.Length < n then n
+    else
+        let mutable best = n
+        let mutable i = 0
+        while best > 0 && i <= other.Length - n do
+            let mutable d = 0
+            let mutable j = 0
+            while j < n && d < best do
+                if window.[j] <> other.[i + j] then d <- d + 1
+                j <- j + 1
+            if d < best then best <- d
+            i <- i + 1
+        best
+
+/// Fills `WtMismatches` for every candidate against the DNA of the other allele (same strand orientation).
+let annotateDiscrimination (otherSequence: string) (results: gRNAResult list) =
+    results
+    |> List.map (fun r -> { r with WtMismatches = minMismatchesAgainst (windowOfSpacer r.Sequence) otherSequence })
 
 let getMutationHighlightSpan (windowStart: int) (windowSize: int) (mutationStart: int) (mutationLength: int) : int * int =
     let windowEndExclusive = windowStart + windowSize
@@ -154,6 +198,35 @@ let getMutationHighlightSpan (windowStart: int) (windowSize: int) (mutationStart
             (anchor, 1)
         else
             (-1, 0)
+
+/// Base pairs (i, j) of a dot-bracket structure. Brackets other than ( ) are ignored.
+let basePairs (structure: string) : Set<int * int> =
+    let stack = System.Collections.Generic.Stack<int>()
+    let mutable pairs = Set.empty
+    structure |> Seq.iteri (fun i c ->
+        if c = '(' then stack.Push i
+        elif c = ')' && stack.Count > 0 then pairs <- pairs.Add((stack.Pop(), i)))
+    pairs
+
+/// True when every base pair of the scaffold's own fold (`reference`, the fold of the scaffold alone) is still present in the
+/// fold of the complete gRNA (`full`), i.e. the spacer did not pull the hairpin apart.
+let scaffoldIntact (reference: string) (full: string) : bool =
+    if System.String.IsNullOrEmpty reference || System.String.IsNullOrEmpty full then true
+    else Set.isSubset (basePairs reference) (basePairs full)
+
+/// Share of the spacer's letters (after the scaffold) that are unpaired in the fold of the complete gRNA; -1 when unknown.
+let spacerUnpaired (scaffoldLength: int) (full: string) : float =
+    if System.String.IsNullOrEmpty full || full.Length <= scaffoldLength then -1.0
+    else
+        let spacerPart = full.Substring scaffoldLength
+        float (spacerPart |> Seq.filter (fun c -> c = '.') |> Seq.length) / float spacerPart.Length
+
+/// The fold of the scaffold alone, computed once per process.
+let private scaffoldReference : Lazy<Task<string>> =
+    lazy (task {
+        let! fold = RNAFoldWrapper.fold scaffold System.Threading.CancellationToken.None
+        return fold.Structure
+    })
 
 let sortByResult (result: gRNAResult) =
     (result.Allignments, -result.RnaFoldResult.Energy, -result.GCScore, result.HomopolymerCount)
@@ -192,12 +265,15 @@ let getOrderedgRna (seedStart: int) (seedEnd: int) (window: int) (sequence: stri
 
         let! allignments = bowtieService.ProcessMultipleSequencesAsync(subsequences, 2, 2, cancellationToken)
         let! folds = foldMany gRNASequences cancellationToken
+        let! scaffoldStructure = scaffoldReference.Value
         
         let results =
             List.zip3 results folds allignments
             |> List.map (fun (res, fold, align) ->
                 { res with
                     RnaFoldResult = fold
+                    ScaffoldIntact = scaffoldIntact scaffoldStructure fold.Structure
+                    SpacerUnpaired = spacerUnpaired scaffold.Length fold.Structure
                     Allignments = align})
 
         let filteredResults = results |> List.sortBy sortByResult

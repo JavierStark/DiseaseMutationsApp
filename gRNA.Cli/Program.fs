@@ -25,11 +25,11 @@ let usage =
 
 Usage:
   grna doctor [--network]
-  grna resolve <rsID> [<rsID> ...]
+  grna resolve <rsID> [<rsID> ...] [--all-alleles]
   grna disease <name | OMIM number | MONDO id> [--list] [--pick 1] [--subtypes] [--min-significance pathogenic-likely|pathogenic|any]
                                               [--format rs|csv|tsv|json] [--out file]
   grna design --hgvs <HGVS> [--spacer 28] [--seed 10-17] [--complement] [--format csv|json|tsv] [--out file]
-  grna design --input <list.txt|session.json> --out <report.csv> [--spacer 28] [--seed 10-17] [--complement] [--concurrency 2]
+  grna design --input <list.txt|session.json> --out <report.csv> [--spacer 28] [--seed 10-17] [--complement] [--concurrency 2] [--all-alleles]
   grna fold <RNA sequence>
   grna pool --guides <report.csv> [--capacity 5] [--plate 96|384] [--model auto|2df|2dm|3d] [--out plan.csv]
   grna pool --count <V>          [--capacity 5] [--plate 96|384] [--model auto|2df|2dm|3d] [--out plan.csv]
@@ -47,7 +47,7 @@ type Args =
       Options: Map<string, string>
       Flags: Set<string> }
 
-let private flagNames = set [ "complement"; "network"; "help"; "list"; "subtypes" ]
+let private flagNames = set [ "complement"; "network"; "help"; "list"; "subtypes"; "all-alleles" ]
 
 let parseArgs (argv: string list) : Args =
     let rec go (rest: string list) (pos: string list) (opts: Map<string, string>) (flags: Set<string>) =
@@ -69,9 +69,9 @@ let parseArgs (argv: string list) : Args =
 let private allowed =
     Map.ofList
         [ "doctor", (Set.empty, set [ "network"; "help" ])
-          "resolve", (Set.empty, set [ "help" ])
+          "resolve", (Set.empty, set [ "all-alleles"; "help" ])
           "disease", (set [ "pick"; "min-significance"; "format"; "out" ], set [ "list"; "subtypes"; "help" ])
-          "design", (set [ "hgvs"; "input"; "spacer"; "seed"; "format"; "out"; "concurrency" ], set [ "complement"; "help" ])
+          "design", (set [ "hgvs"; "input"; "spacer"; "seed"; "format"; "out"; "concurrency" ], set [ "complement"; "all-alleles"; "help" ])
           "fold", (Set.empty, set [ "help" ])
           "pool", (set [ "guides"; "count"; "capacity"; "plate"; "model"; "out" ], set [ "help" ]) ]
 
@@ -139,7 +139,7 @@ let resolve (args: Args) (ct: CancellationToken) : Task<int> =
             if not (isRsId rs) && not (rs |> Seq.forall Char.IsDigit && rs <> "") then
                 raise (BadArgs(sprintf "'%s' is not an rsID (expected rs334 or 334)." rs))
             let id = if rs.StartsWith("rs", StringComparison.OrdinalIgnoreCase) then rs.Substring 2 else rs
-            let! hgvs = SNP.getHgvsNotationsAsync id ct
+            let! hgvs = (if args.Flags.Contains "all-alleles" then SNP.getAllHgvsNotationsAsync id ct else SNP.getHgvsNotationsAsync id ct)
             if hgvs.IsEmpty then eprintfn "%s: no NG_ notations found" rs
             for h in hgvs do printfn "%s\t%s" rs h
         return ExitOk
@@ -244,6 +244,10 @@ let private jsonOf (rows: DesignRow list) =
                        seedRegion = g.SeedRegion
                        homopolymers = g.HomopolymerCount
                        energy = g.RnaFoldResult.Energy
+                       wtMismatches = g.WtMismatches
+                       engineered = g.Engineered
+                       scaffoldIntact = g.ScaffoldIntact
+                       spacerUnpaired = g.SpacerUnpaired
                        structure = g.RnaFoldResult.Structure |})
             {| hgvs = r.Hgvs
                rsId = Option.toObj r.RsId
@@ -356,7 +360,7 @@ let design (args: Args) (ct: CancellationToken) : Task<int> =
         let mutable idx = 0
         for input in inputs do
             if isRsId input then
-                let! hgvs = SNP.getHgvsNotationsAsync (input.Substring 2) ct
+                let! hgvs = (if args.Flags.Contains "all-alleles" then SNP.getAllHgvsNotationsAsync (input.Substring 2) ct else SNP.getHgvsNotationsAsync (input.Substring 2) ct)
                 if hgvs.IsEmpty then eprintfn "%s: no NG_ notations found" input
                 for h in hgvs do
                     jobs.Add((idx, Some(input.Substring 2), h))

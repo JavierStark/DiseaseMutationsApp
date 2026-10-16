@@ -31,7 +31,7 @@ public static class GrnaCsvSchema
 
     /// <summary>A leading comment line recording the parameters, so an exported report can be reproduced.</summary>
     public static string ProvenanceLine(int spacerSize, int seedStart, int seedEnd) =>
-        $"# Diana report; spacer={spacerSize}; seed={seedStart}-{seedEnd}; generated={DateTime.UtcNow:yyyy-MM-ddTHH:mm:ssZ}";
+        gRNA.ReportSchema.provenance(spacerSize, seedStart, seedEnd);
 
     public static string Header => string.Join(",", Columns);
 
@@ -44,7 +44,10 @@ public static class GrnaCsvSchema
         return string.Join(",",
             Csv(rsId ?? ""), Csv(hgvs), sequenceType, g.Rank.ToString(inv), g.Sequence,
             g.Score.ToString(inv), g.GCContent.ToString(inv), g.Allignments.ToString(inv),
-            g.SeedRegion, g.HomopolymerCount.ToString(inv), energy, Strand(isComplement));
+            g.SeedRegion, g.HomopolymerCount.ToString(inv), energy, Strand(isComplement),
+            g.WtMismatches < 0 ? "" : g.WtMismatches.ToString(inv), g.Engineered ? "Yes" : "No",
+            g.ScaffoldIntact ? "Yes" : "No",
+            g.SpacerUnpaired < 0 ? "" : Math.Round(g.SpacerUnpaired, 2).ToString(inv));
     }
 
     public static void AppendRows(StringBuilder sb, string? rsId, string hgvs, IEnumerable<GRNAResult>? grnas, string sequenceType, bool isComplement)

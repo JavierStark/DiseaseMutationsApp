@@ -29,7 +29,7 @@
                         @if (_inputMode == PoolingInputMode.GuideCount)
                         {
                             <div class="mb-2">
-                                <label for="guide-count" class="form-label">Number of guides (V)</label>
+                                <label for="guide-count" class="form-label" title="@HelpText.GuideCount">Number of guides (V)</label>
                                 <input id="guide-count" type="number" class="form-control input-max-sm"
                                        @bind="_guideCount" min="1" max="@PoolingService.MaxGuideCount" />
                                 <small class="text-muted mt-2 d-block">
@@ -40,7 +40,7 @@
                         else
                         {
                             <div class="mb-2">
-                                <label for="guide-list" class="form-label">Guides</label>
+                                <label for="guide-list" class="form-label" title="@HelpText.GuideList">Guides</label>
                                 <textarea id="guide-list" class="form-control" rows="6" @bind="_guideListText"
                                           placeholder="One guide per line (or comma-separated) — or paste a CSV report downloaded from the Diana tab"></textarea>
 
@@ -79,14 +79,14 @@
 
                     <div class="row g-3 mb-4">
                         <div class="col-sm-5">
-                            <label for="well-capacity" class="form-label">Guides per well (K)</label>
+                            <label for="well-capacity" class="form-label" title="@HelpText.WellCapacity">Guides per well (K)</label>
                             <input id="well-capacity" type="number" class="form-control" @bind="_wellCapacity" min="1" />
                             <small class="text-muted mt-2 d-block">
                                 Guides are transcribed in tandem; more than 5–6 risks RNA conformations that block Cas13.
                             </small>
                         </div>
                         <div class="col-sm-5">
-                            <label for="plate-format" class="form-label">Plate format</label>
+                            <label for="plate-format" class="form-label" title="@HelpText.PlateFormat">Plate format</label>
                             <select id="plate-format" class="form-select" @bind="_plate" @bind:after="OnPlateChanged">
                                 <option value="@PlateKind.Plate96">96-well (8 × 12)</option>
                                 <option value="@PlateKind.Plate384">384-well (16 × 24)</option>
@@ -242,7 +242,7 @@
                             Enter the wells that read positive (for example <code>A1, B3, Plate 2 - C4</code>, or tube numbers
                             like <code>#12</code>) to find which guides they implicate.
                         </p>
-                        <label for="decode-wells" class="form-label">Positive wells</label>
+                        <label for="decode-wells" class="form-label" title="@HelpText.PositiveWells">Positive wells</label>
                         <textarea id="decode-wells" class="form-control" rows="3" @bind="_decodeText" @bind:event="oninput"></textarea>
                         <div class="mt-2">
                             <button class="btn btn-outline-primary" @onclick="RunDecode">Decode</button>

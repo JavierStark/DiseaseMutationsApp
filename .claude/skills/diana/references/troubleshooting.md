@@ -37,7 +37,8 @@ or `.claude/skills/diana/scripts/grna.sh doctor`). Each non-passing check prints
 | `<rsID>: no NG_ notations found` | dbSNP has no `NG_` mapping for it (not an error) | Use an explicit HGVS (`NC_`/`NM_`) instead. |
 | `FAIL <hgvs>: The Repeat mutation type is not supported for design.` | repeat, conversion and translocation notations parse but cannot be designed | Known limitation (`docs/using-the-library.md`). |
 | `FAIL <hgvs>: Reference mismatch at ...: the variant states A but the sequence has C.` | the base (or `del`/`dup`/`inv` sequence) in the HGVS is not the base at that position of the fetched accession | Check the accession version and coordinates; this is the tool refusing to design for the wrong place. |
-| `FAIL <hgvs>: Coding-sequence (c.) positions ...` | `c.` positions count from the CDS start and are not converted yet | Use the `g.` notation (an rsID resolves to those) or an `n.` position. |
+| `FAIL <hgvs>: c. positions can be converted only on a transcript record ...` | the notation is `c.` on a genomic record (`NG_`, `NC_`) | Use the transcript accession (`NM_000518.5:c.20A>T`) or the `g.` notation (an rsID resolves to those). |
+| `FAIL <hgvs>: ... has an intronic offset` | `c.92+2`-style positions do not exist in an mRNA | Use the `g.` coordinates of the intronic base. |
 | `FAIL <hgvs>: The mutated region is N nt, shorter than the spacer size` | e.g. a deletion longer than the spacer leaves no window | Use a smaller `--spacer` (minimum 18) or a shorter variant. |
 | `error: Spacer size must be between 18 and 60` | `--spacer` out of range | Use 18-60 (default 28). |
 | Output file empty except header, exit != 0 | every variant failed; the header is still written | Check exit code and stderr `FAIL` lines, not just whether the file exists. |

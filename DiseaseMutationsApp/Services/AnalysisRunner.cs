@@ -150,6 +150,9 @@ public sealed partial class AnalysisRunner : IAsyncDisposable
         return true;
     }
 
+    private static bool IsTranscriptAccession(string hgvs) =>
+        hgvs.Length > 3 && (hgvs.StartsWith("NM_") || hgvs.StartsWith("XM_") || hgvs.StartsWith("NR_") || hgvs.StartsWith("XR_"));
+
     private static InputTabData BuildTab(string input) =>
         IsRsId(input)
             ? new InputTabData { Type = InputType.RS, DisplayLabel = input.ToLowerInvariant(), RsId = input[2..], IsLoading = true }
@@ -157,7 +160,8 @@ public sealed partial class AnalysisRunner : IAsyncDisposable
             {
                 Type = InputType.HGVS,
                 DisplayLabel = input,
-                DirectHgvs = new HgvsData { Hgvs = input }
+                // A transcript record (NM_, XM_, NR_, XR_) is the mRNA itself: its + strand is the sense strand.
+                DirectHgvs = new HgvsData { Hgvs = input, GeneOnPlusStrand = IsTranscriptAccession(input) ? true : null }
             };
 
     /// <summary>Cancels the whole run.</summary>
@@ -249,13 +253,15 @@ public sealed partial class AnalysisRunner : IAsyncDisposable
     {
         try
         {
-            var hgvsList = await _grna.GetHgvsFromSnp(tab.RsId!, ct);
-            // Complete child list, built off-model and published by a single assignment.
-            var children = hgvsList
-                .SelectMany(h => new[]
+            var variants = await _grna.GetSnpVariants(tab.RsId!, _state.IndexShowAllAlleles, ct);
+            // Complete child list, built off-model and published by a single assignment. Per variant the tab that
+            // targets the gene's mRNA comes first (Cas13 binds RNA); typed or unannotated variants keep Normal first.
+            var children = variants
+                .SelectMany(v =>
                 {
-                    new HgvsData { Hgvs = h, IsComplement = false },
-                    new HgvsData { Hgvs = h, IsComplement = true }
+                    var normal = new HgvsData { Hgvs = v.Hgvs, IsComplement = false, Gene = v.Gene, GeneOnPlusStrand = v.GeneOnPlusStrand };
+                    var complement = new HgvsData { Hgvs = v.Hgvs, IsComplement = true, Gene = v.Gene, GeneOnPlusStrand = v.GeneOnPlusStrand };
+                    return v.GeneOnPlusStrand == false ? new[] { complement, normal } : new[] { normal, complement };
                 })
                 .ToList();
             Apply(runId, () =>

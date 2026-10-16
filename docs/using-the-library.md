@@ -51,7 +51,7 @@ Main.getBestgRNAFromHGVS : hgvs:string -> grnaSize:int -> seedStart:int -> seedE
                            -> BowtieService -> CancellationToken -> complement:bool -> Task<ResultFromHGVS>
 ```
 
-Before any NCBI or Bowtie work it validates (all failures are `GrnaInputException`): `validateSpacerParameters` (spacer 18-60, seed inside it, constants `MinSpacerSize`/`MaxSpacerSize`), the parsed HGVS, and, once the sequence is fetched, `validateAgainstSequence` (supported coordinates `g.`/`m.`/`n.` - `c.` is refused, supported mutation type, position inside the sequence, adjacent positions for an insertion, stated reference equal to the real one). `complement = true` designs against the opposite strand: `orientForStrand` replaces both sequences by their reverse complement and mirrors the mutation span (`mirrorSpan`).
+Before any NCBI or Bowtie work it validates (all failures are `GrnaInputException`): `validateSpacerParameters` (spacer 18-60, seed inside it, constants `MinSpacerSize`/`MaxSpacerSize`), the parsed HGVS, and, once the sequence is fetched, `validateAgainstSequence` (supported coordinates `g.`/`m.`/`n.` - an unconverted `c.` is refused; `getBestgRNAFromHGVS` first converts `c.` on a transcript record with `HGVS.convertCodingToTranscript` and the CDS range from `SequenceRepository.GetCodingRange`, supported mutation type, position inside the sequence, adjacent positions for an insertion, stated reference equal to the real one). `complement = true` designs against the opposite strand: `orientForStrand` replaces both sequences by their reverse complement and mirrors the mutation span (`mirrorSpan`).
 
 The function is **curried**; from C# the compiler exposes it as a normal method taking all arguments in order, as
 `GrnaService.GetBestgRNAFromHgvs` shows: `Main.getBestgRNAFromHGVS(hgvs, window, seedStart, seedEnd, bowtie, ct, complement)`.
@@ -74,9 +74,13 @@ with padding. `Repeat` parses but `GetMutatedSubsequence` throws `NotImplemented
 Fetches FASTA from NCBI E-utilities. Cached (bounded, insertion-ordered), concurrency-safe, one in-flight fetch per
 accession, failures not cached. The body goes through `parseFasta`, which accepts exactly one FASTA record of letters (upper-cased) and raises `GrnaUpstreamException` for anything else (an HTML/JSON error page, an empty body, a second record).
 
-### `SNP.getHgvsNotationsAsync rsNumber ct`
+### `SNP.getHgvsNotationsAsync rsNumber ct`, `getAllHgvsNotationsAsync`, `getVariantsAsync`, `parseVariants`
 Resolves an rsID (digits only, no `rs`; anything else raises `GrnaInputException` before a request is made). Returns `[]` for "no `NG_` mapping"; raises `GrnaUpstreamException` for HTTP failure.
 `NM_`/`NC_` notations are not returned.
+`getHgvsNotationsAsync` returns the **default selection**: the disease-relevant allele(s) on the main RefSeqGene record (everything if that would be empty); `getAllHgvsNotationsAsync` returns every allele on every `NG_` record. `getVariantsAsync` returns `SnpVariant` records (`Hgvs`, `Accession`, `Gene`, `GeneOnPlusStrand`, `Significance`, `Preferred`); `parseVariants json` is the pure parser behind them.
+
+### Per-guide fields added 2026-10-16
+`SpacerFinder.gRNAResult` has `WtMismatches` (fewest letters between the guide's DNA window and the closest window of the other allele; -1 when not computed; filled by `annotateDiscrimination`, helpers `windowOfSpacer`, `minMismatchesAgainst`) and `Engineered` (true for the spacer `applySubstitutionSpecialRule` builds, which is now returned first, followed by the unchanged ordinary list).
 
 ### `DiseaseVariants`
 Finds candidate rsIDs for a disease (see `docs/runtime-contract.md` for the services and limits). Pure functions over JSON text:

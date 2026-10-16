@@ -7,7 +7,8 @@ open System.Globalization
 
 let columns =
     [ "RS ID"; "HGVS"; "Sequence Type"; "Rank"; "Sequence"; "Score"; "GC Content"
-      "Alignments"; "Seed Region"; "Homopolymers"; "Fold Energy"; "Strand" ]
+      "Alignments"; "Seed Region"; "Homopolymers"; "Fold Energy"; "Strand"
+      "WT Mismatches"; "Engineered"; "Scaffold Intact"; "Spacer Unpaired" ]
 
 let header = String.Join(",", columns)
 
@@ -71,12 +72,18 @@ let row (rsId: string option) (hgvs: string) (sequenceType: string) (isComplemen
           g.SeedRegion
           string g.HomopolymerCount
           inv g.RnaFoldResult.Energy
-          (if isComplement then complementStrand else normalStrand) ]
+          (if isComplement then complementStrand else normalStrand)
+          (if g.WtMismatches < 0 then "" else string g.WtMismatches)
+          (if g.Engineered then "Yes" else "No")
+          (if g.ScaffoldIntact then "Yes" else "No")
+          (if g.SpacerUnpaired < 0.0 then "" else inv (Math.Round(g.SpacerUnpaired, 2))) ]
     )
 
 /// A leading comment line recording the parameters so a report can be reproduced.
 let provenance (spacer: int) (seedStart: int) (seedEnd: int) =
-    sprintf "# Diana report; spacer=%d; seed=%d-%d; generated=%s" spacer seedStart seedEnd (DateTime.UtcNow.ToString("yyyy-MM-ddTHH:mm:ssZ"))
+    // After the three parameters the line records the fixed choices behind the numbers, so a report can be reproduced and read later.
+    sprintf "# Diana report; spacer=%d; seed=%d-%d; generated=%s; gc-score-range=40-60; special-rule=variant at N-3, mismatch at N-4; scaffold=%d nt; off-target index=GRCh38 genome (not a transcriptome)"
+        spacer seedStart seedEnd (DateTime.UtcNow.ToString("yyyy-MM-ddTHH:mm:ssZ")) SpacerFinder.scaffold.Length
 
 /// Reads spacer and seed back from a provenance line written by `provenance`; None when the line is not one.
 let tryParseProvenance (line: string) : (int * int * int) option =

@@ -36,7 +36,7 @@ This module is essential for the application to understand the user's initial re
 * The code must be `ACCESSION:TYPE.CHANGE`; a missing colon, a position without a change, a position of 0 or beyond the 32-bit range, a reversed range (`10_5del`), and a substitution that changes nothing (`C>C`) are rejected with a message (CLI exit code 2).
 * Alleles must be upper-case `A`, `C`, `G` or `T` (no IUPAC codes, no lower case).
 * Before any design, the variant is checked against the sequence that NCBI returns (`Main.validateAgainstSequence`): the position must lie inside the accession, an insertion needs two adjacent positions, and **the stated reference base must equal the base actually at that position**. `NC_000017.11:g.7674220A>T` is refused because base 7,674,220 is `C`.
-* Only genomic (`g.`), mitochondrial (`m.`) and non-coding (`n.`) positions are designed, because they index the fetched sequence directly. **`c.` (coding-sequence) positions are refused**: they count from the start of the coding sequence, which the application does not yet convert, so using them as plain sequence indexes would target a different place than the notation says. Repeat (`[n]`), conversion and translocation notation parse but are refused for design.
+* Only genomic (`g.`), mitochondrial (`m.`) and non-coding (`n.`) positions are designed, because they index the fetched sequence directly. **`c.` (coding-sequence) positions are converted only on a transcript record** (`NM_`, `XM_`; changed 2026-10-16): an mRNA has no introns, so `c.N` is simply position `cdsStart + N - 1` of the transcript (`c.-N` is `cdsStart - N`, `c.*N` is `cdsEnd + N`), with `cdsStart`/`cdsEnd` read from the single-range `CDS` feature of the GenBank record (`SequenceRepository.parseCdsRange`; a split or reverse CDS is refused). `HGVS.convertCodingToTranscript` rewrites `NM_000518.5:c.20A>T` as `NM_000518.5:n.70A>T` before parsing, the stated reference base is then checked against the real sequence as for any `n.` variant, and a notice records the conversion. The design is made on the mRNA itself, which is what Cas13 binds. Intronic offsets (`c.92+2`) do not exist in an mRNA and are refused; `c.` on a genomic record (`NG_`, `NC_`) is refused with the advice to use the `NM_` accession, because introns lie between the exons and the exon map is not read. A `c.` position that reaches `validateAgainstSequence` unconverted is always refused, so it is never used as a plain index. Repeat (`[n]`), conversion and translocation notation parse but are refused for design.
 * The spacer size must be between 18 and 60 nt and the seed range must lie inside the spacer.
 
 ### 2. SNP (Single Nucleotide Polymorphism): Common Variations
@@ -47,16 +47,18 @@ A SNP is a variation at a single nucleotide position in the genome. It is the mo
 **Implementation:**
 `gRNA/SNP.fs` talks to NCBI's dbSNP database to translate an `rs` ID into its corresponding HGVS notations. This lets the system work with a standardized format starting from a SNP identifier.
 
+*What is returned (changed 2026-10-16).* The dbSNP answer for one rsID lists every alternative allele on several RefSeqGene (`NG_`) records. `rs334`, for example, gives 4 records x 3 alleles = 12 notations, of which only one (`NG_000007.3:g.70614A>T`, HBB Glu6Val) is the sickle-cell variant. The response is now parsed as JSON (`SNP.parseVariants`) instead of scanning it for text patterns, and each notation carries what dbSNP knows about it:
+
+* **Default selection (`Preferred`):** the main RefSeqGene record only (the first `NG_` record whose reference base equals that of the mRNA `NM_` record at this position; dbSNP lists the primary record first), and, when dbSNP names any pathogenic or likely-pathogenic allele, only those alleles. If the default would be empty, everything is returned, never nothing. This is a heuristic: the web app has a "Show all alleles and gene records" box and the CLI has `--all-alleles` to get the full list.
+* **Gene and orientation:** the gene symbol and whether the gene is read along the `+` strand of that accession (the gene's orientation on the chromosome combined with the record's `is_aln_opposite_orientation`). See section 4.1.2.
+* **Significance:** the ClinVar significances dbSNP lists for the allele.
+
 ```fsharp
 // In gRNA/SNP.fs
-
-module SNP =
-    let getHgvsNotationsAsync (rsNumber: string) =
-        async {
-            let url = $"https://api.ncbi.nlm.nih.gov/variation/v0/refsnp/{rsNumber}"
-            // ... logic to make the web request and parse the JSON response
-            // HGVS notations are extracted from the result.
-        }
+type SnpVariant = { Hgvs; Accession; Gene; GeneOnPlusStrand; Significance; Preferred }
+let parseVariants (json: string) : SnpVariant list      // pure, tested on a captured rs334 response
+let getHgvsNotationsAsync rs ct      // default: Preferred only
+let getAllHgvsNotationsAsync rs ct   // every notation
 ```
 
 ### 3. DNA/RNA Sequence Manipulation
@@ -134,6 +136,14 @@ Every variant can be designed against either strand of the reference; the result
 
 *History, so that older reports can be read correctly.* Until 2026-10-13 the complement mode complemented the sequence without reversing it, which gave a spacer equal to the reverse of the reference strand and a Bowtie query that is a sequence on neither strand: its alignment count was 0 for the TP53 example where the normal strand gives 1. Reports made before that date contain complement rows that should be regenerated.
 
+#### 4.1.2. Which tab binds the mRNA? (added 2026-10-16)
+
+Cas13 cuts RNA, so a spacer is useful for knock-down or RNA detection only if it is **complementary to the gene's mRNA**. The mRNA has the sequence of the strand the gene is read along. The "Normal" tab designs the spacer as the reverse complement of the `+` strand of the accession, so it binds the mRNA when the gene is read along `+`, and the "Complement" tab does when the gene is read along `-` (`HgvsData.TargetsMrna`).
+
+* For an rsID the orientation comes from dbSNP (section 2). `NG_` records are normally stored in gene orientation, so for `NG_` notations the Normal tab is the one that binds the mRNA. HBB, TP53 and PAH are on the minus strand of their chromosome, so for `NC_` coordinates it is the Complement tab.
+* The result tabs say so ("mRNA" or "antisense" badge, gene symbol), the mRNA-binding tab is listed first, and the antisense tab carries a warning.
+* A typed HGVS has no orientation information: the page says it is unknown and that the user must check the strand. Looking the orientation up for typed coordinates is future work.
+
 #### 4.2. Scoring and Filtering: a Multi-Factor Approach
 
 Each candidate spacer goes through a series of bioinformatic evaluations. The results are stored in a `gRNAResult` record, which encapsulates all information relevant to a candidate.
@@ -187,6 +197,16 @@ let calculateGCScore (gcContent: float) (lowerThreshold: float, upperThreshold: 
 * **Concept:** The complete gRNA (spacer + scaffold) must fold into a functional structure to bind Cas13. If the spacer itself folds into a stable secondary structure (hairpins, loops), it can interfere with its function. `RNAFold` (ViennaRNA) is used to predict the structure and its minimum free energy (MFE).
 * **Implementation:** Folding is run on the **complete RNA gRNA** — the 36 nt scaffold followed by the RNA spacer (`scaffold + spacer`, both already in RNA form) — not on the raw DNA window. An energy value (`RnaFoldResult.Energy`) closer to zero (less negative) is preferable, since it indicates a less stable, more accessible structure.
 
+**e) Discrimination between the two alleles (added 2026-10-16):**
+* **Concept:** for a diagnostic the guide must react to the mutated sequence and stay silent on the normal one. A guide whose DNA target differs from the normal sequence by 0 or 1 letter cannot be expected to do so. Earlier versions showed the two candidate lists separately and never said how a guide behaves on the *other* allele.
+* **Implementation:** `SpacerFinder.annotateDiscrimination` gives every candidate `WtMismatches`: the fewest differing letters between the guide's DNA window (`windowOfSpacer`, the reverse complement of the spacer) and any same-length window of the **other** allele's sequence in the same orientation (a mutated-list guide against the original sequence, an original-list guide against the mutated one). Sliding over all windows makes this work for insertions and deletions, where the windows do not line up one-to-one. When the other sequence is shorter than the window, nothing can be compared and the whole window length is reported. It is computed after the substitution rule, so the engineered spacer is measured as it will be ordered. Checked by hand on cystic fibrosis F508del (junction guides: 6 to 8 mismatches; a guide lying in unchanged sequence: 1).
+* **How it is used:** it is a column ("Mismatches vs other allele", sortable, with a filter), a red "not discriminating" chip when it is below 2, and a warning when no guide of a sequence reaches 2. **It does not change the ranking** (section 4.3). The threshold 2 is a working choice, not a literature value, and the metric ignores where in the spacer the mismatches fall. The CSV has `WT Mismatches` (empty when not computed).
+
+**f) Scaffold hairpin and spacer accessibility (added 2026-10-16):** the single minimum free energy mixes two different things: the scaffold's own hairpin, which Cas13 needs, and the spacer's tendency to fold, which hinders binding to the target. Two checks are derived from the fold already computed for each complete gRNA, without changing the ranking:
+* `ScaffoldIntact`: every base pair of the fold of the *scaffold alone* (computed once per process, `scaffoldReference`) is still present in the fold of the complete gRNA (`SpacerFinder.scaffoldIntact`, over `basePairs`). When it is not, the table shows a "hairpin broken" chip: the spacer pulls the hairpin apart and the guide may not load. Extra pairs between the scaffold and the spacer are not penalised by this check.
+* `SpacerUnpaired`: the share of the spacer's letters that are unpaired (`.`) in the fold of the complete gRNA (`SpacerFinder.spacerUnpaired`). It is a proxy for accessibility *of the guide*; accessibility of the *target RNA site*, which also matters for Cas13, is not modelled.
+For the engineered spacer both values are carried over from the candidate it was built from (the fold is not recomputed, as for the energy and the alignments). The MFE (Turner 2004 parameters) is a prediction, not a measurement.
+
 #### 4.3. Sorting and Final Ranking
 
 Once every candidate has been evaluated, they need to be sorted to present the most promising ones to the user. Sorting is a lexicographic process that prioritizes the most important factors first.
@@ -206,7 +226,7 @@ This translates into the following priority order:
 3. **Highest `GCScore`:** all else equal, the candidate with GC content closest to ideal is preferred.
 4. **Lowest `HomopolymerCount`:** finally, the presence of homopolymers is penalized.
 
-After sorting, candidates with an identical sort key are grouped into the same `Rank` (ties share a rank; the next distinct group gets the next rank number). A final normalized `Score` from 0 to 1 is then assigned to every gRNA based on its rank relative to the total number of groups, where the best group scores 1.0. This gives the user a simple, quantitative metric to quickly compare the relative quality of the different gRNAs.
+After sorting, candidates with an identical sort key are grouped into the same `Rank` (ties share a rank; the next distinct group gets the next rank number). A final normalized `Score` from 0 to 1 is then assigned to every gRNA based on its rank relative to the total number of groups, where the best group scores 1.0. This gives the user a simple metric to quickly compare the *relative* order of candidates of one variant. **It is a rank percentile, not a prediction of guide activity**, which is why (changed 2026-10-16) the table explains it in a tooltip and shows "only candidate" instead of 100 % when a variant has a single ordinary candidate. The CSV still carries the number. The fixed choices behind the numbers (GC range 40-60, the mismatch positions, the scaffold length and the off-target reference) are written in the provenance line of every report.
 
 This rigorous selection process ensures the gRNAs recommended by the application are not only capable of targeting the mutation of interest, but do so with the highest possible efficiency and safety.
 
@@ -222,7 +242,9 @@ The system implements a special rule to capitalize on this strategy — **and it
 
 1. **Detection (index `N-3`):** the system looks, among the already-ranked candidates, for the one whose mutation highlight starts exactly at local index `N-3` — the 3rd base from the spacer's 3' end (index `N-1` is the last/3'-most base, `N-2` the 2nd from the end, `N-3` the 3rd).
 2. **Modification (index `N-4`):** if such a spacer is found, a modified version is created. `adjustFourthFromEndToAorU` flips the nucleotide at index `N-4` — one position further from the 3' end than where the mutation itself sits — changing it to `A` or `U` (whichever it was not originally). Its GC content, GC score, homopolymer count, and seed region are then recomputed from the adjusted sequence, while the alignment count and RNA-fold result are carried over unchanged from the original candidate (re-running Bowtie/RNAFold on the single-base-adjusted sequence would be redundant work for a metric that will be overridden anyway).
-3. **Prioritization — replaces the whole list:** this modified spacer is assigned the highest priority: `Rank = 1` and `Score = 1.0`. **This is a deliberate design choice, not an omission:** `applySubstitutionSpecialRule` returns **only** this single candidate when a matching candidate exists. The full ranked candidate table for that HGVS variant is then discarded; the UI table for such a variant shows one row. **When no candidate matches the rule cannot apply, and the ordinary ranking is returned unchanged with a warning** (decision of 2026-10-13; before that the list was emptied and the user saw two empty tables without an explanation). A match is impossible only near the ends of the accession: the mutation must be the 3rd base of a full window, so at least 2 bases are needed on one side and `spacer size - 3` (25 for 28 nt) on the other, i.e. a substitution at position 1 or 2 of the accession, or in its last 24 bases, on the normal strand; on the complement strand the sides swap. `Main.specialRuleNotice` words the warning (`ResultFromHGVS.notices`). The logic assumes the advantage of introducing this mismatch outweighs the other scoring criteria (GC, homopolymers, etc.) for this specific candidate.
+3. **Prioritization — engineered spacer first, the rest follows (changed 2026-10-16):** this modified spacer is assigned `Rank = 1`, `Score = 1.0` and `Engineered = true`, and `applySubstitutionSpecialRule` returns it **followed by the whole ordinary ranked list, unchanged** (the candidate it was built from stays in the list in its unmodified form). In the web app the engineered row is always listed first, whatever the sort, with a coloured row and an "Engineered" chip; the other rows keep their own ranks and scores, so two rows can both show rank 1. The CSV has an `Engineered` column (`Yes`/`No`). Before this date the single engineered candidate *replaced* the list and the user could not see or choose an alternative. **When no candidate matches the rule cannot apply, and the ordinary ranking is returned unchanged with a warning** (decision of 2026-10-13). A match is impossible only near the ends of the accession: the mutation must be the 3rd base of a full window, so at least 2 bases are needed on one side and `spacer size - 3` (25 for 28 nt) on the other, i.e. a substitution at position 1 or 2 of the accession, or in its last 24 bases, on the normal strand; on the complement strand the sides swap. `Main.specialRuleNotice` words the warning (`ResultFromHGVS.notices`).
+
+*Open scientific question.* The position choice is still unsourced. Gootenberg et al. (Science 2017, SHERLOCK) report the best discrimination with the variant at **position 3** of the spacer and the synthetic mismatch at **position 5**, i.e. two bases apart, which is not what the code does (variant at index N-3 from the 3' end, mismatch at N-4, adjacent). Which end the numbering starts from could not be checked in the supplement. Until the team confirms the convention, treat the engineered spacer as one option among the ranked ones and compare it with the ordinary candidates using the discrimination column.
 
 ```fsharp
 // In gRNA/SpacerFinder.fs
@@ -241,10 +263,10 @@ let applySubstitutionSpecialRule (seedStart: int) (seedEnd: int) (windowSize: in
         let adjustedSequence = adjustFourthFromEndToAorU selected.Sequence
         // ... a new gRNAResult is built from the adjusted sequence, Rank = 1, Score = 1.0
         )
-    |> Option.toList
+    |> function Some adjusted -> adjusted :: results | None -> results   // engineered first, then the ordinary list
 ```
 
-This automatic rule offers the researcher a potentially more effective gRNA for editing substitution SNPs, using the mutation itself to improve the specificity of the process — at the cost of no longer presenting the full ranked alternative list for that variant.
+This automatic rule offers the researcher a potentially more effective gRNA for editing substitution SNPs, using the mutation itself to improve the specificity of the process, while still showing the full ranked alternatives.
 
 ### 5. Alignment with Bowtie: Off-Target Analysis
 
@@ -319,7 +341,8 @@ type ResultFromHGVS = {
 3. **Sequence:** uses `SequenceRepository.fs` to fetch the reference sequence from NCBI (cached in-process per accession). The response must be exactly one FASTA record of letters (it is upper-cased); an HTML or JSON error page, an empty body or a second record is an upstream error, never a sequence. The variant is then checked against it (position inside the sequence, stated reference base equal to the real base, supported coordinate system).
 4. **Mutation:** uses `Sequence.fs` to build both the mutated and the original (wild-type) subsequence, with flanking context on each side (`spacer size - mutation length`, at least 0). When `complement` is requested, both sequences are replaced by their reverse complement before spacer generation (section 4.1.1), and the mutation position is mirrored. If the mutated sequence is shorter than the spacer there is no window and the run stops with a message.
 5. **gRNA search:** uses `SpacerFinder.fs` to generate and score all candidate gRNAs **for both the mutated and the original sequence**, coordinating calls to `BowtieWrapper.fs` and `RNAFoldWrapper.fs`.
-6. **Substitution rule:** if the HGVS mutation type is `Substitution`, `applySubstitutionSpecialRule` is applied to both candidate lists (see section 4.4) — each list is replaced by its single mismatch-engineered candidate; if no candidate matches (mutation too close to an end of the sequence) the ranking is kept and a notice is added to the result.
+6. **Substitution rule:** if the HGVS mutation type is `Substitution`, `applySubstitutionSpecialRule` is applied to both candidate lists (see section 4.4): the mismatch-engineered candidate is put first and the ordinary list follows; if no candidate matches (mutation too close to an end of the sequence) the ranking is kept and a notice is added to the result.
+6b. **Discrimination:** `annotateDiscrimination` fills `WtMismatches` for both lists against the other allele (section 4.2e).
 7. **Output:** returns the two ranked gRNA lists (mutated and original), both sequences, and the flanking-context length, so the UI can render the original-vs-mutated comparison and both result tables side by side.
 
 This modular, science-grounded approach lets the application design efficient, specific gRNAs for editing genes associated with disease.

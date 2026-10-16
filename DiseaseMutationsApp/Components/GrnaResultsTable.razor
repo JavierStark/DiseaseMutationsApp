@@ -8,27 +8,32 @@
 
         <div class="filter-row" role="search" aria-label="@($"Filter candidates: {Title}")">
             <div>
-                <label class="form-label" for="@Id("min-score")">Min score</label>
+                <label class="form-label" for="@Id("min-score")" title="@HelpText.MinScore">Min score</label>
                 <input id="@Id("min-score")" type="number" class="form-control form-control-sm" min="0" max="1" step="0.05"
                        @bind="Filter.MinScore" @bind:after="FilterChanged" />
             </div>
             <div>
-                <label class="form-label" for="@Id("max-aln")">Max alignments</label>
+                <label class="form-label" for="@Id("max-aln")" title="@HelpText.MaxAlignments">Max alignments</label>
                 <input id="@Id("max-aln")" type="number" class="form-control form-control-sm" min="0" max="6"
                        @bind="Filter.MaxAlignments" @bind:after="FilterChanged" />
             </div>
             <div>
-                <label class="form-label" for="@Id("min-gc")">GC % from</label>
+                <label class="form-label" for="@Id("min-wt")" title="@HelpText.MinWtMismatches">Min mismatches vs other allele</label>
+                <input id="@Id("min-wt")" type="number" class="form-control form-control-sm" min="0" max="30"
+                       @bind="Filter.MinWtMismatches" @bind:after="FilterChanged" />
+            </div>
+            <div>
+                <label class="form-label" for="@Id("min-gc")" title="@HelpText.GcFilter">GC % from</label>
                 <input id="@Id("min-gc")" type="number" class="form-control form-control-sm" min="0" max="100"
                        @bind="Filter.MinGc" @bind:after="FilterChanged" />
             </div>
             <div>
-                <label class="form-label" for="@Id("max-gc")">GC % to</label>
+                <label class="form-label" for="@Id("max-gc")" title="@HelpText.GcFilter">GC % to</label>
                 <input id="@Id("max-gc")" type="number" class="form-control form-control-sm" min="0" max="100"
                        @bind="Filter.MaxGc" @bind:after="FilterChanged" />
             </div>
             <div>
-                <label class="form-label" for="@Id("contains")">Sequence contains</label>
+                <label class="form-label" for="@Id("contains")" title="@HelpText.Contains">Sequence contains</label>
                 <input id="@Id("contains")" type="text" class="form-control form-control-sm filter-wide font-monospace"
                        @bind="Filter.Contains" @bind:event="oninput" @bind:after="FilterChanged" />
             </div>
@@ -57,15 +62,17 @@
                 <caption class="visually-hidden">@Title. Use the column header buttons to sort.</caption>
                 <thead>
                 <tr>
-                    <th scope="col">Action</th>
-                    @Header("gRNA spacer (5' to 3')", GrnaSortColumn.Sequence, false)
-                    @Header("GC score", GrnaSortColumn.GCScore, true)
-                    @Header("GC %", GrnaSortColumn.GCContent, true)
-                    @Header("Homopolymers", GrnaSortColumn.HomopolymerCount, true)
-                    @Header("Alignments", GrnaSortColumn.Alignments, false)
-                    <th scope="col">Assembly compatibility</th>
-                    @Header("Energy (kcal/mol)", GrnaSortColumn.Energy, true)
-                    @Header("Score", GrnaSortColumn.Score, true)
+                    <th scope="col" title="@HelpText.UseButton">Action</th>
+                    @Header("gRNA spacer (5' to 3')", GrnaSortColumn.Sequence, false, HelpText.Spacer)
+                    @Header("GC score", GrnaSortColumn.GCScore, true, HelpText.GcScore)
+                    @Header("GC %", GrnaSortColumn.GCContent, true, HelpText.GcPercent)
+                    @Header("Homopolymers", GrnaSortColumn.HomopolymerCount, true, HelpText.Homopolymers)
+                    @Header("Alignments", GrnaSortColumn.Alignments, false, HelpText.Alignments)
+                    <th scope="col" title="@HelpText.Assembly">Assembly compatibility</th>
+                    @Header("Energy (kcal/mol)", GrnaSortColumn.Energy, true, HelpText.Energy)
+                    @Header("Spacer unpaired", GrnaSortColumn.SpacerUnpaired, true, HelpText.SpacerUnpaired)
+                    @Header("Mismatches vs other allele", GrnaSortColumn.WtMismatches, true, HelpText.WtMismatches)
+                    @Header("Score", GrnaSortColumn.Score, true, HelpText.Score)
                 </tr>
                 </thead>
                 <tbody>
@@ -75,10 +82,10 @@
                     var rowKey = $"{rowIndex}|{spacer}";   // position + text: identical windows must not share a key
                     var lociKey = rowKey + "-loci";
                     var risk = AlignmentRisk.Describe(g.Allignments);
-                    <tr class="@(spacer == SelectedSpacer ? "row-selected" : null)" @key="rowKey">
+                    <tr class="@(spacer == SelectedSpacer ? "row-selected" : null) @(g.Engineered ? "row-engineered" : null)" @key="rowKey">
                         <td class="text-nowrap">
                             <button type="button" class="btn btn-sm btn-outline-secondary" @onclick="() => OnCreateGrna.InvokeAsync(spacer)"
-                                    aria-pressed="@(spacer == SelectedSpacer ? "true" : "false")" title="Use this spacer to build the complete gRNA">
+                                    aria-pressed="@(spacer == SelectedSpacer ? "true" : "false")" title="@HelpText.UseButton">
                                 <Icon Name="@(spacer == SelectedSpacer ? "check" : "plus")" />Use
                             </button>
                             <button type="button" class="btn btn-sm btn-outline-secondary btn-icon-only" @onclick="() => CopyAsync(spacer)"
@@ -86,11 +93,15 @@
                                 <Icon Name="copy" />
                             </button>
                             <button type="button" class="btn btn-sm btn-outline-secondary btn-icon-only" @onclick="() => ToggleLoci(spacer)"
-                                    aria-expanded="@(_loci.ContainsKey(spacer) ? "true" : "false")" aria-label="Show genomic loci of @spacer" title="Show genomic loci">
+                                    aria-expanded="@(_loci.ContainsKey(spacer) ? "true" : "false")" aria-label="Show genomic loci of @spacer" title="@HelpText.LociButton">
                                 <Icon Name="@(_loci.ContainsKey(spacer) ? "sort-up" : "chevron")" />
                             </button>
                         </td>
                         <td class="seq-cell">
+                            @if (g.Engineered)
+                            {
+                                <span class="engineered-chip" title="@HelpText.Engineered" tabindex="0">Engineered</span>
+                            }
                             <span class="text-muted">5'</span>
                             <SequenceSpan Sequence="@spacer" SeedStart="SeedStart" SeedEnd="SeedEnd"
                                           MutationStart="g.MutationHighlightStart" MutationLength="g.MutationHighlightLength" />
@@ -103,14 +114,42 @@
                         <td class="num">@g.HomopolymerCount</td>
                         <td><span class="risk-chip @risk.CssClass"><span class="risk-glyph" aria-hidden="true"></span>@risk.Label</span></td>
                         <td><AssemblyCompatibilityBadges Found="sites" ShowLabel="false" /></td>
-                        <td class="num">@(g.RnaFoldResult is null ? "n/a" : g.RnaFoldResult.Energy.ToString("F2"))</td>
-                        <td class="num bar-cell" style="--w:@Pct(g.Score)"><span>@g.Score.ToString("P0")</span></td>
+                        <td class="num">
+                            @(g.RnaFoldResult is null ? "n/a" : g.RnaFoldResult.Energy.ToString("F2"))
+                            @if (!g.ScaffoldIntact)
+                            {
+                                <span class="risk-chip risk-caution" title="@HelpText.ScaffoldBroken"><span class="risk-glyph" aria-hidden="true"></span>hairpin broken</span>
+                            }
+                        </td>
+                        <td class="num" title="@HelpText.SpacerUnpaired">@(g.SpacerUnpaired < 0 ? "n/a" : g.SpacerUnpaired.ToString("P0"))</td>
+                        <td class="num">
+                            @if (g.WtMismatches < 0)
+                            {
+                                <span>n/a</span>
+                            }
+                            else if (g.WtMismatches < 2 && !g.Engineered)
+                            {
+                                <span class="risk-chip risk-high" title="@HelpText.WtMismatchesLow"><span class="risk-glyph" aria-hidden="true"></span>@g.WtMismatches: not discriminating</span>
+                            }
+                            else
+                            {
+                                <span title="@HelpText.WtMismatches">@g.WtMismatches</span>
+                            }
+                        </td>
+                        @if (OnlyCandidate && !g.Engineered)
+                        {
+                            <td class="num" title="@HelpText.ScoreOnlyCandidate"><span>only candidate</span></td>
+                        }
+                        else
+                        {
+                            <td class="num bar-cell" style="--w:@Pct(g.Score)" title="@HelpText.Score"><span>@g.Score.ToString("P0")</span></td>
+                        }
                     </tr>
                     @if (_loci.TryGetValue(spacer, out var state))
                     {
                         <tr class="loci-row" @key="lociKey">
                             <td></td>
-                            <td colspan="8">
+                            <td colspan="10">
                                 @if (state.Loading)
                                 {
                                     <span class="helper-note" role="status">Looking up genomic loci&hellip;</span>
@@ -172,6 +211,8 @@
     [Inject] private IJSRuntime JS { get; set; } = default!;
 
     private List<GRNAResult> Filtered => (GRNAs ?? Array.Empty<GRNAResult>()).Where(Filter.Matches).ToList();
+    /// <summary>True when the list holds a single ordinary candidate: a relative score of 100 % would mean nothing.</summary>
+    private bool OnlyCandidate => (GRNAs?.Count(g => !g.Engineered) ?? 0) == 1;
     private int PageCount => Math.Max(1, (Filtered.Count + Filter.PageSize - 1) / Filter.PageSize);
 
     private List<GRNAResult> PageItems
@@ -221,6 +262,7 @@
         var size = Filter.PageSize;
         Filter.MinScore = null;
         Filter.MaxAlignments = null;
+        Filter.MinWtMismatches = null;
         Filter.MinGc = null;
         Filter.MaxGc = null;
         Filter.Contains = null;
@@ -234,13 +276,13 @@
         catch (JSDisconnectedException) { }
     }
 
-    private RenderFragment Header(string label, GrnaSortColumn column, bool numeric) => __builder =>
+    private RenderFragment Header(string label, GrnaSortColumn column, bool numeric, string tip) => __builder =>
     {
         var active = SortColumn == column;
         var sort = active ? (SortAscending ? "ascending" : "descending") : "none";
         var icon = active ? (SortAscending ? "sort-up" : "sort-down") : "sort";
-        <th scope="col" aria-sort="@sort" class="@(numeric ? "num" : null)">
-            <button type="button" class="sort-btn" @onclick="() => OnSortRequested.InvokeAsync(column)">
+        <th scope="col" aria-sort="@sort" class="@(numeric ? "num" : null)" title="@tip">
+            <button type="button" class="sort-btn" title="@tip" @onclick="() => OnSortRequested.InvokeAsync(column)">
                 @label<Icon Name="@icon" />
             </button>
         </th>

@@ -34,7 +34,7 @@ fixture in `ParsingTests.cs`.
 `RnaFoldIntegrationTests` runs the real library whenever python3 + ViennaRNA are present and skips otherwise.
 
 **dbSNP.** `SNP.getHgvsNotationsAsync` calls `https://api.ncbi.nlm.nih.gov/variation/v0/refsnp/{id}`, a *legacy* surface,
-and extracts `NG_` notations with a regex. An rsID with no `NG_` mapping yields an empty list (reported in the UI as "no
+and parses the JSON (`SNP.parseVariants`): `NG_` notations, the gene and its orientation, and the clinical significance per allele. An rsID with no `NG_` mapping yields an empty list (reported in the UI as "no
 HGVS notations found"); an HTTP failure now raises `GrnaUpstreamException` (reported as an error). `NM_`/`NC_` notations
 are intentionally not returned today. This is an API-surface risk of the same kind that already ended OMIM support.
 

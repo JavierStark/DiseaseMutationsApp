@@ -27,13 +27,26 @@ keyboard-operable tabs. Numbers in square brackets point to the [References](#re
 ### Diana: guide design (`/`)
 
 - **Inputs**: HGVS (`NC_000017.11:g.7674220C>T`) and rsIDs (`rs334`), several at once. An rsID is resolved to its HGVS
-  notations and each is analysed on both strands: a normal tab and a complement (`C`) tab, designed from the reverse complement
-  (the opposite strand read 5'->3'). Variants are checked before any work starts: malformed codes, lower-case or IUPAC alleles, a
-  reference base that differs from the real sequence, `c.` (coding-sequence) positions (not converted yet: use `g.`) and repeat
-  notation are refused with a message. Limits: spacer size 18-60, at most 50 inputs per run.
+  notations, **by default only the disease-relevant allele(s) on the main gene record** (rs334 gives one notation, not twelve;
+  tick *Show all alleles and gene records*, or use `grna ... --all-alleles`, for everything dbSNP lists), and each is analysed on
+  both strands: a normal tab and a complement (`C`) tab, designed from the reverse complement (the opposite strand read 5'->3').
+  Cas13 binds RNA, so the tabs say which strand's spacers are **complementary to the gene's mRNA** (an "mRNA" badge and the gene
+  symbol, the mRNA tab listed first; the other one is marked "antisense" and carries a warning). For a typed HGVS the gene's
+  orientation is unknown and the page says so. Variants are checked before any work starts: malformed codes, lower-case or IUPAC alleles, a
+  reference base that differs from the real sequence, `c.` positions on a genomic record, intronic offsets and repeat
+  notation are refused with a message. **`c.` positions work on a transcript record** (`NM_000518.5:c.20A>T` is converted to
+  `NM_000518.5:n.70A>T` using the coding-sequence start read from the NCBI GenBank record, `c.-5` and `c.*3` included): the guides
+  are then designed on the mRNA itself, which is what Cas13 binds, and a notice says what was converted. Limits: spacer size 18-60, at most 50 inputs per run.
 - **Results** per variant: original and mutated sequences (mutation highlighted, copy as FASTA), two ranked spacer tables
   (sortable, filterable, paged, with an alignment-risk chip), the complete gRNA (scaffold + chosen spacer), ViennaRNA
   structure and a FORNA [4] diagram link.
+- **Can this guide tell the alleles apart?** Each guide has a *Mismatches vs other allele* column: the fewest letters in which its
+  DNA target differs from the closest stretch of the other allele (a mutated-sequence guide against the normal sequence). 0 or 1 is
+  flagged "not discriminating" (red chip), a filter hides those, and a warning appears when no guide of a variant reaches 2. It
+  informs the choice; it does not change the ranking.
+- **Tooltips everywhere.** Hover (or focus) a column header, filter, option or badge to get a one-paragraph explanation of what it
+  is and how it is computed (GC score, alignments, energy, score, mismatches, engineered guide, strands, seed, pooling K, ...).
+  The wording lives in one file, `DiseaseMutationsApp/Services/HelpText.cs`.
 - **Assembly compatibility**: each guide carries two badges, one per standard. BioBrick RFC[10] requires the DNA to be free of
   EcoRI, NotI, XbaI, SpeI and PstI sites and iGEM Type IIS RFC[1000] of BsaI and SapI sites; a green badge means compatible, a
   red one means a site is present (hover it for the enzyme). The badges appear in the results and shortlist tables and in the
@@ -101,10 +114,10 @@ The same preflight as `grna doctor`: Bowtie binary and index, Python and ViennaR
 
 ```
 grna doctor [--network]
-grna resolve rs334
+grna resolve rs334 [--all-alleles]
 grna disease "sickle cell disease" --format rs --out sickle.txt   # rsIDs of a disease's pathogenic ClinVar variants
 grna design --hgvs NC_000017.11:g.7674220C>T --spacer 28 --seed 10-17 [--complement] [--format csv|json|tsv]
-grna design --input variants.txt|session.json --out report.csv   # batch, resumable, bounded concurrency
+grna design --input variants.txt|session.json --out report.csv   # batch, resumable, bounded concurrency ([--all-alleles] for every dbSNP allele)
 grna fold "GAUUUAGACUACCCC..."
 grna pool --guides report.csv --capacity 5 --plate 96 --model auto --out plan.csv
 ```
@@ -204,12 +217,17 @@ If a variant fails it shows the reason and a **Retry this variant** button; othe
   "6+ saturated". **0 means "no genomic match" and is ranked best, by design**: it is common for insertions,
   duplications and deletions, whose junction windows do not exist in the genome, so for those variants the alignment criterion
   does not separate candidates (see [BIOLOGICAL_REPORT.md](BIOLOGICAL_REPORT.md) section 4.2c).
+- **Spacer unpaired** (`Spacer Unpaired` in the CSV): the share of the spacer's letters left unpaired in the fold of the complete gRNA; a spacer that folds on itself or sticks to the scaffold may bind its target less well.
+- **Hairpin broken** (`Scaffold Intact = No`): the scaffold's own hairpin (the fold of the scaffold alone) is no longer fully formed in the complete gRNA, so the guide may not load into Cas13. Both checks come from the fold already computed; they inform the choice and do not change the ranking.
 - **Energy**: minimum free energy (kcal/mol, Turner 2004 parameters [11]) of the *complete* gRNA (scaffold + spacer); closer to zero is preferred.
-- **Score**: 0-1, from the rank after sorting by (Alignments, Energy, GC score, Homopolymers); ties share a rank.
+- **Score**: 0-1, from the rank after sorting by (Alignments, Energy, GC score, Homopolymers); ties share a rank. It is a *relative* number for comparing candidates of one variant, not a prediction of guide activity; when a variant has a single ordinary candidate the table says "only candidate" instead of 100 %.
 
-Substitution variants get the **special rule**: when the mutation lands at the right position near the 3' end, a single
-mismatch-engineered spacer (`Rank = 1`, `Score = 1.0`) replaces the whole ranked list for that variant, by design
-([BIOLOGICAL_REPORT.md](BIOLOGICAL_REPORT.md) section 4.4). When the mutation is too close to an end of the accession for such a
+- **Mismatches vs other allele** (`WT Mismatches` in the CSV): see above; 2 or more can tell the alleles apart, more is better.
+
+Substitution variants get the **special rule**: when the mutation lands at the right position near the 3' end, a
+mismatch-engineered spacer (`Rank = 1`, `Score = 1.0`, `Engineered = Yes`) is listed **first, highlighted**, and the whole
+ordinary ranked list follows it unchanged ([BIOLOGICAL_REPORT.md](BIOLOGICAL_REPORT.md) section 4.4, which also states the open
+question about the mismatch position). When the mutation is too close to an end of the accession for such a
 window to exist (at the start or in the last 24 bases for a 28 nt spacer, the sides swapping on the complement strand) the rule
 cannot apply: the ordinary ranking is shown instead, with a visible warning (a `note` line on stderr and a `notices` field in
 `--format json` for the CLI).
@@ -354,7 +372,7 @@ are stated in [THIRD-PARTY-NOTICES.md](THIRD-PARTY-NOTICES.md).
 
 - Disease variants: add the rsIDs ClinVar lacks through the ClinGen Allele Registry, expand subtypes more than one level, read
   more than 3,000 records, and include somatic and oncogenicity classifications (only germline classifications are used today).
-- Coding-sequence (`c.`) positions: convert them with the CDS start from the NCBI record. Today they are refused, because using them as plain sequence indexes would design around the wrong position.
+- Coding-sequence (`c.`) positions on genomic records (`NG_`, `NC_`): they need the exon map, because introns lie between the exons. Today only transcript records (`NM_`, `XM_`) are converted; others are refused with the advice to use the `NM_` accession.
 - Run history and design comparison (reopen or diff earlier runs with different spacer/seed).
 - Enzyme presets with a configurable scaffold: today the 36 nt Cas13 scaffold and the 28 / 10-17 defaults are fixed, and
   presets for other Cas variants need their scaffolds and seed windows verified against the literature first.

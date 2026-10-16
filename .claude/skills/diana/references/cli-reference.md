@@ -46,7 +46,7 @@ grna <unknown>                 "Unknown command", usage on stderr, exit 2
 |---|---|---|
 | 0 | ok | |
 | 1 | failure | partial batch failure; unexpected exception; Ctrl-C (`cancelled.`) |
-| 2 | bad input | argument errors and unknown options; invalid HGVS (no colon, no change, reversed range, lower-case or IUPAC alleles, a stated reference base that differs from the real sequence, a `c.` position, repeat notation); `--spacer` outside 18-60; `--seed` out of range; unreadable or empty input file; `pool --capacity 0`; a resumed report made with another spacer/seed |
+| 2 | bad input | argument errors and unknown options; invalid HGVS (no colon, no change, reversed range, lower-case or IUPAC alleles, a stated reference base that differs from the real sequence, a `c.` position on a genomic record or with an intronic offset, repeat notation); `--spacer` outside 18-60; `--seed` out of range; unreadable or empty input file; `pool --capacity 0`; a resumed report made with another spacer/seed |
 | 3 | missing native dependency | Bowtie binary/index or Python/ViennaRNA unusable; `doctor` with any FAIL |
 | 4 | upstream failure | NCBI / dbSNP HTTP failure, child process returned unparseable output |
 | 125 | (wrapper scripts / `docker run`) | Docker failed: image missing, daemon down |
@@ -98,11 +98,11 @@ Healthy image output (verified):
 ## `grna resolve`
 
 ```
-grna resolve <rsID> [<rsID> ...]
+grna resolve <rsID> [<rsID> ...] [--all-alleles]
 ```
 
 - Accepts `rs334` or `334` (the `rs` prefix is optional, case-insensitive).
-- stdout: one `<rsID-as-typed>\t<HGVS>` line per notation (e.g. `rs334\tNG_000007.3:g.70614A>T`; rs334 yields 12).
+- stdout: one `<rsID-as-typed>\t<HGVS>` line per notation (e.g. `rs334\tNG_000007.3:g.70614A>T`). By default only the disease-relevant allele(s) on the main RefSeqGene record are listed (rs334 yields 1); `--all-alleles` lists every allele on every RefSeqGene record (rs334 yields 12).
 - Only `NG_` notations are returned. None found: `<rsID>: no NG_ notations found` on stderr, still exit 0.
 - HTTP failure: exit 4. Needs internet only (no Bowtie/Python), so it works natively on any OS.
 
@@ -162,11 +162,12 @@ Explicit `--spacer`/`--seed` override the values stored in a session file.
 ### Inputs
 
 - **HGVS**: e.g. `NC_000017.11:g.7674220C>T`, `NC_000017.11:g.7674220_7674222del`, `...delinsAG`, `...dup`, `...insA`, `...inv`
-  (see README "HGVS examples"). Only `g.`, `m.` and `n.` positions are designed. **`c.` positions are refused** (they count from
-  the coding start, which is not converted yet), and so are repeat, conversion and translocation notations. The stated
+  (see README "HGVS examples"). `g.`, `m.` and `n.` positions are designed. **`c.` positions are converted on a transcript record** (`NM_000518.5:c.20A>T` becomes `n.70A>T`
+  using the CDS start from the GenBank record; this needs internet) and refused on a genomic record (`NG_`, `NC_`) or with an intronic offset
+  (`c.92+2`); repeat, conversion and translocation notations are refused too. The stated
   reference base (or `del`/`dup`/`inv` sequence) must equal the real one, alleles must be upper-case A/C/G/T, and a deletion
   longer than the spacer leaves no window and is refused. Always quote HGVS in the shell.
-- **rsIDs**: an item that is exactly `rs` + digits is resolved via dbSNP first; each `NG_` notation becomes its own job.
+- **rsIDs**: an item that is exactly `rs` + digits is resolved via dbSNP first; each selected `NG_` notation becomes its own job (the disease-relevant allele on the main record, or every one with `--all-alleles`).
   Bare digits are **not** treated as rsIDs, and `rs` or `rs12x` is a malformed variant (exit 2).
 - **Text file** (`--input variants.txt`): split on newlines, `,` and `;`; trimmed; empty and `#`-prefixed items
   dropped; duplicates removed (first occurrence order kept).
@@ -239,9 +240,9 @@ grna pool --count <V>     [--capacity 5] [--plate 96|384] [--model auto|2df|2dm|
 
 ```
 # Diana report; spacer=28; seed=10-17; generated=2026-10-06T17:41:28Z
-RS ID,HGVS,Sequence Type,Rank,Sequence,Score,GC Content,Alignments,Seed Region,Homopolymers,Fold Energy,Strand
-,NC_000017.11:g.7674220C>T,Mutated,1,AGUUCCUGCAUGGGCGGCAUGAACAAGA,1,53.57,1,UGGGCGGC,0,-13.100000381469727,Normal
-,NC_000017.11:g.7674220C>T,Original,1,AGUUCCUGCAUGGGCGGCAUGAACAGGA,1,57.14,1,UGGGCGGC,0,-13.300000190734863,Normal
+RS ID,HGVS,Sequence Type,Rank,Sequence,Score,GC Content,Alignments,Seed Region,Homopolymers,Fold Energy,Strand,WT Mismatches,Engineered,Scaffold Intact,Spacer Unpaired
+,NC_000017.11:g.7674220C>T,Mutated,1,AGUUCCUGCAUGGGCGGCAUGAACAAGA,1,53.57,1,UGGGCGGC,0,-13.100000381469727,Normal,1,Yes,Yes,0.57
+,NC_000017.11:g.7674220C>T,Original,1,AGUUCCUGCAUGGGCGGCAUGAACAGGA,1,57.14,1,UGGGCGGC,0,-13.300000190734863,Normal,1,No,Yes,0.61
 ```
 
 | Column | Content |
@@ -258,6 +259,10 @@ RS ID,HGVS,Sequence Type,Rank,Sequence,Score,GC Content,Alignments,Seed Region,H
 | Homopolymers | runs of >= 4 identical bases |
 | Fold Energy | MFE in kcal/mol, full float precision |
 | Strand | `Normal` or `Complement` |
+| WT Mismatches | fewest letters in which the spacer's DNA target differs from the closest window of the other allele (a mutated row against the original sequence); 0-1 cannot tell the alleles apart; empty when not computed |
+| Engineered | `Yes` for the spacer built by the substitution rule (listed first for that variant), else `No` |
+| Scaffold Intact | `No` when the spacer pulls the scaffold's own hairpin apart in the fold of the complete gRNA, else `Yes` |
+| Spacer Unpaired | share (0-1) of the spacer left unpaired in that fold; empty when not computed |
 
 Line 1 is a provenance comment: skip lines starting with `#` when parsing. Numbers use the invariant culture (`.`).
 Fields containing `,` or `"` are quoted per RFC 4180. All rows for a variant: every `Mutated` row, then every `Original` row.
@@ -276,6 +281,7 @@ Same columns, tab-separated, header first, **no provenance line**.
     "strand": "Normal",
     "mutated":  [ { "rank": 1, "sequence": "AGUU...", "score": 1, "gcContent": 53.57, "alignments": 1,
                     "seedRegion": "UGGGCGGC", "homopolymers": 0, "energy": -13.100000381469727,
+                    "wtMismatches": 1, "engineered": true, "scaffoldIntact": true, "spacerUnpaired": 0.57,
                     "structure": "(.(((((....((((...." } ],
     "original": [ ... ]
   }

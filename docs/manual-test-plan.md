@@ -32,12 +32,17 @@ Record every run in section 9. A step that was not run is written as "not run", 
 
 | # | Step | Expected |
 |---|---|---|
-| 2.1b | `grna design --hgvs NG_000007.3:g.81703T>C` (3 bases from the end of the record), then with `--complement` | Normal strand: ordinary ranking and a `note ...` line on stderr (the web page shows the same text as a warning); complement strand: one engineered spacer, no note |
-| 2.1 | Web app: enter `NC_000017.11:g.7674220C>T`, **Run analysis** | Done within about 30 s; one tab; mutated and original sequence cards; two tables; a single engineered spacer per table (substitution special rule, Rank 1, Score 100%) |
+| 2.1b | `grna design --hgvs NG_000007.3:g.81703T>C` (3 bases from the end of the record), then with `--complement` | Normal strand: ordinary ranking and a `note ...` line on stderr (the web page shows the same text as a warning); complement strand: the engineered spacer first and the ordinary list after it, no note |
+| 2.1 | Web app: enter `NC_000017.11:g.7674220C>T`, **Run analysis** | Done within about 30 s; one tab; mutated and original sequence cards; two tables; the engineered spacer is the FIRST row of each table (highlighted, "Engineered" chip, Rank 1, Score 100%) and the ordinary ranked list follows it; every row has a *Mismatches vs other allele* value |
+| 2.1c | Web app: enter `rs334`, **Run analysis** | One input tab with one variant, `NG_000007.3:g.70614A>T`, gene **HBB**; its first tab is marked **mRNA** and the second **antisense** (with a warning panel). Tick *Show all alleles and gene records* and run again: 12 notations (24 tabs). CLI: `grna resolve rs334` gives 1 line, `--all-alleles` gives 12 |
+| 2.1d | Web app: `NC_000007.14:g.117559592_117559594del` (CFTR F508del) | Top mutated guides show 6 or more *Mismatches vs other allele*; a guide lying wholly in unchanged sequence shows a red "not discriminating" chip; the filter *Min mismatches vs other allele = 2* hides it. The page says the gene orientation is unknown |
+| 2.1e | Hover each column header, filter label and the form options of the Builder, Disease variants and Pooling pages | A native tooltip explains each term; none is empty or off-topic |
 | 2.2 | Same variant, the `C` (complement) result of an rsID, or `grna design ... --complement` | Spacer sequence differs from 2.1; **Alignments is 1**, not 0; strand shown as "− strand, reverse complement, shown 5'→3'" |
 | 2.3 | Change the spacer to 17, then to 61 | Message "between 18 and 60", **Run analysis** disabled |
 | 2.4 | Enter `NC_000017.11:g.7674220A>T` (wrong reference base) | The variant's tab fails with "Reference mismatch ... states A but the sequence has C"; no stack trace; the other variants are unaffected |
-| 2.5 | Enter `NM_000546.6:c.215_217del` | Fails with the message that `c.` positions are not converted |
+| 2.5 | Enter `NM_000518.5:c.20A>T` (needs internet) | Converted to `NM_000518.5:n.70A>T` (a notice says so; HBB CDS starts at 51); the sickle-cell guides appear, designed on the mRNA, and the tab says the spacers bind the mRNA |
+| 2.5b | Enter `NG_000007.3:c.20A>T` and `NM_000518.5:c.92+2T>C` | Both fail with a clear message (genomic record: use the NM_ accession or g.; intronic offset: not in an mRNA) |
+| 2.5c | In any result table, find a guide whose complete-gRNA fold breaks the scaffold hairpin | The Energy cell shows a "hairpin broken" chip; *Spacer unpaired* shows a percentage; hover both for the explanation. A variant with one ordinary candidate shows "only candidate" instead of 100 % |
 | 2.6 | Enter `NC_000017.11:g.7674220_7674300del` (81 bp, longer than the spacer) | Fails with "mutated region is 0 nt, shorter than the spacer size" |
 | 2.7 | Enter `NC_000017.11:g.7674220_7679220dup` (5 kb) | Completes (several minutes), no "Argument list too long" |
 | 2.8 | Enter `rs334` | 24 or so variants resolve; each has a normal and a `C` tab; the run can be cancelled from the progress bar |
