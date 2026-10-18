@@ -366,8 +366,6 @@ DiseaseMutationsApp.E2E/   Playwright browser tests against the real UI with a f
 docs/                      about-the-name, runtime-contract, using-the-library, design-system, manual-test-plan, validation
 examples/standalone.fsx    run the library from F# Interactive
 scripts/check-pins.sh      dependency pinning gate
-showcase/                  source of the feature-tour video (Playwright + Remotion; generated footage is not committed)
-logos/                     the Diana logotype and icon (positive and negative, 1x and 2x)
 BIOLOGICAL_REPORT.md       each biological step mapped to the code, with the open scientific questions
 THIRD-PARTY-NOTICES.md     licenses of the bundled components
 Dockerfile, Dockerfile.bowtie-base, docker-compose.yml, start.sh, start.ps1, start.bat
