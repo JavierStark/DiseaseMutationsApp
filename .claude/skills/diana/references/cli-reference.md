@@ -297,8 +297,8 @@ notices, original, rsId, strand`); don't rely on key order. `notices` is an arra
 ### Pool plan CSV
 
 ```
-Tube ID,Mixture Name,Guides in Tandem,Well
-1,Block 1 - Row 1,Guide 1; Guide 2; Guide 3; Guide 4; Guide 5,Plate 1 - A1
+Tube ID,Guides in Tandem,Well
+1,Guide 1; Guide 2; Guide 3; Guide 4; Guide 5,Plate 1 - A1
 ```
 
 Guides inside a tube are separated by `; `. A tube with nothing to prepare reads `Empty - do not prepare`. Wells are

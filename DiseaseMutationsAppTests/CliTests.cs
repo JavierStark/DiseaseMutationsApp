@@ -333,7 +333,7 @@ public class CliTests
         Assert.Multiple(() =>
         {
             Assert.That(r.Exit, Is.EqualTo(CliProgram.ExitOk), r.Err);
-            Assert.That(lines[0], Is.EqualTo("Tube ID,Mixture Name,Guides in Tandem,Well"));
+            Assert.That(lines[0], Is.EqualTo("Tube ID,Guides in Tandem,Well"));
             Assert.That(lines.Length, Is.GreaterThan(1));
             Assert.That(r.Err, Does.Contain("V=12"));
         });

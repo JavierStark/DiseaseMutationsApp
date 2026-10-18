@@ -5,7 +5,6 @@
         <thead>
             <tr>
                 <th scope="col" class="pool-col-id">Tube ID</th>
-                <th scope="col" class="pool-col-name">Mixture name</th>
                 <th scope="col">Guides in tandem</th>
                 <th scope="col" class="pool-col-well">Final well on plate</th>
             </tr>
@@ -20,7 +19,6 @@
                         <button type="button" class="sort-btn" aria-pressed="@(current.Id == SelectedPoolId ? "true" : "false")"
                                 aria-label="Select tube @current.Id" @onclick="() => OnSelectPool.InvokeAsync(current)" @onclick:stopPropagation="true">@current.Id</button>
                     </td>
-                    <td class="metric-plain">@current.Name</td>
                     <td>
                         @if (current.IsEmpty)
                         {

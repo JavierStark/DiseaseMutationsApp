@@ -526,12 +526,12 @@ let pool (args: Args) (ct: CancellationToken) : Task<int> =
             with :? ArgumentException as ex -> raise (BadArgs ex.Message)
 
         let sb = StringBuilder()
-        sb.AppendLine "Tube ID,Mixture Name,Guides in Tandem,Well" |> ignore
+        sb.AppendLine "Tube ID,Guides in Tandem,Well" |> ignore
         for p in plan.Pools do
             let contents =
                 if p.GuideIndices.IsEmpty then "Empty - do not prepare"
                 else p.GuideIndices |> List.map (fun i -> labels[i - 1]) |> String.concat "; "
-            sb.AppendLine(String.Join(",", [ string p.Id; ReportSchema.csvField p.Name; ReportSchema.csvField contents; ReportSchema.csvField p.Well.Label ])) |> ignore
+            sb.AppendLine(String.Join(",", [ string p.Id; ReportSchema.csvField contents; ReportSchema.csvField p.Well.Label ])) |> ignore
         writeOut (opt args "out") (sb.ToString())
         eprintfn "%s: V=%d K=%d -> %d wells (%d to prepare), each guide in %d" (Pooling.modelName model) v capacity plan.TotalWells plan.NonEmptyWells (Pooling.repetitions model)
         return ExitOk

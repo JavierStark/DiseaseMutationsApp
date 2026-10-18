@@ -104,7 +104,7 @@ Run through `.claude/skills/diana/scripts/grna.sh` or `grna.ps1` as well as `doc
 | 4.2 | Paste a Diana CSV report into **Guide list** | Count equals the number of distinct variants |
 | 4.3 | Enter positive wells `A1, B3` and tube numbers `#12` | Positive wells are marked with a "+" as well as colour; the implicated guides are listed; ambiguous hits say so |
 | 4.4 | Enter `#99999999999` | "Not recognised", the page keeps working |
-| 4.5 | **Download CSV** and open it | Columns `Tube ID, Mixture Name, Guides in Tandem, Well` |
+| 4.5 | **Download CSV** and open it | Columns `Tube ID, Guides in Tandem, Well` |
 | 4.6 | 100,001 guides, or K = 10,001 | Refused with a message |
 
 ## 5. Accessibility by hand (what axe cannot judge)

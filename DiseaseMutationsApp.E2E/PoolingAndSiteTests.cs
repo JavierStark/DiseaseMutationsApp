@@ -80,7 +80,7 @@ public class PoolingPageTests : E2EBase
 
         Assert.Multiple(() =>
         {
-            Assert.That(text.TrimStart('﻿'), Does.StartWith("Tube ID,Mixture Name,Guides in Tandem,Well"));
+            Assert.That(text.TrimStart('﻿'), Does.StartWith("Tube ID,Guides in Tandem,Well"));
             Assert.That(text.Split('\n').Length, Is.GreaterThan(10));
         });
     }

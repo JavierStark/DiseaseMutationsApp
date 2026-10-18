@@ -274,7 +274,7 @@ namespace DiseaseMutationsApp.Pages
             if (_plan is null) return;
 
             var sb = new StringBuilder();
-            sb.AppendLine("Tube ID,Mixture Name,Guides in Tandem,Well");
+            sb.AppendLine("Tube ID,Guides in Tandem,Well");
 
             foreach (var pool in _plan.Pools)
             {
@@ -282,7 +282,7 @@ namespace DiseaseMutationsApp.Pages
                     ? "Empty - do not prepare"
                     : string.Join("; ", pool.GuideLabels);
 
-                sb.AppendLine(string.Join(",", Csv(pool.Id.ToString()), Csv(pool.Name), Csv(contents), Csv(pool.WellLabel)));
+                sb.AppendLine(string.Join(",", Csv(pool.Id.ToString()), Csv(contents), Csv(pool.WellLabel)));
             }
 
             var fileName = $"Pooling_{_plan.ModelName.Replace(" ", "")}_V{_plan.GuideCount}_K{_plan.WellCapacity}_{DateTime.Now:yyyyMMdd_HHmmss}.csv";
