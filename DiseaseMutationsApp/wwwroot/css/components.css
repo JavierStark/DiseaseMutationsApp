@@ -188,6 +188,8 @@ details[open] > .seq-summary::after { transform: rotate(225deg); margin-top: 0.2
 .complete-grna-sequence { font-family: var(--font-mono); background: var(--surface-sunken); border: 1px solid var(--border); border-radius: var(--radius-md); padding: var(--space-3); word-break: break-all; }
 .scaffold-seq { color: var(--reference-text); }
 .spacer-seq { color: var(--variant-text); font-weight: var(--weight-strong); }
+.adapter-seq { color: var(--text-muted); text-decoration: underline; text-decoration-style: dotted; text-underline-offset: 0.25em; }
+.custom-seq { color: var(--text-primary); font-style: italic; }
 .structure-block { font-family: var(--font-mono); background: var(--surface-sunken); border: 1px solid var(--border); border-radius: var(--radius-md); padding: var(--space-3); word-break: break-all; }
 .structure-diagram-wrap { overflow-x: auto; border: 1px solid var(--border); border-radius: var(--radius-md); background: var(--surface); padding: var(--space-2); }
 .structure-diagram { display: block; width: 100%; min-width: 360px; height: auto; }

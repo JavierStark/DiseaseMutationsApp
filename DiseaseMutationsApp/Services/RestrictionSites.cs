@@ -38,8 +38,8 @@ public static class RestrictionSites
     };
 
     /// <summary>Compatibility of the DNA ordered for this spacer (scaffold + spacer) with each assembly standard.</summary>
-    public static IReadOnlyList<AssemblyCompatibility> CompatibilityForGuide(string spacerRna, bool includeT7 = false) =>
-        Compatibility(ForGuide(spacerRna, includeT7));
+    public static IReadOnlyList<AssemblyCompatibility> CompatibilityForGuide(string spacerRna, bool includeT7 = false, ConstructOptions? construct = null) =>
+        Compatibility(ForGuide(spacerRna, includeT7, construct));
 
     /// <summary>Given the enzymes found in a sequence, which standards it is compatible with.</summary>
     public static IReadOnlyList<AssemblyCompatibility> Compatibility(IReadOnlyList<string> foundEnzymes) =>
@@ -57,9 +57,38 @@ public static class RestrictionSites
             .ToList();
     }
 
-    /// <summary>Sites in the DNA that would be ordered for this spacer: scaffold + spacer, behind the T7 promoter if requested.</summary>
-    public static IReadOnlyList<string> ForGuide(string spacerRna, bool includeT7) =>
-        Find(OligoExport.Template(spacerRna, includeT7, OligoStrand.Sense));
+    /// <summary>
+    /// Sites in the DNA that would be ordered for this spacer: the built construct (DR, adapters, custom flanks), behind
+    /// the T7 promoter if requested. The engineered adapters carry their own enzyme sites on purpose (they are what the
+    /// assembly cuts), so only sites beyond those the adapters bring are reported.
+    /// </summary>
+    public static IReadOnlyList<string> ForGuide(string spacerRna, bool includeT7, ConstructOptions? construct = null)
+    {
+        var full = OligoExport.Template(spacerRna, includeT7, OligoStrand.Sense, construct);
+        // Each side's adapters joined as built (Frida inside BioBricks): junctions between adapters are part of the design.
+        var adapters = GuideConstruct.Parts("", construct)
+            .Where(p => p.Kind is ConstructPartKind.BioBricks or ConstructPartKind.Frida)
+            .ToList();
+        var expected = new[] { "5'", "3'" }
+            .Select(side => OligoExport.ToDna(string.Concat(adapters.Where(p => p.Label.EndsWith(side)).Select(p => p.Rna))))
+            .ToList();
+        return Enzymes.Where(e => CountSites(full, e.Site) > expected.Sum(a => CountSites(a, e.Site)))
+            .Select(e => e.Name)
+            .ToList();
+    }
+
+    /// <summary>Occurrences of a site on both strands of the DNA (overlaps counted).</summary>
+    private static int CountSites(string dna, string site)
+    {
+        static int Count(string s, string site)
+        {
+            var n = 0;
+            for (var i = s.IndexOf(site, StringComparison.Ordinal); i >= 0; i = s.IndexOf(site, i + 1, StringComparison.Ordinal)) n++;
+            return n;
+        }
+
+        return Count(dna, site) + Count(OligoExport.ReverseComplement(dna), site);
+    }
 
     public static string Warning(string enzyme) =>
         $"Warning: This DNA sequence includes a restriction site for the enzyme: '{enzyme}'";

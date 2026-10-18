@@ -47,7 +47,13 @@ public static class HelpText
 
     // ----- Complete gRNA, shortlist, files -----
     public const string Scaffold = "The constant 36-letter handle (direct repeat) that precedes the spacer; Cas13 recognises its hairpin. Diana uses one fixed scaffold; confirm that it is the one for your Cas13 protein.";
-    public const string Shortlist = "Guides you picked across variants. Send them to Pooling or download an order-ready oligo file.";
+    public const string DrSelect = "Which Cas13 direct repeat (DR) goes in front of the spacer. Pick 'None' if your design has no DR, or put your own DR in the custom 5' box.";
+    public const string Frida = "Frida adapter (our own engineered adapter): AGAGCGTCTCTAAAC - spacer - GCTTAGAGACGTACT. Added around the DR and spacer.";
+    public const string BioBricks = "BioBricks assembly adapter: GGCTAGCGAATTCGCGGCCGCTTCT - spacer - AGTAGCGGCCGCTGCAGCGATCGT. Can be used alone or with the Frida adapter, in which case it wraps the Frida adapter.";
+    public const string CustomWrapper = "Your own sequence on one or both sides (a different DR, an adapter, anything). A, C, G, T or U only. It sits next to the DR and spacer, inside the adapters.";
+    public const string Fasta = "Download each shortlisted guide as its complete built sequence (DR, adapters and custom flanks included) in FASTA format.";
+    public const string FastaRna = "Write the FASTA sequences with U instead of T.";
+    public const string Shortlist ="Guides you picked across variants. Send them to Pooling or download an order-ready oligo file.";
     public const string T7 = "Adds a T7 promoter to the DNA oligos so the guide can be made by in-vitro transcription.";
     public const string Pairs = "Writes the top and bottom DNA strands as separate oligos, ready to anneal.";
     public const string SaveSession = "Download your inputs, spacer/seed settings and shortlist as a file that can be loaded again here or by the grna command line.";

@@ -156,12 +156,45 @@
                             <button type="button" class="btn btn-sm btn-outline-secondary" @onclick="ToggleShortlist">
                                 <Icon Name="@(Shortlisted ? "check" : "list")" />@(Shortlisted ? "In shortlist (remove)" : "Add to shortlist")
                             </button>
+                            <button type="button" class="btn btn-sm btn-outline-secondary" title="@HelpText.Fasta" @onclick="DownloadFasta">
+                                <Icon Name="download" />FASTA
+                            </button>
                         </div>
+                    }
+                </div>
+                <div class="construct-options mb-3">
+                    <div class="d-flex flex-wrap align-items-center gap-3 mb-2">
+                        <label class="form-label mb-0" for="@Id("dr")" title="@HelpText.DrSelect">Direct repeat</label>
+                        <select id="@Id("dr")" class="form-select form-select-sm w-auto" value="@Construct.DrId" @onchange="OnDrChanged">
+                            @foreach (var preset in GuideConstruct.DrPresets)
+                            {
+                                <option value="@preset.Id">@preset.Name</option>
+                            }
+                        </select>
+                        <div class="form-check mb-0"><input id="@Id("frida")" class="form-check-input" type="checkbox" checked="@Construct.Frida" @onchange="e => SetConstruct(Construct with { Frida = (bool)e.Value! })" /><label class="form-check-label" for="@Id("frida")" title="@HelpText.Frida">Frida adapter</label></div>
+                        <div class="form-check mb-0"><input id="@Id("bb")" class="form-check-input" type="checkbox" checked="@Construct.BioBricks" @onchange="e => SetConstruct(Construct with { BioBricks = (bool)e.Value! })" /><label class="form-check-label" for="@Id("bb")" title="@HelpText.BioBricks">BioBricks assembly adapter</label></div>
+                    </div>
+                    <div class="row g-2">
+                        <div class="col-12 col-md-6">
+                            <input id="@Id("c5")" class="form-control form-control-sm font-monospace @(GuideConstruct.IsValidCustom(Construct.Custom5) ? "" : "is-invalid")" placeholder="Custom 5' sequence (optional)" title="@HelpText.CustomWrapper"
+                                   aria-label="Custom 5' sequence" value="@Construct.Custom5" @onchange="e => SetConstruct(Construct with { Custom5 = e.Value?.ToString() ?? string.Empty })" />
+                        </div>
+                        <div class="col-12 col-md-6">
+                            <input id="@Id("c3")" class="form-control form-control-sm font-monospace @(GuideConstruct.IsValidCustom(Construct.Custom3) ? "" : "is-invalid")" placeholder="Custom 3' sequence (optional)" title="@HelpText.CustomWrapper"
+                                   aria-label="Custom 3' sequence" value="@Construct.Custom3" @onchange="e => SetConstruct(Construct with { Custom3 = e.Value?.ToString() ?? string.Empty })" />
+                        </div>
+                    </div>
+                    @if (!GuideConstruct.IsValidCustom(Construct.Custom5) || !GuideConstruct.IsValidCustom(Construct.Custom3))
+                    {
+                        <p class="text-danger small mt-2 mb-0" role="alert"><Icon Name="alert" />Custom sequences may only contain A, C, G, T or U. An invalid box is ignored until fixed.</p>
                     }
                 </div>
                 <div class="complete-grna-sequence">
                     <span class="text-muted">5'</span>
-                    <span class="scaffold-seq">@GrnaService.Scaffold</span>@if (Data.SelectedSpacer != null){<span class="spacer-seq">@Data.SelectedSpacer</span>}
+                    @foreach (var part in GuideConstruct.Parts(Data.SelectedSpacer ?? "", Construct).Where(p => p.Kind != ConstructPartKind.Spacer || Data.SelectedSpacer != null))
+                    {
+                        <span class="@PartClass(part.Kind)" title="@part.Label">@part.Rna</span>
+                    }
                     <span class="text-muted">3'</span>
                 </div>
                 @if (Data.SelectedSpacer == null)
@@ -170,8 +203,8 @@
                 }
                 else
                 {
-                    <div class="mt-3"><AssemblyCompatibilityBadges Found="RestrictionSites.ForGuide(Data.SelectedSpacer, false)" /></div>
-                    @foreach (var enzyme in RestrictionSites.ForGuide(Data.SelectedSpacer, false))
+                    <div class="mt-3"><AssemblyCompatibilityBadges Found="RestrictionSites.ForGuide(Data.SelectedSpacer, false, Construct)" /></div>
+                    @foreach (var enzyme in RestrictionSites.ForGuide(Data.SelectedSpacer, false, Construct))
                     {
                         <div class="alert alert-warning mt-3 mb-0" role="alert">
                             <Icon Name="alert" />@RestrictionSites.Warning(enzyme)
@@ -206,7 +239,7 @@
                             <p class="helper-note mb-3">The diagram is drawn here from the dot-bracket notation. "Open in FORNA" sends this gRNA sequence and its structure to the FORNA server at the University of Vienna, which only serves plain http, so it opens in a new tab only when you choose it.</p>
                             @if (Data.ShowStructure)
                             {
-                                var seq = GrnaService.Scaffold + Data.SelectedSpacer;
+                                var seq = GuideConstruct.Build(Data.SelectedSpacer ?? "", Construct);
                                 var length = Data.RnaFoldResult.Structure.Length;
                                 <div class="structure-diagram-wrap">
                                     <svg class="structure-diagram" viewBox="0 0 @StructureDiagram.Width(length).ToString("0.##", CultureInfo.InvariantCulture) @StructureDiagram.Height(length).ToString("0.##", CultureInfo.InvariantCulture)"
@@ -319,6 +352,42 @@
         }
     }
 
+    private ConstructOptions Construct => State.Construct;
+
+    private string Id(string name) => $"construct-{name}-{Data.GetHashCode()}";
+
+    private static string PartClass(ConstructPartKind kind) => kind switch
+    {
+        ConstructPartKind.Spacer => "spacer-seq",
+        ConstructPartKind.DirectRepeat => "scaffold-seq",
+        ConstructPartKind.Custom => "custom-seq",
+        _ => "adapter-seq",
+    };
+
+    /// <summary>Changing the construct changes what a fold would be of, so a shown structure is dropped.</summary>
+    private void SetConstruct(ConstructOptions options)
+    {
+        State.Construct = options;
+        Data.RnaFoldResult = null;
+        Data.RnaFoldError = null;
+        Data.FornaUrl = null;
+        Data.ShowStructure = false;
+        State.NotifyStateChanged();
+    }
+
+    private void OnDrChanged(ChangeEventArgs e) => SetConstruct(Construct with { DrId = e.Value?.ToString() ?? GuideConstruct.LwaId });
+
+    private async Task DownloadFasta()
+    {
+        if (Data.SelectedSpacer == null) return;
+        var fasta = OligoExport.FastaRecord(Data.Hgvs, Data.IsComplement, Data.SelectedSpacer, Construct, rna: true);
+        try
+        {
+            await JS.InvokeVoidAsync("downloadFile", $"gRNA_{DateTime.Now:yyyyMMdd_HHmmss}.fasta", "text/plain;charset=utf-8", fasta);
+        }
+        catch (JSDisconnectedException) { }
+    }
+
     private void SelectSpacer(string spacer)
     {
         Data.SelectedSpacer = spacer;
@@ -334,7 +403,7 @@
         if (Data.SelectedSpacer == null) return;
         try
         {
-            Data.CopiedToClipboard = await JS.InvokeAsync<bool>("grnaCopy", GrnaService.Scaffold + Data.SelectedSpacer);
+            Data.CopiedToClipboard = await JS.InvokeAsync<bool>("grnaCopy", GuideConstruct.Build(Data.SelectedSpacer, Construct));
         }
         catch (JSDisconnectedException) { }
     }
@@ -349,7 +418,7 @@
             leaf.RnaFoldError = null;
             leaf.RnaFoldResult = null;
             leaf.FornaUrl = null;
-            var complete = GrnaService.Scaffold + leaf.SelectedSpacer;
+            var complete = GuideConstruct.Build(leaf.SelectedSpacer, Construct);
             var result = await Grna.GetRnaFold(complete);
             leaf.RnaFoldResult = result;
             leaf.FornaUrl = Grna.GetFornaUrl(complete, result.Structure);

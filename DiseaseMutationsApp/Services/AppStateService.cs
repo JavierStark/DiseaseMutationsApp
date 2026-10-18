@@ -30,6 +30,9 @@ namespace DiseaseMutationsApp.Services
         /// <summary>Guides picked across variants, ready to send to the Pooling page.</summary>
         public List<ShortlistItem> Shortlist { get; set; } = new();
 
+        /// <summary>How the complete gRNA is wrapped (DR, adapters, custom flanks); used by the card, shortlist and exports.</summary>
+        public ConstructOptions Construct { get; set; } = new();
+
         /// <summary>Set when variants were sent from the Disease variants page; the Diana page shows it once, then clears it.</summary>
         public IncomingNotice? IndexIncomingNotice { get; set; }
 

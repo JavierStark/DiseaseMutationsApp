@@ -7,7 +7,7 @@ namespace DiseaseMutationsApp.Services;
 /// regenerated or kept as CSV). The `grna design --input` command reads the same file, so a run started in
 /// the browser can be reproduced headless and vice versa.
 /// </summary>
-public record SessionDocument(int Version, string Input, int Spacer, string Seed, List<ShortlistItem> Shortlist)
+public record SessionDocument(int Version, string Input, int Spacer, string Seed, List<ShortlistItem> Shortlist, ConstructOptions? Construct = null)
 {
     public const int CurrentVersion = 1;
 

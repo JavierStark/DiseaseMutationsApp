@@ -334,12 +334,20 @@ namespace DiseaseMutationsApp.Pages
 
         private bool _oligoT7 = true;
         private bool _oligoPairs = true;
+        private bool _fastaRna;
 
         private async Task DownloadOligos()
         {
             if (StateService.Shortlist.Count == 0) return;
-            var csv = OligoExport.ShortlistCsv(StateService.Shortlist, _oligoT7, _oligoPairs, PlateKind.Plate96);
+            var csv = OligoExport.ShortlistCsv(StateService.Shortlist, _oligoT7, _oligoPairs, PlateKind.Plate96, StateService.Construct);
             await JSRuntime.InvokeVoidAsync("downloadFile", $"Oligos_{DateTime.Now:yyyyMMdd_HHmmss}.csv", "text/csv;charset=utf-8", csv);
+        }
+
+        private async Task DownloadFasta()
+        {
+            if (StateService.Shortlist.Count == 0) return;
+            var fasta = OligoExport.ShortlistFasta(StateService.Shortlist, StateService.Construct, _fastaRna);
+            await JSRuntime.InvokeVoidAsync("downloadFile", $"Shortlist_{DateTime.Now:yyyyMMdd_HHmmss}.fasta", "text/plain;charset=utf-8", fasta);
         }
 
         private string? _uploadMessage;
@@ -366,6 +374,7 @@ namespace DiseaseMutationsApp.Pages
                     var parts = session.Seed.Split('-', 2);
                     if (parts.Length == 2 && int.TryParse(parts[0], out var s) && int.TryParse(parts[1], out var en)) { _seedStart = s; _seedEnd = en; }
                     StateService.Shortlist = session.Shortlist;
+                    if (session.Construct is not null) StateService.Construct = session.Construct;
                 }
 
                 _uploadMessage = $"Loaded {AnalysisRunner.ParseInputs(input).Count} input(s) from {e.File.Name}. Press Run analysis.";
@@ -379,7 +388,7 @@ namespace DiseaseMutationsApp.Pages
 
         private async Task DownloadSession()
         {
-            var doc = new SessionDocument(SessionDocument.CurrentVersion, _hgvs ?? "", _gRnaSize, $"{_seedStart}-{_seedEnd}", StateService.Shortlist);
+            var doc = new SessionDocument(SessionDocument.CurrentVersion, _hgvs ?? "", _gRnaSize, $"{_seedStart}-{_seedEnd}", StateService.Shortlist, StateService.Construct);
             await JSRuntime.InvokeVoidAsync("downloadFile", $"Session_{DateTime.Now:yyyyMMdd_HHmmss}.json", "application/json;charset=utf-8", SessionDocument.Serialize(doc));
         }
 

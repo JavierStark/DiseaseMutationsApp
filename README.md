@@ -232,8 +232,40 @@ window to exist (at the start or in the last 24 bases for a 28 nt spacer, the si
 cannot apply: the ordinary ranking is shown instead, with a visible warning (a `note` line on stderr and a `notices` field in
 `--format json` for the CLI).
 
-The complete gRNA is the 36 nt scaffold `GAUUUAGACUACCCCAAAAACGAAGGGGACUAAAAC` followed by the spacer (the reverse complement of the
-target window, as RNA).
+### The complete gRNA (direct repeat, adapters, custom flanks)
+
+By default the complete gRNA is the 36 nt LwaCas13a direct repeat (DR) `GAUUUAGACUACCCCAAAAACGAAGGGGACUAAAAC` followed by the
+spacer (the reverse complement of the target window, as RNA). The **Complete gRNA** card (after pressing **Use**) lets you change
+what surrounds the spacer:
+
+| Option | What it adds |
+|---|---|
+| **Direct repeat** selector | Which DR goes before the spacer: `LwaCas13a` (default) or `None`. More Cas13 DRs are a one-line addition to `GuideConstruct.DrPresets` once their sequence is verified. |
+| **Frida adapter** | Our own engineered adapter: `AGAGCGTCTCTAAAC` - spacer - `GCTTAGAGACGTACT`. |
+| **BioBricks assembly adapter** | `GGCTAGCGAATTCGCGGCCGCTTCT` - spacer - `AGTAGCGGCCGCTGCAGCGATCGT`. Usable alone or together with Frida; when both are on it always wraps the Frida adapter. |
+| **Custom 5' / 3'** | Two free text boxes (A, C, G, T or U; either may stay empty) for your own DR, adapter or any other sequence. Invalid text is flagged and ignored. |
+
+The pieces are assembled in this order (5' to 3'), with the "spacer" being the DR-plus-spacer core:
+
+```
+[BioBricks 5'] [Frida 5'] [custom 5'] [DR] SPACER [custom 3'] [Frida 3'] [BioBricks 3']
+```
+
+The setting is shared by the whole page and applies to everything downstream: the displayed sequence (adapter DNA letters are shown as RNA,
+T to U), **Copy**, **Get structure** (the fold and the diagram are of the full construct), the shortlist, the restriction-site
+warnings and the order CSV (as DNA; the T7 promoter, if ticked, goes in front of the outermost 5' piece). It is saved in the session file and
+loaded back with it. Notes:
+
+- The adapters carry cloning-enzyme sites on purpose (for example BsmBI in Frida; EcoRI, NotI, PstI and the XbaI/SpeI junctions in BioBricks).
+  These designed sites are not reported as warnings, but any extra site brought by the spacer or a custom flank still is.
+- The candidate table's `Energy`, `Spacer Unpaired` and `Hairpin broken` columns are computed on the DR plus spacer only, before any
+  adapter is chosen. A fold of the full construct is run on demand with **Get structure**, and adapters can change it.
+- The command line `grna design` still reports the DR + spacer; `grna fold` folds any RNA sequence you give it, so a built construct can be folded with it.
+
+**FASTA export.** The built, complete gRNA can be downloaded as FASTA: **FASTA** on the card for the selected guide (RNA), and
+**Complete gRNAs (FASTA)** in the shortlist for all shortlisted guides (DNA by default, RNA with **FASTA as RNA**). Each record's header is
+`>variant[_C]|spacer=<bare spacer>|construct=<recipe, e.g. LwaCas13a DR + Frida + BioBricks>|DNA|<length>nt`, followed by the sequence on one line.
+The order CSV keeps its oligo format.
 
 ### HGVS examples
 
@@ -374,8 +406,9 @@ are stated in [THIRD-PARTY-NOTICES.md](THIRD-PARTY-NOTICES.md).
   more than 3,000 records, and include somatic and oncogenicity classifications (only germline classifications are used today).
 - Coding-sequence (`c.`) positions on genomic records (`NG_`, `NC_`): they need the exon map, because introns lie between the exons. Today only transcript records (`NM_`, `XM_`) are converted; others are refused with the advice to use the `NM_` accession.
 - Run history and design comparison (reopen or diff earlier runs with different spacer/seed).
-- Enzyme presets with a configurable scaffold: today the 36 nt Cas13 scaffold and the 28 / 10-17 defaults are fixed, and
-  presets for other Cas variants need their scaffolds and seed windows verified against the literature first.
+- Enzyme presets: the complete gRNA is configurable (DR choice, adapters, custom flanks; see above), but only the LwaCas13a DR is
+  built in and the 28 / 10-17 defaults are fixed. Presets for other Cas variants need their DRs and seed windows verified against the literature first.
+  The candidate table's fold columns do not yet account for adapters.
 
 Not planned: additional genome assemblies (each adds ~4 GB to the image), authentication.
 

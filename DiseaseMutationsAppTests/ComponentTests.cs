@@ -230,6 +230,25 @@ public class ComponentTests : BunitContext
     }
 
     [Test]
+    public void HgvsDetailPanel_AdapterCheckboxesAndCustomBoxes_ChangeTheCompleteGrna()
+    {
+        const string spacer = "ACGUACGUACGUACGUACGU";
+        var cut = Render<HgvsDetailPanel>(p => p.Add(c => c.Data, ReadyLeaf(false, spacer)));
+        string Shown() => string.Concat(cut.FindAll(".complete-grna-sequence span:not(.text-muted)").Select(s => s.TextContent));
+        Assert.That(Shown(), Is.EqualTo(GrnaService.Scaffold + spacer));
+
+        cut.Find("input[type=checkbox][id^=construct-frida]").Change(true);
+        cut.Find("input[type=checkbox][id^=construct-bb]").Change(true);
+        cut.Find("input[id^=construct-c3]").Change("tt");
+        var o = new ConstructOptions(Frida: true, BioBricks: true, Custom3: "tt");
+        Assert.That(Shown(), Is.EqualTo(GuideConstruct.Build(spacer, o)));
+        Assert.That(cut.FindAll(".complete-grna-card .alert-warning"), Is.Empty);
+
+        cut.Find("select").Change(GuideConstruct.NoneId);
+        Assert.That(Shown(), Does.Not.Contain(GrnaService.Scaffold));
+    }
+
+    [Test]
     public void GrnaResultsTable_FilterHidesRows_AndToleratesMissingFoldResult()
     {
         var noFold = new GRNAResult { Sequence = "ACGUACGUACGUACGU", SeedRegion = "ACGU", Score = 0.2, Allignments = 0, RnaFoldResult = null!, MutationHighlightStart = -1 };

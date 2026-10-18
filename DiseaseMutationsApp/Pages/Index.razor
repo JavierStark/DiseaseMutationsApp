@@ -117,6 +117,8 @@
                         <div class="form-check mb-0"><input id="oligo-t7" class="form-check-input" type="checkbox" @bind="_oligoT7" /><label class="form-check-label" for="oligo-t7" title="@HelpText.T7">T7 promoter</label></div>
                         <div class="form-check mb-0"><input id="oligo-pairs" class="form-check-input" type="checkbox" @bind="_oligoPairs" /><label class="form-check-label" for="oligo-pairs" title="@HelpText.Pairs">Top and bottom oligos</label></div>
                         <button type="button" class="btn btn-sm btn-outline-secondary" @onclick="DownloadOligos"><Icon Name="download" />Order CSV (DNA)</button>
+                        <div class="form-check mb-0"><input id="fasta-rna" class="form-check-input" type="checkbox" @bind="_fastaRna" /><label class="form-check-label" for="fasta-rna" title="@HelpText.FastaRna">FASTA as RNA</label></div>
+                        <button type="button" class="btn btn-sm btn-outline-secondary" title="@HelpText.Fasta" @onclick="DownloadFasta"><Icon Name="download" />Complete gRNAs (FASTA)</button>
                         <button type="button" class="btn btn-sm btn-primary" @onclick="SendShortlistToPooling"><Icon Name="send" />Send to Pooling</button>
                         <button type="button" class="btn btn-sm btn-outline-secondary" @onclick="StateService.ClearShortlist"><Icon Name="trash" />Clear</button>
                     </div>
@@ -142,7 +144,7 @@
                             <tr @key="@($"{item.Hgvs}|{item.IsComplement}")">
                                 <td class="font-monospace">@item.Hgvs</td>
                                 <td>@(item.IsComplement ? "Complement" : "Normal")</td>
-                                <td class="seq-cell">@item.Spacer @{ var sites = RestrictionSites.ForGuide(item.Spacer, _oligoT7); }<RestrictionChip Enzymes="sites" /></td>
+                                <td class="seq-cell">@item.Spacer @{ var sites = RestrictionSites.ForGuide(item.Spacer, _oligoT7, StateService.Construct); }<RestrictionChip Enzymes="sites" /></td>
                                 <td class="num">@item.Score.ToString("P0")</td>
                                 <td><span class="risk-chip @risk.CssClass"><span class="risk-glyph" aria-hidden="true"></span>@risk.Label</span></td>
                                 <td><AssemblyCompatibilityBadges Found="sites" ShowLabel="false" /></td>
