@@ -142,8 +142,8 @@ grna design --input sickle.txt --out report.csv      # then design guides for th
 ## `grna design`
 
 ```
-grna design --hgvs <HGVS>           [--spacer 28] [--seed 10-17] [--complement] [--format csv|json|tsv] [--out file] [--concurrency 2]
-grna design --input <file|session.json> [--spacer 28] [--seed 10-17] [--complement] [--format csv|json|tsv] [--out file] [--concurrency 2]
+grna design --hgvs <HGVS>           [--spacer 28] [--seed 10-17] [--complement] [--format csv|json|tsv] [--out file] [--concurrency 2] [--snp-pos 3] [--mismatch-pos 4]
+grna design --input <file|session.json> [--spacer 28] [--seed 10-17] [--complement] [--format csv|json|tsv] [--out file] [--concurrency 2] [--snp-pos 3] [--mismatch-pos 4]
 ```
 
 | Option | Default | Notes |
@@ -156,6 +156,8 @@ grna design --input <file|session.json> [--spacer 28] [--seed 10-17] [--compleme
 | `--format` | `csv` | `csv`, `json` or `tsv` (case-insensitive); anything else exit 2 |
 | `--out` | stdout | output file |
 | `--concurrency` | 2 | variants in flight, clamped to 1-4. Bowtie is serialised per process anyway, so >2 rarely helps. |
+| `--snp-pos` | 3 | substitution rule: where the variant sits in the engineered spacer, counted from the spacer's 3' end (1 = last letter). Must be 1..spacer size and differ from `--mismatch-pos`; otherwise exit 2. |
+| `--mismatch-pos` | 4 | substitution rule: which letter is deliberately changed to A (or U if it is A), counted from the 3' end. A resumed report made with other positions is refused (exit 2); the positions are in the report's `# Diana report` line. |
 
 Explicit `--spacer`/`--seed` override the values stored in a session file.
 

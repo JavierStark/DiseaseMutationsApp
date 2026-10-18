@@ -79,6 +79,9 @@ Resolves an rsID (digits only, no `rs`; anything else raises `GrnaInputException
 `NM_`/`NC_` notations are not returned.
 `getHgvsNotationsAsync` returns the **default selection**: the disease-relevant allele(s) on the main RefSeqGene record (everything if that would be empty); `getAllHgvsNotationsAsync` returns every allele on every `NG_` record. `getVariantsAsync` returns `SnpVariant` records (`Hgvs`, `Accession`, `Gene`, `GeneOnPlusStrand`, `Significance`, `Preferred`); `parseVariants json` is the pure parser behind them.
 
+### Substitution-rule positions
+`Main.getBestgRNAFromHGVSWithRule (rule: SpecialRuleOptions)` takes the variant and mismatch positions (both from the spacer's 3' end, 1 = last letter; `Main.defaultSpecialRule` is 3 and 4, `Main.validateSpecialRule` checks them); `getBestgRNAFromHGVS` is the same call with the defaults. Lower level: `SpacerFinder.applySubstitutionSpecialRuleAt snpPos mismatchPos ...`, `specialRuleAppliesAt`, `adjustPositionFromEndToAorU`. `ReportSchema.provenanceWithRule` records the positions and `tryParseRule` reads them back.
+
 ### Per-guide fields added 2026-10-16
 `SpacerFinder.gRNAResult` has `WtMismatches` (fewest letters between the guide's DNA window and the closest window of the other allele; -1 when not computed; filled by `annotateDiscrimination`, helpers `windowOfSpacer`, `minMismatchesAgainst`) and `Engineered` (true for the spacer `applySubstitutionSpecialRule` builds, which is now returned first, followed by the unchanged ordinary list).
 

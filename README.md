@@ -118,6 +118,7 @@ grna resolve rs334 [--all-alleles]
 grna disease "sickle cell disease" --format rs --out sickle.txt   # rsIDs of a disease's pathogenic ClinVar variants
 grna design --hgvs NC_000017.11:g.7674220C>T --spacer 28 --seed 10-17 [--complement] [--format csv|json|tsv]
 grna design --input variants.txt|session.json --out report.csv   # batch, resumable, bounded concurrency ([--all-alleles] for every dbSNP allele)
+grna design --hgvs 'NC_000017.11:g.7674220C>T' --snp-pos 3 --mismatch-pos 4   # where the substitution rule puts the variant and its extra mismatch
 grna fold "GAUUUAGACUACCCC..."
 grna pool --guides report.csv --capacity 5 --plate 96 --model auto --out plan.csv
 ```
@@ -198,7 +199,7 @@ with `GRNA_BOWTIE_BINARY`, `GRNA_BOWTIE_INDEX`, `GRNA_PYTHON`, then `dotnet run 
 
 0. No variant list yet? Open **Disease variants**, find the disease, tick the variants you want and press **Send to Diana**:
    the inputs below are filled in for you.
-1. Enter variants (comma-separated) and the spacer size and seed range (defaults 28 and 10-17, inclusive, 0-based in the spacer; spacer size 18 to 60).
+1. Enter variants (comma-separated), the spacer size and seed range, and, if you want to try other substitution-rule positions, the variant and mismatch positions (defaults 28 and 10-17, inclusive, 0-based in the spacer; spacer size 18 to 60).
 2. **Run analysis**. rsIDs resolve first, then variants are analysed two at a time. Cancel the run, or one variant, any time.
 3. Pick a tab per input; for rsIDs a second strip lists each resolved variant on both strands. Tabs use arrow keys.
 4. Press **Use** on a spacer to build the complete gRNA, copy it, fold it, or add it to the shortlist.
@@ -226,7 +227,11 @@ If a variant fails it shows the reason and a **Retry this variant** button; othe
 
 Substitution variants get the **special rule**: when the mutation lands at the right position near the 3' end, a
 mismatch-engineered spacer (`Rank = 1`, `Score = 1.0`, `Engineered = Yes`) is listed **first, highlighted**, and the whole
-ordinary ranked list follows it unchanged ([BIOLOGICAL_REPORT.md](BIOLOGICAL_REPORT.md) section 4.4, which also states the open
+ordinary ranked list follows it unchanged. **The two positions of the rule are parameters**: *Variant position* (default 3) and
+*Engineered mismatch position* (default 4) in the Builder form, `--snp-pos` / `--mismatch-pos` on `grna design`, `?snp=` / `?mm=` in
+a permalink. Both are counted from the spacer's 3' end (1 = last letter) and must differ; to use a position counted from the 5'
+end enter spacer size - position + 1. The positions are written in the CSV's provenance line, and a resumed report made with other
+positions is refused ([BIOLOGICAL_REPORT.md](BIOLOGICAL_REPORT.md) section 4.4, which also states the open
 question about the mismatch position). When the mutation is too close to an end of the accession for such a
 window to exist (at the start or in the last 24 bases for a 28 nt spacer, the sides swapping on the complement strand) the rule
 cannot apply: the ordinary ranking is shown instead, with a visible warning (a `note` line on stderr and a `notices` field in

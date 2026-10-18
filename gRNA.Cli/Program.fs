@@ -30,6 +30,7 @@ Usage:
                                               [--format rs|csv|tsv|json] [--out file]
   grna design --hgvs <HGVS> [--spacer 28] [--seed 10-17] [--complement] [--format csv|json|tsv] [--out file]
   grna design --input <list.txt|session.json> --out <report.csv> [--spacer 28] [--seed 10-17] [--complement] [--concurrency 2] [--all-alleles]
+                                      [--snp-pos 3] [--mismatch-pos 4]
   grna fold <RNA sequence>
   grna pool --guides <report.csv> [--capacity 5] [--plate 96|384] [--model auto|2df|2dm|3d] [--out plan.csv]
   grna pool --count <V>          [--capacity 5] [--plate 96|384] [--model auto|2df|2dm|3d] [--out plan.csv]
@@ -71,7 +72,7 @@ let private allowed =
         [ "doctor", (Set.empty, set [ "network"; "help" ])
           "resolve", (Set.empty, set [ "all-alleles"; "help" ])
           "disease", (set [ "pick"; "min-significance"; "format"; "out" ], set [ "list"; "subtypes"; "help" ])
-          "design", (set [ "hgvs"; "input"; "spacer"; "seed"; "format"; "out"; "concurrency" ], set [ "complement"; "all-alleles"; "help" ])
+          "design", (set [ "hgvs"; "input"; "spacer"; "seed"; "format"; "out"; "concurrency"; "snp-pos"; "mismatch-pos" ], set [ "complement"; "all-alleles"; "help" ])
           "fold", (Set.empty, set [ "help" ])
           "pool", (set [ "guides"; "count"; "capacity"; "plate"; "model"; "out" ], set [ "help" ]) ]
 
@@ -257,10 +258,10 @@ let private jsonOf (rows: DesignRow list) =
                original = cands r.Result.originalGRNA |})
     JsonSerializer.Serialize(items, opts)
 
-let private csvOf (rows: DesignRow list) (spacer, seedS, seedE) (includeHeader: bool) =
+let private csvOf (rows: DesignRow list) (rule: Main.SpecialRuleOptions) (spacer, seedS, seedE) (includeHeader: bool) =
     let sb = StringBuilder()
     if includeHeader then
-        sb.AppendLine(ReportSchema.provenance spacer seedS seedE) |> ignore
+        sb.AppendLine(ReportSchema.provenanceWithRule rule.SnpPos rule.MismatchPos spacer seedS seedE) |> ignore
         sb.AppendLine ReportSchema.header |> ignore
     for r in rows do
         for g in r.Result.gRNA do
@@ -269,9 +270,9 @@ let private csvOf (rows: DesignRow list) (spacer, seedS, seedE) (includeHeader: 
             sb.AppendLine(ReportSchema.row r.RsId r.Hgvs ReportSchema.originalType r.Complement g) |> ignore
     sb.ToString()
 
-let private tsvOf (rows: DesignRow list) =
+let private tsvOf (rows: DesignRow list) (rule: Main.SpecialRuleOptions) =
     // Split each CSV row into fields first: a plain Replace(',', '\t') would also break quoted fields that contain commas.
-    (csvOf rows (0, 0, 0) false).Split([| '\n' |], StringSplitOptions.RemoveEmptyEntries)
+    (csvOf rows rule (0, 0, 0) false).Split([| '\n' |], StringSplitOptions.RemoveEmptyEntries)
     |> Array.map (fun l -> l.TrimEnd('\r') |> ReportSchema.splitCsvLine |> String.concat "\t")
     |> String.concat "\n"
     |> fun s -> ReportSchema.header.Replace(',', '\t') + "\n" + s + "\n"
@@ -300,6 +301,11 @@ let design (args: Args) (ct: CancellationToken) : Task<int> =
         let seedS, seedE = parseSeed (defaultArg (opt args "seed") (defaultArg sessionSeed "10-17"))
         // Same bounds as the library and the web app (spacer 18-60, seed inside the spacer); a GrnaInputException ends as exit 2.
         Main.validateSpacerParameters spacer seedS seedE
+        // Where the substitution rule puts the variant and its extra mismatch, counted from the spacer's 3' end (1 = last letter).
+        let rule : Main.SpecialRuleOptions =
+            { SnpPos = intOpt args "snp-pos" Main.defaultSpecialRule.SnpPos
+              MismatchPos = intOpt args "mismatch-pos" Main.defaultSpecialRule.MismatchPos }
+        Main.validateSpecialRule spacer rule
         let complement = args.Flags.Contains "complement"
         let concurrency = max 1 (min 4 (intOpt args "concurrency" 2))
         let out = opt args "out"
@@ -339,6 +345,11 @@ let design (args: Args) (ct: CancellationToken) : Task<int> =
         match existingLines |> Array.tryHead |> Option.bind ReportSchema.tryParseProvenance with
         | Some (sp, ss, se) when (sp, ss, se) <> (spacer, seedS, seedE) ->
             raise (BadArgs(sprintf "'%s' was made with spacer=%d seed=%d-%d, not spacer=%d seed=%d-%d. Use a new --out file or the same parameters." out.Value sp ss se spacer seedS seedE))
+        | _ -> ()
+        // Rows made with another substitution rule would be mixed with these: refuse, like a different spacer or seed.
+        match existingLines |> Array.tryHead |> Option.bind ReportSchema.tryParseRule with
+        | Some (sn, mm) when (sn, mm) <> (rule.SnpPos, rule.MismatchPos) ->
+            raise (BadArgs(sprintf "'%s' was made with --snp-pos %d --mismatch-pos %d, not --snp-pos %d --mismatch-pos %d. Use a new --out file or the same positions." out.Value sn mm rule.SnpPos rule.MismatchPos))
         | _ -> ()
         let alreadyDone =
             existingLines
@@ -382,7 +393,7 @@ let design (args: Args) (ct: CancellationToken) : Task<int> =
                     do! sem.WaitAsync ct
                     try
                         try
-                            let! r = Main.getBestgRNAFromHGVS h spacer seedS seedE bowtie ct complement
+                            let! r = Main.getBestgRNAFromHGVSWithRule rule h spacer seedS seedE bowtie ct complement
                             results.Add((i, { Hgvs = h; RsId = rs; Complement = complement; Result = r }))
                             eprintfn "ok   %s" h
                             for notice in r.notices do eprintfn "note %s: %s" h notice
@@ -401,8 +412,8 @@ let design (args: Args) (ct: CancellationToken) : Task<int> =
         let body =
             match format with
             | "json" -> jsonOf rows
-            | "tsv" -> tsvOf rows
-            | _ -> csvOf rows (spacer, seedS, seedE) (not isBatchCsv || not (File.Exists out.Value) || alreadyDone.IsEmpty)
+            | "tsv" -> tsvOf rows rule
+            | _ -> csvOf rows rule (spacer, seedS, seedE) (not isBatchCsv || not (File.Exists out.Value) || alreadyDone.IsEmpty)
 
         if isBatchCsv && File.Exists out.Value && not alreadyDone.IsEmpty then
             File.AppendAllText(out.Value, body, UTF8Encoding(false))

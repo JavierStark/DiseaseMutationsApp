@@ -50,7 +50,7 @@
                     </div>
 
                     <fieldset class="mb-4">
-                        <legend class="form-label" title="@HelpText.SpacerAndSeed">Spacer and seed region</legend>
+                        <legend class="form-label" title="@HelpText.SpacerAndSeed">Spacer, seed region and substitution rule</legend>
                         <div class="row g-3">
                             <div class="col-sm-4">
                                 <label for="grna-size" class="form-label" title="@HelpText.SpacerSize">Spacer size</label>
@@ -65,6 +65,21 @@
                                 <input id="seed-end" type="number" class="form-control" @bind="_seedEnd" @bind:after="OnInputChanged" min="0" max="@(_gRnaSize > 0 ? _gRnaSize - 1 : 0)" />
                             </div>
                         </div>
+                        <div class="row g-3 mt-1">
+                            <div class="col-sm-6">
+                                <label for="snp-pos" class="form-label" title="@HelpText.SnpPos">Variant position from the spacer's 3' end</label>
+                                <input id="snp-pos" type="number" class="form-control" @bind="_snpPos" @bind:after="OnInputChanged" min="1" max="@_gRnaSize" />
+                            </div>
+                            <div class="col-sm-6">
+                                <label for="mismatch-pos" class="form-label" title="@HelpText.MismatchPos">Engineered mismatch position from the 3' end</label>
+                                <input id="mismatch-pos" type="number" class="form-control" @bind="_mismatchPos" @bind:after="OnInputChanged" min="1" max="@_gRnaSize" />
+                            </div>
+                        </div>
+                        <small class="helper-note mt-2 d-block">Substitution rule: the spacer built with the variant at the first position and one deliberate extra mismatch at the second. Positions count from the spacer's 3' end (1 = last letter); defaults 3 and 4. To use a position counted from the 5' end, enter spacer size - position + 1.</small>
+                        @if (RuleValidationMessage != null)
+                        {
+                            <small class="text-danger mt-2 d-block" role="alert">@RuleValidationMessage</small>
+                        }
                         @if (InputCountMessage != null)
                         {
                             <small class="text-danger mt-2 d-block" role="alert">@InputCountMessage</small>

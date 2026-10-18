@@ -23,6 +23,23 @@ let MinSpacerSize = 18
 [<Literal>]
 let MaxSpacerSize = 60
 
+/// Where the substitution rule puts the variant and its deliberate extra mismatch in the spacer. Both positions are counted
+/// from the spacer's 3' end, 1 being the last letter (the default is 3 and 4).
+type SpecialRuleOptions = { SnpPos: int; MismatchPos: int }
+
+let defaultSpecialRule : SpecialRuleOptions =
+    { SnpPos = SpacerFinder.DefaultSnpPosition; MismatchPos = SpacerFinder.DefaultMismatchPosition }
+
+/// Throws GrnaInputException unless both positions lie inside the spacer (1 = its last letter) and they differ: changing the
+/// variant's own letter would defeat the purpose of the rule.
+let validateSpecialRule (grnaSize: int) (rule: SpecialRuleOptions) : unit =
+    if rule.SnpPos < 1 || rule.SnpPos > grnaSize then
+        raise (GrnaInputException(sprintf "The variant position must be between 1 and the spacer size (%d), counted from the spacer's 3' end, got %d." grnaSize rule.SnpPos))
+    if rule.MismatchPos < 1 || rule.MismatchPos > grnaSize then
+        raise (GrnaInputException(sprintf "The mismatch position must be between 1 and the spacer size (%d), counted from the spacer's 3' end, got %d." grnaSize rule.MismatchPos))
+    if rule.SnpPos = rule.MismatchPos then
+        raise (GrnaInputException "The engineered mismatch cannot be at the variant's own position: choose two different positions.")
+
 /// Throws GrnaInputException unless 18 <= spacer <= 60 and 0 <= seedStart <= seedEnd < spacer.
 let validateSpacerParameters (grnaSize: int) (seedStart: int) (seedEnd: int) : unit =
     if grnaSize < MinSpacerSize || grnaSize > MaxSpacerSize then
@@ -62,15 +79,19 @@ let validateAgainstSequence (hgvs: HGVS.HGVS) (data: string) : unit =
         raise (GrnaInputException(sprintf "Reference mismatch at %s:%d_%d: the variant states %s but the sequence has %s." hgvs.Accession startPos endPos stated actual))
 
 /// The warning shown when the substitution special rule could not be applied to one or both candidate lists, or None.
-let specialRuleNotice (hgvs: HGVS.HGVS) (sequenceLength: int) (windowSize: int) (appliesToMutated: bool) (appliesToOriginal: bool) : string option =
+let specialRuleNoticeAt (snpPos: int) (hgvs: HGVS.HGVS) (sequenceLength: int) (windowSize: int) (appliesToMutated: bool) (appliesToOriginal: bool) : string option =
     if appliesToMutated && appliesToOriginal then None
     else
         let which =
             if not appliesToMutated && not appliesToOriginal then "mutated and original sequences"
             elif not appliesToMutated then "mutated sequence"
             else "original sequence"
-        Some(sprintf "The substitution rule (an engineered mismatch next to the mutation, near the 3' end of the spacer) could not be applied to the %s: the mutation is at position %d of %s (%d bases), too close to an end of the sequence for a window that makes it the 3rd base, which needs at least 2 and %d bases on its two sides. The ordinary ranking is shown instead."
-                which (fst hgvs.Position) hgvs.Accession sequenceLength (windowSize - 3))
+        Some(sprintf "The substitution rule (an engineered mismatch near the mutation, with the mutation at position %d from the spacer's 3' end) could not be applied to the %s: the mutation is at position %d of %s (%d bases), too close to an end of the sequence for a window that puts it there, which needs at least %d and %d bases on its two sides. The ordinary ranking is shown instead."
+                snpPos which (fst hgvs.Position) hgvs.Accession sequenceLength (snpPos - 1) (windowSize - snpPos))
+
+/// The warning with the default variant position (3rd from the 3' end).
+let specialRuleNotice (hgvs: HGVS.HGVS) (sequenceLength: int) (windowSize: int) (appliesToMutated: bool) (appliesToOriginal: bool) : string option =
+    specialRuleNoticeAt SpacerFinder.DefaultSnpPosition hgvs sequenceLength windowSize appliesToMutated appliesToOriginal
 
 /// Maps a (start, length) span from the forward orientation of a string of the given length to its reverse complement.
 /// A zero-length span (a deletion junction) keeps pointing at the same boundary.
@@ -96,8 +117,9 @@ let calculateMutationSpanInMutated (extraNucleotids: int) (sequenceLength: int) 
     let mutationLengthInMutated = max 0 (mutatedLength - leftContext - rightContext)
     (leftContext, mutationLengthInMutated)
 
-let getBestgRNAFromHGVS (hgvsString: string) (grnaSize: int) (seedStart: int) (seedEnd: int) (bowtieService: gRNA.Services.BowtieService) (cancellationToken: System.Threading.CancellationToken) (complement: bool) = task {
+let getBestgRNAFromHGVSWithRule (rule: SpecialRuleOptions) (hgvsString: string) (grnaSize: int) (seedStart: int) (seedEnd: int) (bowtieService: gRNA.Services.BowtieService) (cancellationToken: System.Threading.CancellationToken) (complement: bool) = task {
     validateSpacerParameters grnaSize seedStart seedEnd
+    validateSpecialRule grnaSize rule
     // c. positions on a transcript record (NM_...:c.20A>T) are converted to positions of the mRNA (n.70A>T) first.
     let! hgvsString, conversionNotice =
         task {
@@ -155,13 +177,13 @@ let getBestgRNAFromHGVS (hgvsString: string) (grnaSize: int) (seedStart: int) (s
     let! originalGRNAs = originalGRNAsTask
 
     let isSubstitution = hgvsObj.Mutation = HGVS.MutationType.Substitution
-    let appliesToMutated = SpacerFinder.specialRuleApplies grnaSize gRNAs
-    let appliesToOriginal = SpacerFinder.specialRuleApplies grnaSize originalGRNAs
+    let appliesToMutated = SpacerFinder.specialRuleAppliesAt rule.SnpPos grnaSize gRNAs
+    let appliesToOriginal = SpacerFinder.specialRuleAppliesAt rule.SnpPos grnaSize originalGRNAs
 
     let gRNAs, originalGRNAs =
         if isSubstitution then
-            SpacerFinder.applySubstitutionSpecialRule seedStart seedEnd grnaSize gRNAs,
-            SpacerFinder.applySubstitutionSpecialRule seedStart seedEnd grnaSize originalGRNAs
+            SpacerFinder.applySubstitutionSpecialRuleAt rule.SnpPos rule.MismatchPos seedStart seedEnd grnaSize gRNAs,
+            SpacerFinder.applySubstitutionSpecialRuleAt rule.SnpPos rule.MismatchPos seedStart seedEnd grnaSize originalGRNAs
         else
             gRNAs, originalGRNAs
 
@@ -173,7 +195,7 @@ let getBestgRNAFromHGVS (hgvsString: string) (grnaSize: int) (seedStart: int) (s
     let notices =
         (conversionNotice |> Option.toList)
         @ (if isSubstitution then
-               specialRuleNotice hgvsObj sequence.Data.Length grnaSize appliesToMutated appliesToOriginal |> Option.toList
+               specialRuleNoticeAt rule.SnpPos hgvsObj sequence.Data.Length grnaSize appliesToMutated appliesToOriginal |> Option.toList
            else [])
 
     let windowStart, windowEnd = calculateWindow extraNucleotids sequence.Data.Length hgvsObj
@@ -189,3 +211,7 @@ let getBestgRNAFromHGVS (hgvsString: string) (grnaSize: int) (seedStart: int) (s
         notices = notices
     }
 }
+
+/// Designs guides with the default substitution rule (variant 3rd and mismatch 4th from the spacer's 3' end).
+let getBestgRNAFromHGVS (hgvsString: string) (grnaSize: int) (seedStart: int) (seedEnd: int) (bowtieService: gRNA.Services.BowtieService) (cancellationToken: System.Threading.CancellationToken) (complement: bool) =
+    getBestgRNAFromHGVSWithRule defaultSpecialRule hgvsString grnaSize seedStart seedEnd bowtieService cancellationToken complement

@@ -10,6 +10,14 @@ public interface IGrnaAnalysis
     string? GetNcbiNuccoreUrl(string hgvs);
 
     /// <summary>
+    /// Same as <see cref="GetBestgRNAFromHgvs"/> with the substitution rule's positions, both counted from the spacer's
+    /// 3' end (1 = last letter): the variant at <paramref name="snpPos"/>, the engineered mismatch at <paramref name="mismatchPos"/>.
+    /// The default implementation ignores the positions.
+    /// </summary>
+    Task<ResultFromHGVS> GetBestgRNAFromHgvsWithRule(string hgvs, int window, int seedStart, int seedEnd, int snpPos, int mismatchPos, bool complement = false, CancellationToken cancellationToken = default) =>
+        GetBestgRNAFromHgvs(hgvs, window, seedStart, seedEnd, complement, cancellationToken);
+
+    /// <summary>
     /// The notations of an rsID with their context (gene, orientation, significance). By default only the relevant allele(s)
     /// on the main RefSeqGene record; <paramref name="allAlleles"/> lists everything dbSNP has. The default implementation
     /// wraps <see cref="GetHgvsFromSnp"/> and knows nothing about genes.
@@ -41,13 +49,17 @@ public class GrnaService : IGrnaAnalysis
     /// </summary>
     public static string Scaffold => gRNA.SpacerFinder.scaffold;
 
-    public async Task<ResultFromHGVS> GetBestgRNAFromHgvs(string hgvs, int window, int seedStart, int seedEnd, bool complement = false, CancellationToken cancellationToken = default)
+    public Task<ResultFromHGVS> GetBestgRNAFromHgvs(string hgvs, int window, int seedStart, int seedEnd, bool complement = false, CancellationToken cancellationToken = default) =>
+        GetBestgRNAFromHgvsWithRule(hgvs, window, seedStart, seedEnd, SpacerFinder.DefaultSnpPosition, SpacerFinder.DefaultMismatchPosition, complement, cancellationToken);
+
+    public async Task<ResultFromHGVS> GetBestgRNAFromHgvsWithRule(string hgvs, int window, int seedStart, int seedEnd, int snpPos, int mismatchPos, bool complement = false, CancellationToken cancellationToken = default)
     {
         try
         {
-            _logger.LogDebug("Getting best gRNA from HGVS: {Hgvs}, Window: {Window}, Seed: [{SeedStart}, {SeedEnd}], Complement: {Complement}", hgvs, window, seedStart, seedEnd, complement);
+            _logger.LogDebug("Getting best gRNA from HGVS: {Hgvs}, Window: {Window}, Seed: [{SeedStart}, {SeedEnd}], Rule: variant {SnpPos}, mismatch {MismatchPos}, Complement: {Complement}", hgvs, window, seedStart, seedEnd, snpPos, mismatchPos, complement);
 
-            var fsharpResult = await Main.getBestgRNAFromHGVS(hgvs, window, seedStart, seedEnd, _bowtieService, cancellationToken, complement);
+            var rule = new Main.SpecialRuleOptions(snpPos, mismatchPos);
+            var fsharpResult = await Main.getBestgRNAFromHGVSWithRule(rule, hgvs, window, seedStart, seedEnd, _bowtieService, cancellationToken, complement);
 
             return new ResultFromHGVS
             {

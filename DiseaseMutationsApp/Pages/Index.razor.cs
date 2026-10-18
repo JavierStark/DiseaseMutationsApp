@@ -20,6 +20,8 @@ namespace DiseaseMutationsApp.Pages
         [SupplyParameterFromQuery(Name = "hgvs")] private string? HgvsQuery { get; set; }
         [SupplyParameterFromQuery(Name = "spacer")] private int? SpacerQuery { get; set; }
         [SupplyParameterFromQuery(Name = "seed")] private string? SeedQuery { get; set; }
+        [SupplyParameterFromQuery(Name = "snp")] private int? SnpQuery { get; set; }
+        [SupplyParameterFromQuery(Name = "mm")] private int? MismatchQuery { get; set; }
 
         private readonly Func<Action, Task> _marshal;
         private bool _disposed;
@@ -59,8 +61,34 @@ namespace DiseaseMutationsApp.Pages
             set => StateService.IndexSeedEnd = value;
         }
 
+        private int _snpPos
+        {
+            get => StateService.IndexSnpPos;
+            set => StateService.IndexSnpPos = value;
+        }
+
+        private int _mismatchPos
+        {
+            get => StateService.IndexMismatchPos;
+            set => StateService.IndexMismatchPos = value;
+        }
+
+        private RunParameters CurrentParameters => new(_gRnaSize, _seedStart, _seedEnd, _snpPos, _mismatchPos);
+
         private bool CanFetchData =>
-            !Runner.IsBusy && !string.IsNullOrWhiteSpace(_hgvs) && InputCountMessage == null && SeedRangeValidationMessage == null;
+            !Runner.IsBusy && !string.IsNullOrWhiteSpace(_hgvs) && InputCountMessage == null && SeedRangeValidationMessage == null && RuleValidationMessage == null;
+
+        /// <summary>Both positions lie inside the spacer (1 = its 3' end) and differ; null when valid.</summary>
+        private string? RuleValidationMessage
+        {
+            get
+            {
+                if (_snpPos < 1 || _snpPos > _gRnaSize) return $"Variant position must be between 1 and {_gRnaSize} (counted from the spacer's 3' end).";
+                if (_mismatchPos < 1 || _mismatchPos > _gRnaSize) return $"Mismatch position must be between 1 and {_gRnaSize} (counted from the spacer's 3' end).";
+                if (_snpPos == _mismatchPos) return "The engineered mismatch cannot be at the variant's own position.";
+                return null;
+            }
+        }
 
         private string? InputCountMessage
         {
@@ -173,12 +201,14 @@ namespace DiseaseMutationsApp.Pages
             var input = !string.IsNullOrWhiteSpace(HgvsQuery) ? HgvsQuery : RsQuery;
             if (string.IsNullOrWhiteSpace(input)) return;
 
-            var claim = $"{input}|{SpacerQuery}|{SeedQuery}";
+            var claim = $"{input}|{SpacerQuery}|{SeedQuery}|{SnpQuery}|{MismatchQuery}";
             if (StateService.IndexClaimedQuery == claim) return;
             StateService.IndexClaimedQuery = claim;
 
             _hgvs = input.Trim();
             if (SpacerQuery is > 0) _gRnaSize = SpacerQuery.Value;
+            if (SnpQuery is > 0) _snpPos = SnpQuery.Value;
+            if (MismatchQuery is > 0) _mismatchPos = MismatchQuery.Value;
             if (!string.IsNullOrWhiteSpace(SeedQuery))
             {
                 var parts = SeedQuery.Split('-', 2);
@@ -236,7 +266,7 @@ namespace DiseaseMutationsApp.Pages
             _linkBanner = false;
             _incoming = null;
             SaveSession();
-            Runner.TryStart(_hgvs, new RunParameters(_gRnaSize, _seedStart, _seedEnd));
+            Runner.TryStart(_hgvs, CurrentParameters);
         }
 
         private void SaveSession()
@@ -265,7 +295,10 @@ namespace DiseaseMutationsApp.Pages
                 ["rs"] = null,
                 ["hgvs"] = _hgvs.Trim(),
                 ["spacer"] = _gRnaSize,
-                ["seed"] = $"{_seedStart}-{_seedEnd}"
+                ["seed"] = $"{_seedStart}-{_seedEnd}",
+                // Only written when it differs from the default, so ordinary links stay short.
+                ["snp"] = _snpPos == 3 ? null : _snpPos,
+                ["mm"] = _mismatchPos == 4 ? null : _mismatchPos
             });
             try
             {
@@ -328,7 +361,7 @@ namespace DiseaseMutationsApp.Pages
         /// <summary>Parameters go in the file so an exported report can be reproduced (leading # lines are ignored by the parser).</summary>
         private void AppendProvenance(StringBuilder sb)
         {
-            var p = Runner.Parameters ?? new RunParameters(_gRnaSize, _seedStart, _seedEnd);
+            var p = Runner.Parameters ?? CurrentParameters;
             sb.AppendLine(GrnaCsvSchema.ProvenanceLine(p.SpacerSize, p.SeedStart, p.SeedEnd));
         }
 
