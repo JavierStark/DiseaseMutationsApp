@@ -111,11 +111,14 @@ Bowtie is looked up under `/work/bowtie/` and `doctor`/`design` fail with exit 3
 ```bash
 grna --help   (or: grna <command> --help)                    # usage (exit 0)
 grna doctor [--network]                                       # PASS/WARN/FAIL lines; exit 0 healthy, 3 otherwise
-grna resolve rs334 [rs... ]                                   # stdout: "<rsID>\t<HGVS>" per notation
+grna resolve rs334 [rs... ] [--all-alleles]                    # stdout: "<rsID>\t<HGVS>"; default = disease-relevant allele (1 line for rs334), --all-alleles = 12
 grna design --hgvs 'NC_000017.11:g.7674220C>T'                # CSV report to stdout (default --format csv)
 grna design --hgvs '<HGVS>' --format json|tsv [--out file]    # other formats
 grna design --hgvs '<HGVS>' --spacer 28 --seed 10-17 --complement   # parameters (these values are the defaults, minus --complement)
 grna design --hgvs '<HGVS>' --repeat none                           # fold the spacer alone; --repeat default (36 nt scaffold) or --repeat <RNA/DNA sequence> too
+grna design --hgvs 'NM_000492.4:c.1624G>T' --snp-pos 3 --mismatch-pos 4    # substitution rule positions from the 3' end (defaults shown); a transcript c. position is converted
+grna disease 603903 --format rs --out sickle.txt               # rsIDs of a disease's pathogenic/likely pathogenic ClinVar variants (progress on stderr, needs internet)
+grna disease "sickle cell disease" --list                      # the matching diseases (--pick N chooses one, --subtypes widens, --format csv|tsv|json)
 grna design --input variants.txt --out report.csv [--concurrency 2] # batch; RESUMABLE (re-run skips variants already in report.csv)
 printf 'rs334\n' | grna design --input /dev/stdin --format json     # stdin input (Linux/container; docker needs -i, the wrapper adds it)
 grna fold GAUUUAGACUACCCCAAAAACGAAGGGGACUAAAAC                 # 2 lines: sequence, then dot-bracket<TAB>energy
@@ -123,8 +126,9 @@ grna pool --count 100 --capacity 5 --plate 96 --model auto    # plate plan CSV t
 grna pool --guides report.csv --out plan.csv                  # plan from a design report (one guide per variant)
 ```
 
-Inputs to `design`: HGVS notations and/or rsIDs (`rs334` is expanded to every `NG_` notation dbSNP returns, each analysed
-separately). `--input` takes a text file (one or more per line, `,`/`;` also separate, `#` lines ignored) or a web-app
+Inputs to `design`: HGVS notations (`g.`, `m.`, `n.`, and `c.` on an `NM_`/`XM_` transcript, which is converted and reported with a `note`)
+and/or rsIDs (`rs334` gives its disease-relevant allele on the main gene record, one notation; `--all-alleles` gives every allele
+dbSNP lists, 12 for `rs334`; each notation is analysed separately). `--input` takes a text file (one or more per line, `,`/`;` also separate, `#` lines ignored) or a web-app
 session `.json`. Exact formats, output schemas, resume rules and pooling details:
 [references/cli-reference.md](references/cli-reference.md).
 
@@ -140,10 +144,10 @@ session `.json`. Exact formats, output schemas, resume rules and pooling details
    or `docker run` = Docker problem (e.g. image not built).
 4. **A failed `design` still prints the CSV header** (and provenance line). Check the exit code, not just whether output exists.
 5. **Typos are rejected, not ignored.** An unknown option (`--capasity 2`) or a flag that does not apply to the command
-   exits 2 and names it. Only `--complement`, `--network` and `--help` are value-less flags; there is no `--opt=value` form.
+   exits 2 and names it. Only `--complement`, `--all-alleles`, `--list`, `--subtypes`, `--network` and `--help` are value-less flags; there is no `--opt=value` form.
 6. **Resume semantics.** With `--input` + `--out <file>.csv` + csv format, an existing report is appended to and variants
-   already in it (keyed by RS ID + HGVS + strand) are skipped. A report made with a different `--spacer`, `--seed` or `--repeat` is
-   refused (exit 2): use a new `--out` file when changing those. Running the other strand (`--complement`) into the same
+   already in it (keyed by RS ID + HGVS + strand) are skipped. A report made with a different `--spacer`, `--seed`, `--repeat`, `--snp-pos` or `--mismatch-pos` is
+   refused (exit 2, the message names both settings): use a new `--out` file when changing those. Running the other strand (`--complement`) into the same
    file is fine and appends its rows.
 7. **`--complement` analyses one strand per run:** the opposite strand (the reverse complement, read 5'->3'). For both
    strands run twice; the same `--out` file works. An offtarget count of 0 means "no genomic match" and ranks best (common for indels).
@@ -153,7 +157,14 @@ session `.json`. Exact formats, output schemas, resume rules and pooling details
     redirection re-encodes native output.
 11. **Port 5000 is shared**: the compose container and `dotnet run --project DiseaseMutationsApp` both bind it. Stop one first.
 12. **`design` needs network** (NCBI E-utilities for sequences, dbSNP for rsIDs). Set `GRNA_NCBI_API_KEY` and
-    `GRNA_NCBI_CONTACT` for large batches (the wrappers forward them; `docker run` needs `-e`).
+    `GRNA_NCBI_CONTACT` for large batches (the wrappers forward them; `docker run` needs `-e`). `disease` needs the network too
+    (Monarch and NCBI ClinVar).
+13. **The CLI is not the whole app.** The complete-gRNA builder (direct repeat, Frida and BioBricks adapters, custom flanks),
+    the oligo CSV with a T7 promoter, FASTA export, the shortlist and the plate-map page are web-app features; `grna` has none
+    of them. To fold a built construct, pass its RNA to `grna fold`. A `design --format rs` list from `grna disease` leaves out
+    ClinVar records that have no rsID; use `grna disease ... --format csv` to see their genomic HGVS.
+14. **Counts from `disease` change.** ClinVar and Monarch are read live: on 2026-10-18 `grna disease 603903` gave 62 distinct
+    rsIDs (80 records read). Never quote a count without running the command.
 
 ## 7. Typical end-to-end workflow
 
@@ -161,10 +172,14 @@ session `.json`. Exact formats, output schemas, resume rules and pooling details
 ./start.sh                                                         # once (long the first time)
 S=.claude/skills/diana/scripts/grna.sh
 $S doctor || exit 1                                                # exit 3 => read the FAIL remedies
-printf 'NC_000017.11:g.7674220C>T\nrs334\n' > variants.txt
+$S disease 603903 --format rs --out sickle.txt                     # optional: a disease to its ClinVar variants (rsIDs)
+printf 'NC_000017.11:g.7674220C>T\nrs334\n' > variants.txt        # or write the variants yourself
 $S design --input variants.txt --out report.csv; echo "design exit=$?"   # 1 => some variants failed; re-run resumes
 $S pool --guides report.csv --capacity 5 --plate 96 --out plan.csv
 ```
+
+The chain disease -> design -> pool was run on the real image on 2026-10-18 (`sickle.txt` into `design --input`, then `report.csv`
+into `pool --guides`, all exit 0).
 
 ## 8. When something fails
 
@@ -179,4 +194,6 @@ CLI, Windows and network failures).
 - [references/install-and-operate.md](references/install-and-operate.md): installer flags and env knobs, lifecycle
   (start/stop/logs/rebuild/update), image layout, native .NET route, packaging `grna` as a `dotnet tool`, tests and CI.
 - [references/troubleshooting.md](references/troubleshooting.md): symptom-driven fixes.
-- Repository docs: `README.md`, `docs/runtime-contract.md` (pins, env vars, concurrency), `docs/using-the-library.md`.
+- Repository docs: `README.md`, `docs/runtime-contract.md` (pins, env vars, concurrency), `docs/using-the-library.md`,
+  `docs/validation.md` (what each claim rests on, measured timings, known limits), `BIOLOGICAL_REPORT.md` (the science behind
+  every column) and `docs/manual-test-plan.md`.

@@ -174,8 +174,9 @@ Explicit `--spacer`/`--seed` override the values stored in a session file.
 - **Text file** (`--input variants.txt`): split on newlines, `,` and `;`; trimmed; empty and `#`-prefixed items
   dropped; duplicates removed (first occurrence order kept).
 - **Session JSON** (saved by the web app's *Save session*):
-  `{"version":1,"input":"<comma/newline separated variants>","spacer":28,"seed":"10-17","shortlist":[]}`.
-  Only `input`, `spacer` and `seed` are read.
+  `{"version":1,"input":"<comma/newline separated variants>","spacer":28,"seed":"10-17","shortlist":[],"construct":{...},"repeat":"default"}`.
+  Only `input`, `spacer`, `seed` and `repeat` (`default`, `none` or a sequence) are read; the shortlist and the complete-gRNA
+  construct belong to the web app, and an older file without `repeat` means the default.
 - **stdin**: `--input /dev/stdin` (Linux/container; with Docker add `-i`). Not resumable, output to stdout.
 
 ### Execution
@@ -184,8 +185,9 @@ Explicit `--spacer`/`--seed` override the values stored in a session file.
 ranks spacers on the mutated and original sequence (Bowtie off-target counts + ViennaRNA folding). Per job, stderr gets
 `ok   <hgvs>` or `FAIL <hgvs>: <message>`. 3. Rows are emitted in input order regardless of completion order.
 
-Observed timing on a warm container: one HGVS took about 14 s (network fetch + alignment + folding). Batches scale
-roughly linearly divided by concurrency; don't promise timings, measure.
+Observed timing on 2026-10-18 (live NCBI, one run each, wall clock including start-up): a transcript variant
+(`NM_000492.4:c.1521_1523del`) 8 to 10 s, `rs334` about 10 s, a chromosome variant (`NC_000017.11:g.7674220C>T`) 28 to 38 s,
+because the whole accession is downloaded. Batches scale roughly linearly divided by concurrency; don't promise timings, measure.
 
 ### Resumable batches
 
@@ -195,8 +197,9 @@ Then:
 - Existing rows are keyed by `RS ID|HGVS|Strand`; jobs with a matching key are skipped; new rows are **appended** (no new header).
   An existing but empty file simply starts a fresh report.
 - Variants that failed last time are absent from the file, so a plain re-run retries exactly those.
-- The report's provenance line (`# Diana report; spacer=..; seed=..-..`) is compared with the current `--spacer`/`--seed`:
-  **a different spacer or seed is refused (exit 2)**, so rows made with different parameters are never mixed. Use a new `--out`.
+- The report's provenance line (`# Diana report; spacer=..; seed=..-..; ...; special-rule=...; repeat=...`) is compared with the
+  current `--spacer`, `--seed`, `--repeat`, `--snp-pos` and `--mismatch-pos`: **a different value is refused (exit 2)** and the
+  message names both, so rows made with different parameters are never mixed. Use a new `--out`.
   Running the other strand (`--complement`) into the same file is fine: its variants have a different key and are appended.
 - `--hgvs` runs, json/tsv formats and stdout output always overwrite / never resume.
 
@@ -241,7 +244,7 @@ grna pool --count <V>     [--capacity 5] [--plate 96|384] [--model auto|2df|2dm|
 ### Design CSV (default; same schema as the web export and the Pooling page import)
 
 ```
-# Diana report; spacer=28; seed=10-17; generated=2026-10-06T17:41:28Z
+# Diana report; spacer=28; seed=10-17; generated=2026-10-18T14:11:05Z; gc-score-range=40-60; special-rule=variant at N-3, mismatch at N-4; repeat=GAUUUAGACUACCCCAAAAACGAAGGGGACUAAAAC; off-target index=GRCh38 genome (not a transcriptome)
 RS ID,HGVS,Sequence Type,Rank,Sequence,Score,GC Content,Offtargets,Seed Region,Homopolymers,Fold Energy,Strand,WT Mismatches,Engineered,Scaffold Intact,Spacer Unpaired
 ,NC_000017.11:g.7674220C>T,Mutated,1,AGUUCCUGCAUGGGCGGCAUGAACAAGA,1,53.57,1,UGGGCGGC,0,-13.100000381469727,Normal,1,Yes,Yes,0.57
 ,NC_000017.11:g.7674220C>T,Original,1,AGUUCCUGCAUGGGCGGCAUGAACAGGA,1,57.14,1,UGGGCGGC,0,-13.300000190734863,Normal,1,No,Yes,0.61
