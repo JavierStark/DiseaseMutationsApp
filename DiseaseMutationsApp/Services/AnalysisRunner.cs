@@ -24,7 +24,8 @@ public class AnalysisOptions
 public enum RunPhase { Idle, Discovering, Analyzing, Completed, Cancelled }
 
 /// <summary>Spacer/seed parameters a run was started with.</summary>
-public record RunParameters(int SpacerSize, int SeedStart, int SeedEnd);
+/// <summary>Spacer size and seed, plus where the substitution rule puts the variant and its engineered mismatch (counted from the spacer's 3' end, 1 = last letter).</summary>
+public record RunParameters(int SpacerSize, int SeedStart, int SeedEnd, int SnpPos = 3, int MismatchPos = 4);
 
 public record RunProgress(int Total, int Done, int Failed, int Running, int Queued, int Cancelled)
 {
@@ -297,7 +298,7 @@ public sealed partial class AnalysisRunner : IAsyncDisposable
             leafCts.Token.ThrowIfCancellationRequested();
             Apply(runId, () => leaf.Status = LeafStatus.Running);
             var sourceUrl = _grna.GetNcbiNuccoreUrl(leaf.Hgvs);
-            var result = await _grna.GetBestgRNAFromHgvs(leaf.Hgvs, p.SpacerSize, p.SeedStart, p.SeedEnd, leaf.IsComplement, leafCts.Token);
+            var result = await _grna.GetBestgRNAFromHgvsWithRule(leaf.Hgvs, p.SpacerSize, p.SeedStart, p.SeedEnd, p.SnpPos, p.MismatchPos, leaf.IsComplement, leafCts.Token);
 
             // One atomic publish: every field of the finished leaf lands in a single marshalled step.
             Apply(runId, () =>

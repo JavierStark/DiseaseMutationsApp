@@ -154,7 +154,7 @@ public class AccessibilityTests : BunitContext
 
     private static GRNAResult Candidate() => new()
     {
-        Sequence = "AGUUCCUGCAUGGGCGGCAUGAACAAGA", SeedRegion = "UGGGCGGC", Score = 1, Allignments = 1,
+        Sequence = "AGUUCCUGCAUGGGCGGCAUGAACAAGA", SeedRegion = "UGGGCGGC", Score = 1, Offtargets = 1,
         RnaFoldResult = new RNAFoldResult { Structure = "....", Energy = -1.0 }, MutationHighlightStart = -1
     };
 
@@ -194,7 +194,7 @@ public class ResultsTableKeyTests : BunitContext
     {
         var same = new GRNAResult
         {
-            Sequence = "AAAAAAAAAAAAAAAAAAAAAAAAAAAA", SeedRegion = "AAAAAAAA", Score = 1, Allignments = 1,
+            Sequence = "AAAAAAAAAAAAAAAAAAAAAAAAAAAA", SeedRegion = "AAAAAAAA", Score = 1, Offtargets = 1,
             RnaFoldResult = new RNAFoldResult { Structure = "....", Energy = -1.0 }, MutationHighlightStart = -1
         };
         var cut = Render<GrnaResultsTable>(p => p.Add(c => c.GRNAs, new List<GRNAResult> { same, same with { Rank = 2 }, same with { Rank = 3 } }));

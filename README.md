@@ -7,7 +7,7 @@
 Diana is a web application and command-line tool for turning disease-related variants (HGVS notations [10] or rsIDs [5]) into
 ranked CRISPR-Cas13 guide RNA spacers, for finding those variants from a disease (name, OMIM number or MONDO id, through
 ClinVar [16]), and for planning combinatorial guide pooling onto 96/384-well plates. Spacers are scored for
-GC content, homopolymers, off-target alignments (Bowtie [1]) and RNA secondary structure (ViennaRNA [2, 3]), for both the
+GC content, homopolymers, offtargets (Bowtie [1]) and RNA secondary structure (ViennaRNA [2, 3]), for both the
 mutated and the original (wild-type) sequence. It also flags restriction sites (BsaI, BsmBI, SapI, BbsI, EcoRI, PstI, XbaI,
 SpeI, EcoRV, NotI) in the DNA you would order, shows whether each guide is compatible with the BioBrick RFC[10] and iGEM Type IIS
 RFC[1000] assembly standards, and exports an order-ready oligo CSV.
@@ -38,14 +38,14 @@ keyboard-operable tabs. Numbers in square brackets point to the [References](#re
   `NM_000518.5:n.70A>T` using the coding-sequence start read from the NCBI GenBank record, `c.-5` and `c.*3` included): the guides
   are then designed on the mRNA itself, which is what Cas13 binds, and a notice says what was converted. Limits: spacer size 18-60, at most 50 inputs per run.
 - **Results** per variant: original and mutated sequences (mutation highlighted, copy as FASTA), two ranked spacer tables
-  (sortable, filterable, paged, with an alignment-risk chip), the complete gRNA (scaffold + chosen spacer), ViennaRNA
+  (sortable, filterable, paged, with an offtarget-risk chip), the complete gRNA (scaffold + chosen spacer), ViennaRNA
   structure and a FORNA [4] diagram link.
 - **Can this guide tell the alleles apart?** Each guide has a *Mismatches vs other allele* column: the fewest letters in which its
   DNA target differs from the closest stretch of the other allele (a mutated-sequence guide against the normal sequence). 0 or 1 is
   flagged "not discriminating" (red chip), a filter hides those, and a warning appears when no guide of a variant reaches 2. It
   informs the choice; it does not change the ranking.
 - **Tooltips everywhere.** Hover (or focus) a column header, filter, option or badge to get a one-paragraph explanation of what it
-  is and how it is computed (GC score, alignments, energy, score, mismatches, engineered guide, strands, seed, pooling K, ...).
+  is and how it is computed (GC score, offtargets, energy, score, mismatches, engineered guide, strands, seed, pooling K, ...).
   The wording lives in one file, `DiseaseMutationsApp/Services/HelpText.cs`.
 - **Assembly compatibility**: each guide carries two badges, one per standard. BioBrick RFC[10] requires the DNA to be free of
   EcoRI, NotI, XbaI, SpeI and PstI sites and iGEM Type IIS RFC[1000] of BsaI and SapI sites; a green badge means compatible, a
@@ -54,7 +54,7 @@ keyboard-operable tabs. Numbers in square brackets point to the [References](#re
 - **Runs**: cancellable (whole run or one variant), bounded-parallel, and they survive navigating to another page. A refresh
   restores your inputs (never results: download the CSV report to keep them).
 - **Off-target loci**: expand any spacer to see where its target window aligns in the genome (chromosome, position, strand,
-  mismatches; up to 50 alignments). The table's alignment chip still saturates at "6+", honestly labelled. Loci are looked up for the spacer exactly as displayed; for the
+  mismatches; up to 50 alignments). The table's offtarget chip still saturates at "6+", honestly labelled. Loci are looked up for the spacer exactly as displayed; for the
   substitution special rule's engineered spacer this can differ from the table's count, which is carried over from the unadjusted candidate.
 - **Shortlist**: pick spacers across variants, send them to the Pooling page without a CSV round trip, or download an
   order-ready **oligo CSV** (DNA, optional T7 promoter, top/bottom pairs, plate wells addressed like the pooling plan).
@@ -118,6 +118,7 @@ grna resolve rs334 [--all-alleles]
 grna disease "sickle cell disease" --format rs --out sickle.txt   # rsIDs of a disease's pathogenic ClinVar variants
 grna design --hgvs NC_000017.11:g.7674220C>T --spacer 28 --seed 10-17 [--complement] [--format csv|json|tsv]
 grna design --input variants.txt|session.json --out report.csv   # batch, resumable, bounded concurrency ([--all-alleles] for every dbSNP allele)
+grna design --hgvs 'NC_000017.11:g.7674220C>T' --snp-pos 3 --mismatch-pos 4   # where the substitution rule puts the variant and its extra mismatch
 grna fold "GAUUUAGACUACCCC..."
 grna pool --guides report.csv --capacity 5 --plate 96 --model auto --out plan.csv
 ```
@@ -198,7 +199,7 @@ with `GRNA_BOWTIE_BINARY`, `GRNA_BOWTIE_INDEX`, `GRNA_PYTHON`, then `dotnet run 
 
 0. No variant list yet? Open **Disease variants**, find the disease, tick the variants you want and press **Send to Diana**:
    the inputs below are filled in for you.
-1. Enter variants (comma-separated) and the spacer size and seed range (defaults 28 and 10-17, inclusive, 0-based in the spacer; spacer size 18 to 60).
+1. Enter variants (comma-separated), the spacer size and seed range, and, if you want to try other substitution-rule positions, the variant and mismatch positions (defaults 28 and 10-17, inclusive, 0-based in the spacer; spacer size 18 to 60).
 2. **Run analysis**. rsIDs resolve first, then variants are analysed two at a time. Cancel the run, or one variant, any time.
 3. Pick a tab per input; for rsIDs a second strip lists each resolved variant on both strands. Tabs use arrow keys.
 4. Press **Use** on a spacer to build the complete gRNA, copy it, fold it, or add it to the shortlist.
@@ -213,20 +214,24 @@ If a variant fails it shows the reason and a **Retry this variant** button; othe
   `(100 - gc) / 40`. Always in 0-1.
 - **GC content**: raw GC percentage, two decimals.
 - **Homopolymers**: runs of 4 or more identical bases; 0 is best.
-- **Alignments**: Bowtie hits of the DNA window (up to 2 mismatches). 1 is a unique target; the count saturates at 6, shown as
+- **Offtargets**: Bowtie hits of the DNA window (up to 2 mismatches). 1 is a unique target; the count saturates at 6, shown as
   "6+ saturated". **0 means "no genomic match" and is ranked best, by design**: it is common for insertions,
-  duplications and deletions, whose junction windows do not exist in the genome, so for those variants the alignment criterion
+  duplications and deletions, whose junction windows do not exist in the genome, so for those variants the offtarget criterion
   does not separate candidates (see [BIOLOGICAL_REPORT.md](BIOLOGICAL_REPORT.md) section 4.2c).
 - **Spacer unpaired** (`Spacer Unpaired` in the CSV): the share of the spacer's letters left unpaired in the fold of the complete gRNA; a spacer that folds on itself or sticks to the scaffold may bind its target less well.
 - **Hairpin broken** (`Scaffold Intact = No`): the scaffold's own hairpin (the fold of the scaffold alone) is no longer fully formed in the complete gRNA, so the guide may not load into Cas13. Both checks come from the fold already computed; they inform the choice and do not change the ranking.
 - **Energy**: minimum free energy (kcal/mol, Turner 2004 parameters [11]) of the *complete* gRNA (scaffold + spacer); closer to zero is preferred.
-- **Score**: 0-1, from the rank after sorting by (Alignments, Energy, GC score, Homopolymers); ties share a rank. It is a *relative* number for comparing candidates of one variant, not a prediction of guide activity; when a variant has a single ordinary candidate the table says "only candidate" instead of 100 %.
+- **Score**: 0-1, from the rank after sorting by (Offtargets, Energy, GC score, Homopolymers); ties share a rank. It is a *relative* number for comparing candidates of one variant, not a prediction of guide activity; when a variant has a single ordinary candidate the table says "only candidate" instead of 100 %.
 
 - **Mismatches vs other allele** (`WT Mismatches` in the CSV): see above; 2 or more can tell the alleles apart, more is better.
 
 Substitution variants get the **special rule**: when the mutation lands at the right position near the 3' end, a
 mismatch-engineered spacer (`Rank = 1`, `Score = 1.0`, `Engineered = Yes`) is listed **first, highlighted**, and the whole
-ordinary ranked list follows it unchanged ([BIOLOGICAL_REPORT.md](BIOLOGICAL_REPORT.md) section 4.4, which also states the open
+ordinary ranked list follows it unchanged. **The two positions of the rule are parameters**: *Variant position* (default 3) and
+*Engineered mismatch position* (default 4) in the Builder form, `--snp-pos` / `--mismatch-pos` on `grna design`, `?snp=` / `?mm=` in
+a permalink. Both are counted from the spacer's 3' end (1 = last letter) and must differ; to use a position counted from the 5'
+end enter spacer size - position + 1. The positions are written in the CSV's provenance line, and a resumed report made with other
+positions is refused ([BIOLOGICAL_REPORT.md](BIOLOGICAL_REPORT.md) section 4.4, which also states the open
 question about the mismatch position). When the mutation is too close to an end of the accession for such a
 window to exist (at the start or in the last 24 bases for a 28 nt spacer, the sides swapping on the complement strand) the rule
 cannot apply: the ordinary ranking is shown instead, with a visible warning (a `note` line on stderr and a `notices` field in

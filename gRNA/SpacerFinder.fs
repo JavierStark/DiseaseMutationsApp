@@ -43,7 +43,7 @@ type gRNAResult =
       GCContent: float
       HomopolymerCount: int
       SeedRegion: string
-      Allignments: int
+      Offtargets: int
       RnaFoldResult: RNAFoldResult
       Rank: int
       Score: float
@@ -87,7 +87,7 @@ let getgRNAResult (seedStart: int) (seedEnd: int) (sequence: string) : gRNAResul
         GCContent = gcContent
         HomopolymerCount = homopolymerCount
         SeedRegion = seedRegion
-        Allignments = 0
+        Offtargets = 0
         RnaFoldResult = { Structure = ""; Energy = 0.0 }
         Rank = 0
         Score = 0.0
@@ -99,41 +99,56 @@ let getgRNAResult (seedStart: int) (seedEnd: int) (sequence: string) : gRNAResul
         SpacerUnpaired = -1.0
     }
 
-let adjustFourthFromEndToAorU (sequence: string) =
-    if System.String.IsNullOrEmpty(sequence) || sequence.Length < 4 then
+/// Flips the letter `positionFromEnd` places from the 3' end (1 = the last letter) to A, or to U when it already is A.
+/// A sequence shorter than that is returned unchanged.
+let adjustPositionFromEndToAorU (positionFromEnd: int) (sequence: string) =
+    if System.String.IsNullOrEmpty(sequence) || positionFromEnd < 1 || sequence.Length < positionFromEnd then
         sequence
     else
-        let targetIndex = sequence.Length - 4
+        let targetIndex = sequence.Length - positionFromEnd
         let replacement =
             if sequence.[targetIndex] = 'A' then 'U'
             else 'A'
 
         sequence.Remove(targetIndex, 1).Insert(targetIndex, string replacement)
 
+/// The default rule changes the 4th letter from the 3' end.
+let adjustFourthFromEndToAorU (sequence: string) = adjustPositionFromEndToAorU 4 sequence
+
+/// Default positions of the substitution rule, both counted from the spacer's 3' end (1 = last letter):
+/// the variant is the 3rd letter, the engineered mismatch the 4th.
+[<Literal>]
+let DefaultSnpPosition = 3
+[<Literal>]
+let DefaultMismatchPosition = 4
+
 /// True when some candidate carries the mutation at index `windowSize - 3`, i.e. when the rule below can build its
 /// engineered spacer. It cannot when the mutation is too close to an end of the sequence for such a window to exist.
-let specialRuleApplies (windowSize: int) (results: gRNAResult list) =
+let specialRuleAppliesAt (snpPos: int) (windowSize: int) (results: gRNAResult list) =
     results
     |> List.exists (fun result ->
-        result.MutationHighlightStart = windowSize - 3
+        result.MutationHighlightStart = windowSize - snpPos
         && result.MutationHighlightLength > 0)
+
+let specialRuleApplies (windowSize: int) (results: gRNAResult list) =
+    specialRuleAppliesAt DefaultSnpPosition windowSize results
 
 /// Puts the mismatch-engineered candidate FIRST (marked `Engineered`, Rank 1, Score 1.0) and keeps the whole ordinary
 /// ranked list after it, unchanged. When no candidate carries the mutation at `windowSize - 3` (see `specialRuleApplies`)
 /// the ranked list is returned UNCHANGED: the caller reports that the rule did not apply.
-let applySubstitutionSpecialRule (seedStart: int) (seedEnd: int) (windowSize: int) (results: gRNAResult list) =
-    let targetMutationIndex = windowSize - 3
+let applySubstitutionSpecialRuleAt (snpPos: int) (mismatchPos: int) (seedStart: int) (seedEnd: int) (windowSize: int) (results: gRNAResult list) =
+    let targetMutationIndex = windowSize - snpPos
 
     results
     |> List.tryFind (fun result ->
         result.MutationHighlightStart = targetMutationIndex
         && result.MutationHighlightLength > 0)
     |> Option.map (fun selected ->
-        let adjustedSequence = adjustFourthFromEndToAorU selected.Sequence
+        let adjustedSequence = adjustPositionFromEndToAorU mismatchPos selected.Sequence
         let adjustedBaseResult = getgRNAResult seedStart seedEnd adjustedSequence
 
         { adjustedBaseResult with
-            Allignments = selected.Allignments
+            Offtargets = selected.Offtargets
             RnaFoldResult = selected.RnaFoldResult
             MutationHighlightStart = selected.MutationHighlightStart
             MutationHighlightLength = selected.MutationHighlightLength
@@ -145,6 +160,10 @@ let applySubstitutionSpecialRule (seedStart: int) (seedEnd: int) (windowSize: in
     |> function
         | Some adjusted -> adjusted :: results
         | None -> results
+
+/// The default rule: variant 3rd from the 3' end, engineered mismatch 4th from the 3' end.
+let applySubstitutionSpecialRule (seedStart: int) (seedEnd: int) (windowSize: int) (results: gRNAResult list) =
+    applySubstitutionSpecialRuleAt DefaultSnpPosition DefaultMismatchPosition seedStart seedEnd windowSize results
 
 /// The DNA window a spacer was derived from: spacer = reverse(complement(window)) with T to U.
 let windowOfSpacer (spacer: string) =
@@ -229,7 +248,7 @@ let private scaffoldReference : Lazy<Task<string>> =
     })
 
 let sortByResult (result: gRNAResult) =
-    (result.Allignments, -result.RnaFoldResult.Energy, -result.GCScore, result.HomopolymerCount)
+    (result.Offtargets, -result.RnaFoldResult.Energy, -result.GCScore, result.HomopolymerCount)
 
 let reverse (sequence: string) =
     sequence
@@ -263,18 +282,18 @@ let getOrderedgRna (seedStart: int) (seedEnd: int) (window: int) (sequence: stri
         // Fold the actual RNA gRNA (scaffold + spacer), not the raw DNA window.
         let gRNASequences = results |> List.map (fun r -> scaffold + r.Sequence)
 
-        let! allignments = bowtieService.ProcessMultipleSequencesAsync(subsequences, 2, 2, cancellationToken)
+        let! offtargets = bowtieService.ProcessMultipleSequencesAsync(subsequences, 2, 2, cancellationToken)
         let! folds = foldMany gRNASequences cancellationToken
         let! scaffoldStructure = scaffoldReference.Value
         
         let results =
-            List.zip3 results folds allignments
+            List.zip3 results folds offtargets
             |> List.map (fun (res, fold, align) ->
                 { res with
                     RnaFoldResult = fold
                     ScaffoldIntact = scaffoldIntact scaffoldStructure fold.Structure
                     SpacerUnpaired = spacerUnpaired scaffold.Length fold.Structure
-                    Allignments = align})
+                    Offtargets = align})
 
         let filteredResults = results |> List.sortBy sortByResult
         

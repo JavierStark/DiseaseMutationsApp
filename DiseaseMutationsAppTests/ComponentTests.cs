@@ -7,7 +7,7 @@ using Microsoft.AspNetCore.Components;
 
 namespace DiseaseMutationsAppTests;
 
-public class AlignmentRiskTests
+public class OfftargetRiskTests
 {
     [TestCase(0, "risk-none", "0 none")]
     [TestCase(1, "risk-unique", "1 unique")]
@@ -19,7 +19,7 @@ public class AlignmentRiskTests
     [TestCase(600, "risk-saturated", "6+ saturated")]
     public void Describe_LabelsCountWithText(int count, string css, string label)
     {
-        var (c, l) = AlignmentRisk.Describe(count);
+        var (c, l) = OfftargetRisk.Describe(count);
         Assert.Multiple(() =>
         {
             Assert.That(c, Is.EqualTo(css));
@@ -136,7 +136,7 @@ public class ComponentTests : BunitContext
 
     private static GRNAResult G(string seq, double score, int aln, double energy) => new()
     {
-        Sequence = seq, SeedRegion = seq[..4], Score = score, Allignments = aln, GCContent = 50, GCScore = 1,
+        Sequence = seq, SeedRegion = seq[..4], Score = score, Offtargets = aln, GCContent = 50, GCScore = 1,
         RnaFoldResult = new RNAFoldResult { Structure = "....", Energy = energy }, MutationHighlightStart = -1
     };
 
@@ -251,7 +251,7 @@ public class ComponentTests : BunitContext
     [Test]
     public void GrnaResultsTable_FilterHidesRows_AndToleratesMissingFoldResult()
     {
-        var noFold = new GRNAResult { Sequence = "ACGUACGUACGUACGU", SeedRegion = "ACGU", Score = 0.2, Allignments = 0, RnaFoldResult = null!, MutationHighlightStart = -1 };
+        var noFold = new GRNAResult { Sequence = "ACGUACGUACGUACGU", SeedRegion = "ACGU", Score = 0.2, Offtargets = 0, RnaFoldResult = null!, MutationHighlightStart = -1 };
         var items = new List<GRNAResult> { G("AAAACCCCGGGGUUUU", 0.9, 1, -2), noFold };
         var filter = new GrnaFilter { MinScore = 0.5 };
 
@@ -374,14 +374,14 @@ public class StateAndSessionTests
     {
         var g = new GRNAResult
         {
-            Sequence = "ACGUACGU", SeedRegion = "ACGU", Score = 0.8, Allignments = 2, GCContent = 50,
+            Sequence = "ACGUACGU", SeedRegion = "ACGU", Score = 0.8, Offtargets = 2, GCContent = 50,
             RnaFoldResult = new RNAFoldResult { Structure = "", Energy = 0 }
         };
         Assert.Multiple(() =>
         {
             Assert.That(new GrnaFilter().Matches(g), Is.True);
             Assert.That(new GrnaFilter { MinScore = 0.9 }.Matches(g), Is.False);
-            Assert.That(new GrnaFilter { MaxAlignments = 1 }.Matches(g), Is.False);
+            Assert.That(new GrnaFilter { MaxOfftargets = 1 }.Matches(g), Is.False);
             Assert.That(new GrnaFilter { MinGc = 55 }.Matches(g), Is.False);
             Assert.That(new GrnaFilter { MaxGc = 45 }.Matches(g), Is.False);
             Assert.That(new GrnaFilter { Contains = "cgua" }.Matches(g), Is.True);

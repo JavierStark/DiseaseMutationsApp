@@ -145,7 +145,7 @@ session `.json`. Exact formats, output schemas, resume rules and pooling details
    refused (exit 2): use a new `--out` file when changing those. Running the other strand (`--complement`) into the same
    file is fine and appends its rows.
 7. **`--complement` analyses one strand per run:** the opposite strand (the reverse complement, read 5'->3'). For both
-   strands run twice; the same `--out` file works. An alignment count of 0 means "no genomic match" and ranks best (common for indels).
+   strands run twice; the same `--out` file works. An offtarget count of 0 means "no genomic match" and ranks best (common for indels).
 8. **Container working directory:** the image now sets `GRNA_BOWTIE_BINARY` and `GRNA_BOWTIE_INDEX` itself, so `-w` is safe; the overrides in section 4C only matter for an older image or a custom build.
 9. **JSON escapes `>`** as `>` in `hgvs`. Use a real JSON parser (`jq`, `ConvertFrom-Json`), not grep.
 10. **In PowerShell, prefer `--out` over `>`.** It writes UTF-8 without BOM exactly like the web export; PowerShell

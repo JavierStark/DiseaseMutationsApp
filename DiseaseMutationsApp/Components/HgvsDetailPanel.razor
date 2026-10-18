@@ -328,7 +328,7 @@
             GrnaSortColumn.GCScore => ascending ? list.OrderBy(g => g.GCScore) : list.OrderByDescending(g => g.GCScore),
             GrnaSortColumn.GCContent => ascending ? list.OrderBy(g => g.GCContent) : list.OrderByDescending(g => g.GCContent),
             GrnaSortColumn.HomopolymerCount => ascending ? list.OrderBy(g => g.HomopolymerCount) : list.OrderByDescending(g => g.HomopolymerCount),
-            GrnaSortColumn.Alignments => ascending ? list.OrderBy(g => g.Allignments) : list.OrderByDescending(g => g.Allignments),
+            GrnaSortColumn.Offtargets => ascending ? list.OrderBy(g => g.Offtargets) : list.OrderByDescending(g => g.Offtargets),
             GrnaSortColumn.Energy => ascending ? list.OrderBy(g => g.RnaFoldResult?.Energy ?? double.MaxValue) : list.OrderByDescending(g => g.RnaFoldResult?.Energy ?? double.MinValue),
             GrnaSortColumn.SpacerUnpaired => ascending ? list.OrderBy(g => g.SpacerUnpaired) : list.OrderByDescending(g => g.SpacerUnpaired),
             GrnaSortColumn.WtMismatches => ascending ? list.OrderBy(g => g.WtMismatches) : list.OrderByDescending(g => g.WtMismatches),
@@ -443,6 +443,6 @@
         }
 
         var candidate = (Data.GRNAs ?? new()).Concat(Data.OriginalGRNAs ?? new()).FirstOrDefault(g => g.Sequence == Data.SelectedSpacer);
-        State.AddToShortlist(new ShortlistItem(Data.Hgvs, Data.IsComplement, Data.SelectedSpacer, RsId, candidate?.Score ?? 0, candidate?.Allignments ?? 0));
+        State.AddToShortlist(new ShortlistItem(Data.Hgvs, Data.IsComplement, Data.SelectedSpacer, RsId, candidate?.Score ?? 0, candidate?.Offtargets ?? 0));
     }
 }

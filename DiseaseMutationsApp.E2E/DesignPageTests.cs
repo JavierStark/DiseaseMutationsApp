@@ -134,7 +134,7 @@ public class DesignPageTests : E2EBase
             Assert.That(download.SuggestedFilename, Does.EndWith(".csv"));
             Assert.That(bytes.Take(3).ToArray(), Is.EqualTo(new byte[] { 0xEF, 0xBB, 0xBF }), "UTF-8 byte-order mark for Excel");
             var text = System.Text.Encoding.UTF8.GetString(bytes);
-            Assert.That(text, Does.Contain("RS ID,HGVS,Sequence Type,Rank,Sequence,Score,GC Content,Alignments,Seed Region,Homopolymers,Fold Energy,Strand"));
+            Assert.That(text, Does.Contain("RS ID,HGVS,Sequence Type,Rank,Sequence,Score,GC Content,Offtargets,Seed Region,Homopolymers,Fold Energy,Strand"));
             Assert.That(text, Does.Contain("Mutated").And.Contain("Original"));
         });
     }
