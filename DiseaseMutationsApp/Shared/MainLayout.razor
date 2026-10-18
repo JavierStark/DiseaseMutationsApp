@@ -28,11 +28,11 @@
 
             @if (State.Shortlist.Count > 0)
             {
-                <span class="shortlist-count" title="Spacers shortlisted for pooling">
+                <button type="button" class="shortlist-count" title="Show the shortlist" @onclick="ShowShortlist">
                     <Icon Name="list" />
                     <span class="shortlist-badge">@State.Shortlist.Count</span>
-                    <span class="visually-hidden">spacers shortlisted</span>
-                </span>
+                    <span class="visually-hidden">spacers shortlisted, show shortlist</span>
+                </button>
             }
 
             <button type="button" class="btn btn-sm btn-outline-secondary btn-icon-only" @onclick="ToggleTheme"
@@ -60,6 +60,12 @@
     private ErrorBoundary? _boundary;
     private bool _dark;
     private bool _disposed;
+
+    private async Task ShowShortlist()
+    {
+        // On the Builder the panel is on this page; elsewhere, go to the Builder, which renders it.
+        if (!await JS.InvokeAsync<bool>("scrollToShortlist")) Nav.NavigateTo("/#shortlist");
+    }
 
     protected override void OnInitialized()
     {

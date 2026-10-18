@@ -2,9 +2,116 @@
 @using DiseaseMutationsApp.Pages
 @inject GrnaService Grna
 
-<div class="card">
-    <div class="card-body">
-        <h2 class="card-title section-title mb-3"><Icon Name="table" />@Title</h2>
+@if (Collapsible)
+{
+    <details class="card grna-collapsible" open="@(!StartCollapsed)">
+        <summary class="card-body seq-summary">
+            <h2 class="card-title section-title mb-0"><Icon Name="table" />@Title</h2>
+        </summary>
+        <div class="card-body pt-0">
+            @Content
+        </div>
+    </details>
+}
+else
+{
+    <div class="card">
+        <div class="card-body">
+            <h2 class="card-title section-title mb-3"><Icon Name="table" />@Title</h2>
+            @Content
+        </div>
+    </div>
+}
+
+@code {
+    private static int _instance;
+    private readonly int _uid = Interlocked.Increment(ref _instance);
+
+    [Parameter] public string Title { get; set; } = "gRNA spacer results";
+    [Parameter] public IReadOnlyList<GRNAResult>? GRNAs { get; set; }
+    [Parameter] public GrnaSortColumn SortColumn { get; set; }
+    [Parameter] public bool SortAscending { get; set; }
+    [Parameter] public EventCallback<GrnaSortColumn> OnSortRequested { get; set; }
+    [Parameter] public EventCallback<string> OnCreateGrna { get; set; }
+    [Parameter] public string? SelectedSpacer { get; set; }
+    [Parameter] public GrnaFilter Filter { get; set; } = new();
+    [Parameter] public int SeedStart { get; set; }
+    [Parameter] public int SeedEnd { get; set; }
+    /// <summary>Wraps the table in a collapsible panel (used for the original-sequence results).</summary>
+    [Parameter] public bool Collapsible { get; set; }
+    /// <summary>With <see cref="Collapsible"/>: whether the panel starts closed.</summary>
+    [Parameter] public bool StartCollapsed { get; set; }
+
+    [Inject] private IJSRuntime JS { get; set; } = default!;
+
+    private List<GRNAResult> Filtered => (GRNAs ?? Array.Empty<GRNAResult>()).Where(Filter.Matches).ToList();
+    /// <summary>True when the list holds a single ordinary candidate: a relative score of 100 % would mean nothing.</summary>
+    private bool OnlyCandidate => (GRNAs?.Count(g => !g.Engineered) ?? 0) == 1;
+    private int PageCount => Math.Max(1, (Filtered.Count + Filter.PageSize - 1) / Filter.PageSize);
+
+    private List<GRNAResult> PageItems
+    {
+        get
+        {
+            var page = Math.Clamp(Filter.Page, 0, PageCount - 1);
+            return Filtered.Skip(page * Filter.PageSize).Take(Filter.PageSize).ToList();
+        }
+    }
+
+    private string Id(string name) => $"grna-{_uid}-{name}";
+    private static string Pct(double v) => $"{Math.Clamp(v, 0, 1) * 100:0}%".Replace(',', '.');
+
+    private sealed class LociState
+    {
+        public bool Loading { get; set; } = true;
+        public string? Error { get; set; }
+        public OffTargetReport? Report { get; set; }
+    }
+
+    private readonly Dictionary<string, LociState> _loci = new();
+
+    private async Task ToggleLoci(string spacer)
+    {
+        if (_loci.Remove(spacer)) return;
+        var state = new LociState();
+        _loci[spacer] = state;
+        try
+        {
+            state.Report = await Grna.GetOffTargets(spacer);
+        }
+        catch (Exception ex)
+        {
+            state.Error = ex.Message;
+        }
+        finally
+        {
+            state.Loading = false;
+        }
+    }
+
+    private void FilterChanged() => Filter.Page = 0;
+
+    private void ClearFilter()
+    {
+        var size = Filter.PageSize;
+        Filter.MinScore = null;
+        Filter.MaxAlignments = null;
+        Filter.MinWtMismatches = null;
+        Filter.MinGc = null;
+        Filter.MaxGc = null;
+        Filter.Contains = null;
+        Filter.PageSize = size;
+        Filter.Page = 0;
+    }
+
+    private async Task CopyAsync(string spacer)
+    {
+        try { await JS.InvokeAsync<bool>("grnaCopy", spacer); }
+        catch (JSDisconnectedException) { }
+    }
+
+    private RenderFragment Content => __builder =>
+    {
 
         <div class="filter-row" role="search" aria-label="@($"Filter candidates: {Title}")">
             <div>
@@ -190,91 +297,7 @@
                 <button type="button" class="btn btn-sm btn-outline-secondary" disabled="@(Filter.Page >= PageCount - 1)" @onclick="() => Filter.Page++">Next</button>
             </div>
         }
-    </div>
-</div>
-
-@code {
-    private static int _instance;
-    private readonly int _uid = Interlocked.Increment(ref _instance);
-
-    [Parameter] public string Title { get; set; } = "gRNA spacer results";
-    [Parameter] public IReadOnlyList<GRNAResult>? GRNAs { get; set; }
-    [Parameter] public GrnaSortColumn SortColumn { get; set; }
-    [Parameter] public bool SortAscending { get; set; }
-    [Parameter] public EventCallback<GrnaSortColumn> OnSortRequested { get; set; }
-    [Parameter] public EventCallback<string> OnCreateGrna { get; set; }
-    [Parameter] public string? SelectedSpacer { get; set; }
-    [Parameter] public GrnaFilter Filter { get; set; } = new();
-    [Parameter] public int SeedStart { get; set; }
-    [Parameter] public int SeedEnd { get; set; }
-
-    [Inject] private IJSRuntime JS { get; set; } = default!;
-
-    private List<GRNAResult> Filtered => (GRNAs ?? Array.Empty<GRNAResult>()).Where(Filter.Matches).ToList();
-    /// <summary>True when the list holds a single ordinary candidate: a relative score of 100 % would mean nothing.</summary>
-    private bool OnlyCandidate => (GRNAs?.Count(g => !g.Engineered) ?? 0) == 1;
-    private int PageCount => Math.Max(1, (Filtered.Count + Filter.PageSize - 1) / Filter.PageSize);
-
-    private List<GRNAResult> PageItems
-    {
-        get
-        {
-            var page = Math.Clamp(Filter.Page, 0, PageCount - 1);
-            return Filtered.Skip(page * Filter.PageSize).Take(Filter.PageSize).ToList();
-        }
-    }
-
-    private string Id(string name) => $"grna-{_uid}-{name}";
-    private static string Pct(double v) => $"{Math.Clamp(v, 0, 1) * 100:0}%".Replace(',', '.');
-
-    private sealed class LociState
-    {
-        public bool Loading { get; set; } = true;
-        public string? Error { get; set; }
-        public OffTargetReport? Report { get; set; }
-    }
-
-    private readonly Dictionary<string, LociState> _loci = new();
-
-    private async Task ToggleLoci(string spacer)
-    {
-        if (_loci.Remove(spacer)) return;
-        var state = new LociState();
-        _loci[spacer] = state;
-        try
-        {
-            state.Report = await Grna.GetOffTargets(spacer);
-        }
-        catch (Exception ex)
-        {
-            state.Error = ex.Message;
-        }
-        finally
-        {
-            state.Loading = false;
-        }
-    }
-
-    private void FilterChanged() => Filter.Page = 0;
-
-    private void ClearFilter()
-    {
-        var size = Filter.PageSize;
-        Filter.MinScore = null;
-        Filter.MaxAlignments = null;
-        Filter.MinWtMismatches = null;
-        Filter.MinGc = null;
-        Filter.MaxGc = null;
-        Filter.Contains = null;
-        Filter.PageSize = size;
-        Filter.Page = 0;
-    }
-
-    private async Task CopyAsync(string spacer)
-    {
-        try { await JS.InvokeAsync<bool>("grnaCopy", spacer); }
-        catch (JSDisconnectedException) { }
-    }
+    };
 
     private RenderFragment Header(string label, GrnaSortColumn column, bool numeric, string tip) => __builder =>
     {

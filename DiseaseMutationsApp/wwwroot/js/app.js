@@ -45,6 +45,15 @@ window.grnaPlateNav = {
     }
 };
 
+// Scrolls to the shortlist panel on the Builder page; returns false when the panel is not on this page.
+window.scrollToShortlist = () => {
+    const panel = document.getElementById('shortlist');
+    if (!panel) return false;
+    panel.scrollIntoView({ behavior: 'smooth', block: 'start' });
+    panel.focus({ preventScroll: true });
+    return true;
+};
+
 window.grnaCopy = async (text) => {
     try { await navigator.clipboard.writeText(text); return true; } catch { return false; }
 };
