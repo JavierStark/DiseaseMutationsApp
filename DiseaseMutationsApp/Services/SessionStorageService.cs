@@ -75,6 +75,7 @@ public class SessionStorageService
 
     public async Task ClearAsync()
     {
+        _pendingSave?.Cancel();
         try { await _js.InvokeVoidAsync("localStorage.removeItem", Key); }
         catch { /* best effort */ }
     }

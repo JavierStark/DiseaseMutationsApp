@@ -9,7 +9,7 @@ namespace DiseaseMutationsApp.Pages
         RS
     }
 
-    public enum GrnaSortColumn { Sequence, GCScore, GCContent, HomopolymerCount, Alignments, Energy, Score, WtMismatches, SpacerUnpaired }
+    public enum GrnaSortColumn { Sequence, GCScore, GCContent, HomopolymerCount, Offtargets, Energy, Score, WtMismatches, SpacerUnpaired }
 
     /// <summary>Lifecycle of one analysed variant (leaf).</summary>
     public enum LeafStatus { Queued, Running, Ready, Failed, Cancelled }
@@ -77,11 +77,11 @@ namespace DiseaseMutationsApp.Pages
         public bool CopiedToClipboard { get; set; }
         public bool IsLoadingRnaFold { get; set; }
         public RNAFoldResult? RnaFoldResult { get; set; }
-        /// <summary>The built guide's fold with the repeat it was built with and the checks derived from it; null until "Get structure".</summary>
-        public ConstructFoldResult? Construct { get; set; }
+        /// <summary>The built guide's fold with the repeat hairpin and spacer checks derived from it; null until "Get structure".</summary>
+        public ConstructFoldResult? FoldChecks { get; set; }
         public string? RnaFoldError { get; set; }
         public string? FornaUrl { get; set; }
-        public bool ShowStructure { get; set; }
+        public bool ShowForna { get; set; }
         public GrnaSortColumn SortColumn { get; set; } = GrnaSortColumn.Score;
         public bool SortAscending { get; set; }
         public GrnaSortColumn OriginalSortColumn { get; set; } = GrnaSortColumn.Score;
@@ -102,7 +102,7 @@ namespace DiseaseMutationsApp.Pages
     public class GrnaFilter
     {
         public double? MinScore { get; set; }
-        public int? MaxAlignments { get; set; }
+        public int? MaxOfftargets { get; set; }
         /// <summary>Hide guides that differ from the other allele in fewer than this many letters.</summary>
         public int? MinWtMismatches { get; set; }
         public double? MinGc { get; set; }
@@ -112,11 +112,11 @@ namespace DiseaseMutationsApp.Pages
         public int Page { get; set; }
 
         public bool IsActive =>
-            MinScore.HasValue || MaxAlignments.HasValue || MinWtMismatches.HasValue || MinGc.HasValue || MaxGc.HasValue || !string.IsNullOrWhiteSpace(Contains);
+            MinScore.HasValue || MaxOfftargets.HasValue || MinWtMismatches.HasValue || MinGc.HasValue || MaxGc.HasValue || !string.IsNullOrWhiteSpace(Contains);
 
         public bool Matches(GRNAResult g) =>
             (!MinScore.HasValue || g.Score >= MinScore.Value)
-            && (!MaxAlignments.HasValue || g.Allignments <= MaxAlignments.Value)
+            && (!MaxOfftargets.HasValue || g.Offtargets <= MaxOfftargets.Value)
             && (!MinWtMismatches.HasValue || g.Engineered || g.WtMismatches < 0 || g.WtMismatches >= MinWtMismatches.Value)
             && (!MinGc.HasValue || g.GCContent >= MinGc.Value)
             && (!MaxGc.HasValue || g.GCContent <= MaxGc.Value)

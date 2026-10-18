@@ -26,28 +26,46 @@ public static class OligoExport
     public static string ReverseComplement(string dna) =>
         new(Sequence.complementary(dna).Reverse().ToArray());
 
-    /// <summary>
-    /// The DNA read 5' to 3' for the chosen strand: sense equals the transcript, antisense is its reverse complement.
-    /// <paramref name="repeat"/> is the direct repeat before the spacer; null or empty means the default Cas13 repeat.
-    /// </summary>
-    public static string Template(string spacerRna, bool includeT7, OligoStrand strand, string? repeat = null)
+    /// <summary>The DNA read 5' to 3' for the chosen strand: sense equals the transcript, antisense is its reverse complement.</summary>
+    public static string Template(string spacerRna, bool includeT7, OligoStrand strand, ConstructOptions? construct = null)
     {
-        var sense = (includeT7 ? T7Promoter : "") + ToDna(RepeatChoice.Effective(repeat) + spacerRna);
+        var sense = (includeT7 ? T7Promoter : "") + ToDna(GuideConstruct.Build(spacerRna, construct));
         return strand == OligoStrand.Sense ? sense : ReverseComplement(sense);
     }
 
     /// <summary>Top and bottom oligo of the annealed pair for one guide; top is always the sense strand.</summary>
-    public static OligoPair Pair(string name, string spacerRna, bool includeT7, string? repeat = null)
+    public static OligoPair Pair(string name, string spacerRna, bool includeT7, ConstructOptions? construct = null)
     {
-        var top = Template(spacerRna, includeT7, OligoStrand.Sense, repeat);
+        var top = Template(spacerRna, includeT7, OligoStrand.Sense, construct);
         return new OligoPair(name, top, ReverseComplement(top));
+    }
+
+    /// <summary>
+    /// FASTA of the complete (built) guides, one record per shortlist item. The header carries the variant, the strand,
+    /// the bare spacer and the construct recipe so the file stands alone. DNA (T) by default, RNA (U) on request. No T7 promoter.
+    /// </summary>
+    public static string ShortlistFasta(IEnumerable<ShortlistItem> items, ConstructOptions? construct = null, bool rna = false)
+    {
+        var sb = new StringBuilder();
+        foreach (var item in items)
+            sb.Append(FastaRecord(item.Hgvs, item.IsComplement, item.Spacer, construct, rna));
+        return sb.ToString();
+    }
+
+    /// <summary>One FASTA record for a single guide (ends with a newline).</summary>
+    public static string FastaRecord(string hgvs, bool isComplement, string spacerRna, ConstructOptions? construct = null, bool rna = false)
+    {
+        var built = GuideConstruct.Build(spacerRna, construct);
+        var seq = rna ? built : ToDna(built);
+        var name = $"{hgvs}{(isComplement ? "_C" : "")}".Replace(' ', '_');
+        return $">{name}|spacer={spacerRna}|construct={GuideConstruct.Describe(construct)}|{(rna ? "RNA" : "DNA")}|{seq.Length}nt\n{seq}\n";
     }
 
     /// <summary>
     /// Plate-format order CSV: one row per oligo, wells filled row-major from A1 across plates, using the same
     /// well addressing as the pooling plan. With <paramref name="bothOligos"/> each guide gets a top and a bottom row.
     /// </summary>
-    public static string ShortlistCsv(IEnumerable<ShortlistItem> items, bool includeT7, bool bothOligos, PlateKind plate, string? repeat = null)
+    public static string ShortlistCsv(IEnumerable<ShortlistItem> items, bool includeT7, bool bothOligos, PlateKind plate, ConstructOptions? construct = null)
     {
         var format = plate == PlateKind.Plate384 ? Pooling.plate384 : Pooling.plate96;
         var sb = new StringBuilder();
@@ -56,8 +74,8 @@ public static class OligoExport
         foreach (var item in items)
         {
             var baseName = $"{item.Hgvs}{(item.IsComplement ? "_C" : "")}".Replace(' ', '_');
-            var pair = Pair(baseName, item.Spacer, includeT7, repeat);
-            var sites = string.Join(";", RestrictionSites.Find(pair.Top));
+            var pair = Pair(baseName, item.Spacer, includeT7, construct);
+            var sites = string.Join(";", RestrictionSites.ForGuide(item.Spacer, includeT7, construct));
             var rows = bothOligos
                 ? new[] { ("top", pair.Top), ("bottom", pair.Bottom) }
                 : new[] { ("top", pair.Top) };

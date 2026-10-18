@@ -118,7 +118,7 @@ public class SpacerFinderHighlightTests
             Assert.That(results[0].MutationHighlightStart, Is.EqualTo(3));
             Assert.That(results[0].MutationHighlightLength, Is.EqualTo(1));
             Assert.That(results[0].Sequence, Is.EqualTo("UUAUGG"));
-            Assert.That(results[0].Allignments, Is.EqualTo(3));
+            Assert.That(results[0].Offtargets, Is.EqualTo(3));
             Assert.That(results[0].Rank, Is.EqualTo(1));
             Assert.That(results[0].Score, Is.EqualTo(1.0));
         });
@@ -215,7 +215,7 @@ public class SpacerFinderHighlightTests
     }
 
     [Test]
-    public void ApplySubstitutionSpecialRule_RecomputesMetricsFromAdjustedSequence_ButKeepsAllignmentsAndFold()
+    public void ApplySubstitutionSpecialRule_RecomputesMetricsFromAdjustedSequence_ButKeepsOfftargetsAndFold()
     {
         var selected = new SpacerFinder.gRNAResult(
             "AAAAGG", // GC content 33.33%, adjust index (len-4)=2 'A' -> 'U' => "AAUAGG"
@@ -241,7 +241,7 @@ public class SpacerFinderHighlightTests
             Assert.That(results[0].GCContent, Is.EqualTo(SpacerFinder.calculateGCContent("AAUAGG")));
             Assert.That(results[0].HomopolymerCount, Is.EqualTo(SpacerFinder.countHomopolymers("AAUAGG")));
             // Carried over from the original selected candidate:
-            Assert.That(results[0].Allignments, Is.EqualTo(5));
+            Assert.That(results[0].Offtargets, Is.EqualTo(5));
             Assert.That(results[0].RnaFoldResult.Energy, Is.EqualTo(-3.4));
         });
     }

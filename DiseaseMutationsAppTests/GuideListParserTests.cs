@@ -6,7 +6,7 @@ public class GuideListParserTests
 {
     /// <summary>Mirrors the header written by Index.razor.cs DownloadReport.</summary>
     private const string BuilderHeader =
-        "RS ID,HGVS,Sequence Type,Rank,Sequence,Score,GC Content,Alignments,Seed Region,Homopolymers,Fold Energy";
+        "RS ID,HGVS,Sequence Type,Rank,Sequence,Score,GC Content,Offtargets,Seed Region,Homopolymers,Fold Energy";
 
     [Test]
     public void Parse_NullOrWhitespace_ReturnsEmptyList()
@@ -162,7 +162,7 @@ public class GuideListParserTests
     [Test]
     public void Parse_TabDelimitedBuilderCsv_IsRecognisedAndParsed()
     {
-        var header = string.Join('\t', "RS ID", "HGVS", "Sequence Type", "Rank", "Sequence", "Score", "GC Content", "Alignments", "Seed Region", "Homopolymers", "Fold Energy");
+        var header = string.Join('\t', "RS ID", "HGVS", "Sequence Type", "Rank", "Sequence", "Score", "GC Content", "Offtargets", "Seed Region", "Homopolymers", "Fold Energy");
         var row1 = string.Join('\t', "12345", "NM_000546.6:c.215C>G", "Mutated", "1", "AAAA", "0.9", "50", "0", "AAAA", "0", "-4.1");
         var row2 = string.Join('\t', "12345", "NM_000546.6:c.215C>G", "Original", "1", "CCCC", "0.7", "50", "0", "CCCC", "0", "-2.0");
         var csv = string.Join("\n", header, row1, row2);

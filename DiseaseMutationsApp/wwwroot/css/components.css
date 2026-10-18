@@ -67,6 +67,9 @@
 /* ===== Tabs ===== */
 .tabstrip { display: flex; flex-wrap: wrap; gap: var(--space-1); list-style: none; padding: 0; margin: 0; border-bottom: 1px solid var(--border); }
 .tabstrip-tab { background: transparent; border: 1px solid transparent; border-bottom: 0; border-radius: var(--radius-md) var(--radius-md) 0 0; padding: var(--space-2) var(--space-3); color: var(--text-secondary); max-width: 16rem; margin-bottom: -1px; transition: color var(--transition), background-color var(--transition), border-color var(--transition); }
+.tabstrip > li { min-width: 0; }
+.tabstrip-tab { overflow: hidden; text-align: left; }
+.tabstrip-tab .tab-status { display: flex; max-width: 100%; }
 .tabstrip-tab:hover { background: var(--surface-hover); color: var(--text-primary); }
 .tabstrip-tab[aria-selected="true"] { background: var(--surface); border-color: var(--border); color: var(--text-primary); font-weight: var(--weight-strong); box-shadow: inset 0 2px 0 var(--variant-strong); }
 .tabstrip-sm .tabstrip-tab { padding: var(--space-1) var(--space-3); font-size: var(--text-sm); max-width: 34rem; }
@@ -188,11 +191,10 @@ details[open] > .seq-summary::after { transform: rotate(225deg); margin-top: 0.2
 .complete-grna-sequence { font-family: var(--font-mono); background: var(--surface-sunken); border: 1px solid var(--border); border-radius: var(--radius-md); padding: var(--space-3); word-break: break-all; }
 .scaffold-seq { color: var(--reference-text); }
 .spacer-seq { color: var(--variant-text); font-weight: var(--weight-strong); }
+.adapter-seq { color: var(--text-muted); text-decoration: underline; text-decoration-style: dotted; text-underline-offset: 0.25em; }
+.custom-seq { color: var(--text-primary); font-style: italic; }
 .structure-block { font-family: var(--font-mono); background: var(--surface-sunken); border: 1px solid var(--border); border-radius: var(--radius-md); padding: var(--space-3); word-break: break-all; }
-.structure-diagram-wrap { overflow-x: auto; border: 1px solid var(--border); border-radius: var(--radius-md); background: var(--surface); padding: var(--space-2); }
-.structure-diagram { display: block; width: 100%; min-width: 360px; height: auto; }
-.structure-diagram path { fill: none; stroke: var(--variant-strong); stroke-width: 1.5; }
-.structure-diagram text { font-family: var(--font-mono); font-size: 11px; fill: var(--text-primary); }
+.forna-frame iframe { width: 100%; height: 480px; border: 1px solid var(--border); border-radius: var(--radius-md); background: #fff; }
 .energy-value { font-family: var(--font-mono); font-weight: var(--weight-strong); color: var(--reference-text); }
 
 /* ===== Shortlist ===== */

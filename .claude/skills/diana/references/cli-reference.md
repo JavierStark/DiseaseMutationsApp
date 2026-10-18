@@ -142,8 +142,8 @@ grna design --input sickle.txt --out report.csv      # then design guides for th
 ## `grna design`
 
 ```
-grna design --hgvs <HGVS>           [--spacer 28] [--seed 10-17] [--complement] [--format csv|json|tsv] [--out file] [--concurrency 2]
-grna design --input <file|session.json> [--spacer 28] [--seed 10-17] [--complement] [--format csv|json|tsv] [--out file] [--concurrency 2]
+grna design --hgvs <HGVS>           [--spacer 28] [--seed 10-17] [--complement] [--format csv|json|tsv] [--out file] [--concurrency 2] [--snp-pos 3] [--mismatch-pos 4]
+grna design --input <file|session.json> [--spacer 28] [--seed 10-17] [--complement] [--format csv|json|tsv] [--out file] [--concurrency 2] [--snp-pos 3] [--mismatch-pos 4]
 ```
 
 | Option | Default | Notes |
@@ -156,6 +156,8 @@ grna design --input <file|session.json> [--spacer 28] [--seed 10-17] [--compleme
 | `--format` | `csv` | `csv`, `json` or `tsv` (case-insensitive); anything else exit 2 |
 | `--out` | stdout | output file |
 | `--concurrency` | 2 | variants in flight, clamped to 1-4. Bowtie is serialised per process anyway, so >2 rarely helps. |
+| `--snp-pos` | 3 | substitution rule: where the variant sits in the engineered spacer, counted from the spacer's 3' end (1 = last letter). Must be 1..spacer size and differ from `--mismatch-pos`; otherwise exit 2. |
+| `--mismatch-pos` | 4 | substitution rule: which letter is deliberately changed to A (or U if it is A), counted from the 3' end. A resumed report made with other positions is refused (exit 2); the positions are in the report's `# Diana report` line. |
 
 Explicit `--spacer`/`--seed` override the values stored in a session file.
 
@@ -240,7 +242,7 @@ grna pool --count <V>     [--capacity 5] [--plate 96|384] [--model auto|2df|2dm|
 
 ```
 # Diana report; spacer=28; seed=10-17; generated=2026-10-06T17:41:28Z
-RS ID,HGVS,Sequence Type,Rank,Sequence,Score,GC Content,Alignments,Seed Region,Homopolymers,Fold Energy,Strand,WT Mismatches,Engineered,Scaffold Intact,Spacer Unpaired
+RS ID,HGVS,Sequence Type,Rank,Sequence,Score,GC Content,Offtargets,Seed Region,Homopolymers,Fold Energy,Strand,WT Mismatches,Engineered,Scaffold Intact,Spacer Unpaired
 ,NC_000017.11:g.7674220C>T,Mutated,1,AGUUCCUGCAUGGGCGGCAUGAACAAGA,1,53.57,1,UGGGCGGC,0,-13.100000381469727,Normal,1,Yes,Yes,0.57
 ,NC_000017.11:g.7674220C>T,Original,1,AGUUCCUGCAUGGGCGGCAUGAACAGGA,1,57.14,1,UGGGCGGC,0,-13.300000190734863,Normal,1,No,Yes,0.61
 ```
@@ -254,7 +256,7 @@ RS ID,HGVS,Sequence Type,Rank,Sequence,Score,GC Content,Alignments,Seed Region,H
 | Sequence | spacer, RNA (`U`) |
 | Score | 0-1 |
 | GC Content | percent |
-| Alignments | Bowtie hits, 0-6; **6 means "6 or more"** (saturated) |
+| Offtargets | Bowtie hits, 0-6; **6 means "6 or more"** (saturated) |
 | Seed Region | the seed slice of the spacer |
 | Homopolymers | runs of >= 4 identical bases |
 | Fold Energy | MFE in kcal/mol, full float precision |
@@ -279,7 +281,7 @@ Same columns, tab-separated, header first, **no provenance line**.
     "hgvs": "NC_000017.11:g.7674220C>T",
     "rsId": null,
     "strand": "Normal",
-    "mutated":  [ { "rank": 1, "sequence": "AGUU...", "score": 1, "gcContent": 53.57, "alignments": 1,
+    "mutated":  [ { "rank": 1, "sequence": "AGUU...", "score": 1, "gcContent": 53.57, "offtargets": 1,
                     "seedRegion": "UGGGCGGC", "homopolymers": 0, "energy": -13.100000381469727,
                     "wtMismatches": 1, "engineered": true, "scaffoldIntact": true, "spacerUnpaired": 0.57,
                     "structure": "(.(((((....((((...." } ],
@@ -314,7 +316,7 @@ $S doctor >/dev/null || { echo "install broken"; exit 1; }
 grep -v '^#' report.csv | awk -F, 'NR>1 && $3=="Mutated" && $4==1 {print $2"\t"$5}'
 
 # JSON with jq: top candidate per variant
-$S design --hgvs 'NC_000017.11:g.7674220C>T' --format json | jq -r '.[] | [.hgvs, .mutated[0].sequence, .mutated[0].alignments] | @tsv'
+$S design --hgvs 'NC_000017.11:g.7674220C>T' --format json | jq -r '.[] | [.hgvs, .mutated[0].sequence, .mutated[0].offtargets] | @tsv'
 
 # Retry a batch until no variant fails (resume makes each pass cheap); stop on non-retryable codes
 for i in 1 2 3; do $S design --input variants.txt --out report.csv; rc=$?; [ $rc -ne 1 ] && break; done; echo "rc=$rc"

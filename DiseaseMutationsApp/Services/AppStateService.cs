@@ -20,6 +20,9 @@ namespace DiseaseMutationsApp.Services
         public RepeatMode IndexRepeatMode { get; set; } = RepeatMode.Default;
         /// <summary>The typed direct repeat, used when <see cref="IndexRepeatMode"/> is Custom.</summary>
         public string? IndexCustomRepeat { get; set; }
+        /// <summary>Substitution rule: position of the variant and of the engineered mismatch, from the spacer's 3' end (1 = last letter).</summary>
+        public int IndexSnpPos { get; set; } = 3;
+        public int IndexMismatchPos { get; set; } = 4;
         /// <summary>List every dbSNP allele and RefSeqGene record of an rsID, not only the relevant ones.</summary>
         public bool IndexShowAllAlleles { get; set; }
         /// <summary>Replaced wholesale (never mutated in place) so a render never sees a half-built list.</summary>
@@ -33,6 +36,9 @@ namespace DiseaseMutationsApp.Services
 
         /// <summary>Guides picked across variants, ready to send to the Pooling page.</summary>
         public List<ShortlistItem> Shortlist { get; set; } = new();
+
+        /// <summary>How the complete gRNA is wrapped (DR, adapters, custom flanks); used by the card, shortlist and exports.</summary>
+        public ConstructOptions Construct { get; set; } = new();
 
         /// <summary>Set when variants were sent from the Disease variants page; the Diana page shows it once, then clears it.</summary>
         public IncomingNotice? IndexIncomingNotice { get; set; }
@@ -238,6 +244,6 @@ namespace DiseaseMutationsApp.Services
     }
 
     /// <summary>One chosen spacer for one variant strand.</summary>
-    public record ShortlistItem(string Hgvs, bool IsComplement, string Spacer, string? RsId, double Score, int Alignments);
+    public record ShortlistItem(string Hgvs, bool IsComplement, string Spacer, string? RsId, double Score, int Offtargets);
 }
 

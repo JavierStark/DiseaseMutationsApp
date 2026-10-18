@@ -203,7 +203,7 @@ public class SpacerFinderTests
             Assert.That(result.GCScore, Is.EqualTo(SpacerFinder.calculateGCScore(result.GCContent, 40.0, 60.0)));
             Assert.That(result.HomopolymerCount, Is.EqualTo(SpacerFinder.countHomopolymers(sequence)));
             // Defaults before Bowtie/RNAFold enrichment:
-            Assert.That(result.Allignments, Is.EqualTo(0));
+            Assert.That(result.Offtargets, Is.EqualTo(0));
             Assert.That(result.Rank, Is.EqualTo(0));
             Assert.That(result.Score, Is.EqualTo(0.0));
             Assert.That(result.MutationHighlightStart, Is.EqualTo(-1));
@@ -221,10 +221,10 @@ public class SpacerFinderTests
     // ===== sortByResult =====
 
     [Test]
-    public void SortByResult_OrdersByAllignmentsThenEnergyThenGcScoreThenHomopolymers()
+    public void SortByResult_OrdersByOfftargetsThenEnergyThenGcScoreThenHomopolymers()
     {
         // Each case changes exactly one field relative to `baseline`, so the expected order
-        // directly demonstrates the tuple's field priority: Allignments > Energy > GCScore > Homopolymers.
+        // directly demonstrates the tuple's field priority: Offtargets > Energy > GCScore > Homopolymers.
         var baseline = new SpacerFinder.gRNAResult(
             "AAAA", 1.0, 50.0, 0, "AA", 1,
             new RNAFoldWrapper.RNAFoldResult("....", -1.0), 0, 0.0, -1, 0, -1, false, true, -1.0);
@@ -237,16 +237,16 @@ public class SpacerFinderTests
         var worseEnergyOnly = new SpacerFinder.gRNAResult(
             "AAAA", 1.0, 50.0, 0, "AA", 1,
             new RNAFoldWrapper.RNAFoldResult("....", -5.0), 0, 0.0, -1, 0, -1, false, true, -1.0);
-        var worseAllignmentsOnly = new SpacerFinder.gRNAResult(
+        var worseOfftargetsOnly = new SpacerFinder.gRNAResult(
             "AAAA", 1.0, 50.0, 0, "AA", 5,
             new RNAFoldWrapper.RNAFoldResult("....", -1.0), 0, 0.0, -1, 0, -1, false, true, -1.0);
 
-        var unordered = new[] { worseAllignmentsOnly, worseEnergyOnly, worseGcScoreOnly, worseHomopolymersOnly, baseline };
+        var unordered = new[] { worseOfftargetsOnly, worseEnergyOnly, worseGcScoreOnly, worseHomopolymersOnly, baseline };
         var ordered = unordered.OrderBy(SpacerFinder.sortByResult).ToArray();
 
         Assert.That(ordered, Is.EqualTo(new[]
         {
-            baseline, worseHomopolymersOnly, worseGcScoreOnly, worseEnergyOnly, worseAllignmentsOnly
+            baseline, worseHomopolymersOnly, worseGcScoreOnly, worseEnergyOnly, worseOfftargetsOnly
         }));
     }
 

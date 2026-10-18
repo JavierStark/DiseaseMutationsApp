@@ -20,6 +20,8 @@ namespace DiseaseMutationsApp.Pages
         [SupplyParameterFromQuery(Name = "hgvs")] private string? HgvsQuery { get; set; }
         [SupplyParameterFromQuery(Name = "spacer")] private int? SpacerQuery { get; set; }
         [SupplyParameterFromQuery(Name = "seed")] private string? SeedQuery { get; set; }
+        [SupplyParameterFromQuery(Name = "snp")] private int? SnpQuery { get; set; }
+        [SupplyParameterFromQuery(Name = "mm")] private int? MismatchQuery { get; set; }
         [SupplyParameterFromQuery(Name = "repeat")] private string? RepeatQuery { get; set; }
 
         private readonly Func<Action, Task> _marshal;
@@ -77,13 +79,39 @@ namespace DiseaseMutationsApp.Pages
         /// <summary>The repeat the finished (or running) analysis used, not what the form says now: the tables show that run.</summary>
         private string? RunRepeat => Runner.Parameters?.Repeat;
 
-        private bool CanFetchData =>
-            !Runner.IsBusy && !string.IsNullOrWhiteSpace(_hgvs) && InputCountMessage == null && SeedRangeValidationMessage == null && RepeatValidationMessage == null;
-
         private void OnRepeatModeChanged(ChangeEventArgs e)
         {
             _repeatMode = Enum.TryParse<RepeatMode>(e.Value?.ToString(), out var mode) ? mode : RepeatMode.Default;
             SaveSession();
+        }
+
+        private int _snpPos
+        {
+            get => StateService.IndexSnpPos;
+            set => StateService.IndexSnpPos = value;
+        }
+
+        private int _mismatchPos
+        {
+            get => StateService.IndexMismatchPos;
+            set => StateService.IndexMismatchPos = value;
+        }
+
+        private RunParameters CurrentParameters => new(_gRnaSize, _seedStart, _seedEnd, _snpPos, _mismatchPos, RepeatChoice.Resolve(_repeatMode, _customRepeat));
+
+        private bool CanFetchData =>
+            !Runner.IsBusy && !string.IsNullOrWhiteSpace(_hgvs) && InputCountMessage == null && SeedRangeValidationMessage == null && RuleValidationMessage == null && RepeatValidationMessage == null;
+
+        /// <summary>Both positions lie inside the spacer (1 = its 3' end) and differ; null when valid.</summary>
+        private string? RuleValidationMessage
+        {
+            get
+            {
+                if (_snpPos < 1 || _snpPos > _gRnaSize) return $"Variant position must be between 1 and {_gRnaSize} (counted from the spacer's 3' end).";
+                if (_mismatchPos < 1 || _mismatchPos > _gRnaSize) return $"Mismatch position must be between 1 and {_gRnaSize} (counted from the spacer's 3' end).";
+                if (_snpPos == _mismatchPos) return "The engineered mismatch cannot be at the variant's own position.";
+                return null;
+            }
         }
 
         private string? InputCountMessage
@@ -197,12 +225,14 @@ namespace DiseaseMutationsApp.Pages
             var input = !string.IsNullOrWhiteSpace(HgvsQuery) ? HgvsQuery : RsQuery;
             if (string.IsNullOrWhiteSpace(input)) return;
 
-            var claim = $"{input}|{SpacerQuery}|{SeedQuery}|{RepeatQuery}";
+            var claim = $"{input}|{SpacerQuery}|{SeedQuery}|{SnpQuery}|{MismatchQuery}|{RepeatQuery}";
             if (StateService.IndexClaimedQuery == claim) return;
             StateService.IndexClaimedQuery = claim;
 
             _hgvs = input.Trim();
             if (SpacerQuery is > 0) _gRnaSize = SpacerQuery.Value;
+            if (SnpQuery is > 0) _snpPos = SnpQuery.Value;
+            if (MismatchQuery is > 0) _mismatchPos = MismatchQuery.Value;
             if (!string.IsNullOrWhiteSpace(SeedQuery))
             {
                 var parts = SeedQuery.Split('-', 2);
@@ -263,7 +293,7 @@ namespace DiseaseMutationsApp.Pages
             _linkBanner = false;
             _incoming = null;
             SaveSession();
-            Runner.TryStart(_hgvs, new RunParameters(_gRnaSize, _seedStart, _seedEnd, RepeatChoice.Resolve(_repeatMode, _customRepeat)));
+            Runner.TryStart(_hgvs, CurrentParameters);
         }
 
         private void SaveSession()
@@ -283,6 +313,16 @@ namespace DiseaseMutationsApp.Pages
 
         private void OnShowAllAllelesChanged(ChangeEventArgs e) => _showAllAlleles = e.Value is true;
 
+        /// <summary>Empties the input box and the copy kept in browser storage, so a refresh does not bring the inputs back.</summary>
+        private async Task ClearInput()
+        {
+            _hgvs = null;
+            _restoredBanner = false;
+            _linkBanner = false;
+            _incoming = null;
+            await Session.ClearAsync();
+        }
+
         private void CancelRun() => Runner.Cancel();
 
         private async Task CopyPermalink()
@@ -294,6 +334,9 @@ namespace DiseaseMutationsApp.Pages
                 ["hgvs"] = _hgvs.Trim(),
                 ["spacer"] = _gRnaSize,
                 ["seed"] = $"{_seedStart}-{_seedEnd}",
+                // Only written when it differs from the default, so ordinary links stay short.
+                ["snp"] = _snpPos == 3 ? null : _snpPos,
+                ["mm"] = _mismatchPos == 4 ? null : _mismatchPos,
                 ["repeat"] = _repeatMode == RepeatMode.Default ? null : RepeatChoice.ToToken(_repeatMode, _customRepeat)
             });
             try
@@ -357,18 +400,26 @@ namespace DiseaseMutationsApp.Pages
         /// <summary>Parameters go in the file so an exported report can be reproduced (leading # lines are ignored by the parser).</summary>
         private void AppendProvenance(StringBuilder sb)
         {
-            var p = Runner.Parameters ?? new RunParameters(_gRnaSize, _seedStart, _seedEnd, RepeatChoice.Resolve(_repeatMode, _customRepeat));
-            sb.AppendLine(GrnaCsvSchema.ProvenanceLine(p.SpacerSize, p.SeedStart, p.SeedEnd, p.Repeat));
+            var p = Runner.Parameters ?? CurrentParameters;
+            sb.AppendLine(GrnaCsvSchema.ProvenanceLine(p.SpacerSize, p.SeedStart, p.SeedEnd, p.SnpPos, p.MismatchPos, p.Repeat));
         }
 
         private bool _oligoT7 = true;
         private bool _oligoPairs = true;
+        private bool _fastaRna;
 
         private async Task DownloadOligos()
         {
             if (StateService.Shortlist.Count == 0) return;
-            var csv = OligoExport.ShortlistCsv(StateService.Shortlist, _oligoT7, _oligoPairs, PlateKind.Plate96, RunRepeat);
+            var csv = OligoExport.ShortlistCsv(StateService.Shortlist, _oligoT7, _oligoPairs, PlateKind.Plate96, StateService.Construct);
             await JSRuntime.InvokeVoidAsync("downloadFile", $"Oligos_{DateTime.Now:yyyyMMdd_HHmmss}.csv", "text/csv;charset=utf-8", csv);
+        }
+
+        private async Task DownloadFasta()
+        {
+            if (StateService.Shortlist.Count == 0) return;
+            var fasta = OligoExport.ShortlistFasta(StateService.Shortlist, StateService.Construct, _fastaRna);
+            await JSRuntime.InvokeVoidAsync("downloadFile", $"Shortlist_{DateTime.Now:yyyyMMdd_HHmmss}.fasta", "text/plain;charset=utf-8", fasta);
         }
 
         private string? _uploadMessage;
@@ -395,6 +446,7 @@ namespace DiseaseMutationsApp.Pages
                     var parts = session.Seed.Split('-', 2);
                     if (parts.Length == 2 && int.TryParse(parts[0], out var s) && int.TryParse(parts[1], out var en)) { _seedStart = s; _seedEnd = en; }
                     StateService.Shortlist = session.Shortlist;
+                    if (session.Construct is not null) StateService.Construct = session.Construct;
                     (_repeatMode, _customRepeat) = RepeatChoice.FromToken(session.Repeat);
                 }
 
@@ -409,7 +461,7 @@ namespace DiseaseMutationsApp.Pages
 
         private async Task DownloadSession()
         {
-            var doc = new SessionDocument(SessionDocument.CurrentVersion, _hgvs ?? "", _gRnaSize, $"{_seedStart}-{_seedEnd}", StateService.Shortlist,
+            var doc = new SessionDocument(SessionDocument.CurrentVersion, _hgvs ?? "", _gRnaSize, $"{_seedStart}-{_seedEnd}", StateService.Shortlist, StateService.Construct,
                 RepeatChoice.ToToken(_repeatMode, _customRepeat));
             await JSRuntime.InvokeVoidAsync("downloadFile", $"Session_{DateTime.Now:yyyyMMdd_HHmmss}.json", "application/json;charset=utf-8", SessionDocument.Serialize(doc));
         }

@@ -11,7 +11,7 @@ namespace DiseaseMutationsApp.E2E;
 public sealed class FakeAnalysis : IGrnaAnalysis
 {
     public async Task<ResultFromHGVS> GetBestgRNAFromHgvs(string hgvs, int window, int seedStart, int seedEnd,
-        bool complement = false, CancellationToken cancellationToken = default, string? repeat = null)
+        bool complement = false, CancellationToken cancellationToken = default)
     {
         if (hgvs.Contains("SLOW", StringComparison.Ordinal))
             await Task.Delay(TimeSpan.FromMinutes(2), cancellationToken);
@@ -64,7 +64,7 @@ public sealed class FakeAnalysis : IGrnaAnalysis
                 GCContent = 50f + i,
                 HomopolymerCount = i % 2,
                 SeedRegion = seq.Substring(seedStart, seedEnd - seedStart + 1),
-                Allignments = complement ? 1 : 1 + i / 2,
+                Offtargets = complement ? 1 : 1 + i / 2,
                 RnaFoldResult = new RNAFoldResult { Structure = new string('.', 36 + window), Energy = -10 - i },
                 Rank = i + 1,
                 Score = Math.Round(1.0 - i * 0.2, 2),

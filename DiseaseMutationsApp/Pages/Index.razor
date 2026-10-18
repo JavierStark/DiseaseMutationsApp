@@ -40,8 +40,14 @@
 
                     <div class="mb-4">
                         <label for="hgvs" class="form-label" title="@HelpText.Variants">HGVS or rs codes (comma-separated for several)</label>
-                        <textarea id="hgvs" class="form-control" @bind="_hgvs" @bind:event="oninput" @bind:after="OnInputChanged" rows="4" maxlength="8000"
-                                  placeholder="NG_008690.2:g.123012G>T, rs12345"></textarea>
+                        <div class="input-with-clear">
+                            <textarea id="hgvs" class="form-control" @bind="_hgvs" @bind:event="oninput" @bind:after="OnInputChanged" rows="4" maxlength="8000"
+                                      placeholder="NG_008690.2:g.123012G>T, rs12345"></textarea>
+                            <button type="button" class="btn btn-outline-secondary btn-icon-only" @onclick="ClearInput" disabled="@string.IsNullOrWhiteSpace(_hgvs)"
+                                    aria-label="Clear inputs" title="Clear the input box and the saved browser copy">
+                                <Icon Name="close" />
+                            </button>
+                        </div>
                         <small class="helper-note mt-2 d-block">One or more variants. An rsID is resolved to its HGVS notations (by default only the disease-relevant allele on the main gene record) and analysed on both strands; the tab that targets the gene's mRNA comes first.</small>
                         <div class="form-check mt-2">
                             <input id="all-alleles" class="form-check-input" type="checkbox" checked="@_showAllAlleles" @onchange="OnShowAllAllelesChanged" />
@@ -50,7 +56,7 @@
                     </div>
 
                     <fieldset class="mb-4">
-                        <legend class="form-label" title="@HelpText.SpacerAndSeed">Spacer and seed region</legend>
+                        <legend class="form-label" title="@HelpText.SpacerAndSeed">Spacer, seed region and substitution rule</legend>
                         <div class="row g-3">
                             <div class="col-sm-4">
                                 <label for="grna-size" class="form-label" title="@HelpText.SpacerSize">Spacer size</label>
@@ -65,6 +71,21 @@
                                 <input id="seed-end" type="number" class="form-control" @bind="_seedEnd" @bind:after="OnInputChanged" min="0" max="@(_gRnaSize > 0 ? _gRnaSize - 1 : 0)" />
                             </div>
                         </div>
+                        <div class="row g-3 mt-1">
+                            <div class="col-sm-6">
+                                <label for="snp-pos" class="form-label" title="@HelpText.SnpPos">Variant position from the spacer's 3' end</label>
+                                <input id="snp-pos" type="number" class="form-control" @bind="_snpPos" @bind:after="OnInputChanged" min="1" max="@_gRnaSize" />
+                            </div>
+                            <div class="col-sm-6">
+                                <label for="mismatch-pos" class="form-label" title="@HelpText.MismatchPos">Engineered mismatch position from the 3' end</label>
+                                <input id="mismatch-pos" type="number" class="form-control" @bind="_mismatchPos" @bind:after="OnInputChanged" min="1" max="@_gRnaSize" />
+                            </div>
+                        </div>
+                        <small class="helper-note mt-2 d-block">Substitution rule: the spacer built with the variant at the first position and one deliberate extra mismatch at the second. Positions count from the spacer's 3' end (1 = last letter); defaults 3 and 4. To use a position counted from the 5' end, enter spacer size - position + 1.</small>
+                        @if (RuleValidationMessage != null)
+                        {
+                            <small class="text-danger mt-2 d-block" role="alert">@RuleValidationMessage</small>
+                        }
                         @if (InputCountMessage != null)
                         {
                             <small class="text-danger mt-2 d-block" role="alert">@InputCountMessage</small>
@@ -142,6 +163,8 @@
                         <div class="form-check mb-0"><input id="oligo-t7" class="form-check-input" type="checkbox" @bind="_oligoT7" /><label class="form-check-label" for="oligo-t7" title="@HelpText.T7">T7 promoter</label></div>
                         <div class="form-check mb-0"><input id="oligo-pairs" class="form-check-input" type="checkbox" @bind="_oligoPairs" /><label class="form-check-label" for="oligo-pairs" title="@HelpText.Pairs">Top and bottom oligos</label></div>
                         <button type="button" class="btn btn-sm btn-outline-secondary" @onclick="DownloadOligos"><Icon Name="download" />Order CSV (DNA)</button>
+                        <div class="form-check mb-0"><input id="fasta-rna" class="form-check-input" type="checkbox" @bind="_fastaRna" /><label class="form-check-label" for="fasta-rna" title="@HelpText.FastaRna">FASTA as RNA</label></div>
+                        <button type="button" class="btn btn-sm btn-outline-secondary" title="@HelpText.Fasta" @onclick="DownloadFasta"><Icon Name="download" />Complete gRNAs (FASTA)</button>
                         <button type="button" class="btn btn-sm btn-primary" @onclick="SendShortlistToPooling"><Icon Name="send" />Send to Pooling</button>
                         <button type="button" class="btn btn-sm btn-outline-secondary" @onclick="StateService.ClearShortlist"><Icon Name="trash" />Clear</button>
                     </div>
@@ -155,7 +178,7 @@
                             <th scope="col" title="@HelpText.StrandBoth">Strand</th>
                             <th scope="col">Spacer</th>
                             <th scope="col" class="num" title="@HelpText.Score">Score</th>
-                            <th scope="col" title="@HelpText.Alignments">Alignments</th>
+                            <th scope="col" title="@HelpText.Offtargets">Offtargets</th>
                             <th scope="col" title="@HelpText.Assembly">Assembly compatibility</th>
                             <th scope="col"><span class="visually-hidden">Remove</span></th>
                         </tr>
@@ -163,11 +186,11 @@
                         <tbody>
                         @foreach (var item in StateService.Shortlist)
                         {
-                            var risk = AlignmentRisk.Describe(item.Alignments);
+                            var risk = OfftargetRisk.Describe(item.Offtargets);
                             <tr @key="@($"{item.Hgvs}|{item.IsComplement}")">
                                 <td class="font-monospace">@item.Hgvs</td>
                                 <td>@(item.IsComplement ? "Complement" : "Normal")</td>
-                                <td class="seq-cell">@item.Spacer @{ var sites = RestrictionSites.ForGuide(item.Spacer, _oligoT7, RunRepeat); }<RestrictionChip Enzymes="sites" /></td>
+                                <td class="seq-cell">@item.Spacer @{ var sites = RestrictionSites.ForGuide(item.Spacer, _oligoT7, StateService.Construct); }<RestrictionChip Enzymes="sites" /></td>
                                 <td class="num">@item.Score.ToString("P0")</td>
                                 <td><span class="risk-chip @risk.CssClass"><span class="risk-glyph" aria-hidden="true"></span>@risk.Label</span></td>
                                 <td><AssemblyCompatibilityBadges Found="sites" ShowLabel="false" /></td>

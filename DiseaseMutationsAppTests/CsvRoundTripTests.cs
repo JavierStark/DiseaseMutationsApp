@@ -8,7 +8,7 @@ public class CsvRoundTripTests
     private static GRNAResult Guide(string seq, int rank) => new()
     {
         Sequence = seq, SeedRegion = seq[..4], Rank = rank, Score = 0.9, GCContent = 50, GCScore = 1,
-        Allignments = 1, HomopolymerCount = 0, RnaFoldResult = new RNAFoldResult { Structure = "....", Energy = -1.5 }
+        Offtargets = 1, HomopolymerCount = 0, RnaFoldResult = new RNAFoldResult { Structure = "....", Energy = -1.5 }
     };
 
     [Test]

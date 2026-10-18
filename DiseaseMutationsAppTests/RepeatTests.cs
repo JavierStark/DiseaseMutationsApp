@@ -64,17 +64,6 @@ public class RepeatTests
     }
 
     [Test]
-    public void Effective_NeverReturnsNoRepeat_BecauseAGuideThatIsBuiltNeedsOne()
-    {
-        Assert.Multiple(() =>
-        {
-            Assert.That(RepeatChoice.Effective(null), Is.EqualTo(SpacerFinder.scaffold));
-            Assert.That(RepeatChoice.Effective(""), Is.EqualTo(SpacerFinder.scaffold));
-            Assert.That(RepeatChoice.Effective("GAUUUC"), Is.EqualTo("GAUUUC"));
-        });
-    }
-
-    [Test]
     public void Token_RoundTripsEveryChoice()
     {
         Assert.Multiple(() =>
@@ -109,7 +98,7 @@ public class RepeatTests
             Assert.That(ReportSchema.tryParseRepeat(withNone).Value, Is.EqualTo(""));
             Assert.That(ReportSchema.tryParseRepeat(byDefault).Value, Is.EqualTo(SpacerFinder.scaffold));
             Assert.That(ReportSchema.tryParseProvenance(withCustom).Value, Is.EqualTo(Tuple.Create(28, 10, 17)), "spacer and seed still parse");
-            Assert.That(GrnaCsvSchema.ProvenanceLine(28, 10, 17, ""), Does.Contain("repeat=none"));
+            Assert.That(GrnaCsvSchema.ProvenanceLine(28, 10, 17, repeat: ""), Does.Contain("repeat=none"));
         });
     }
 
@@ -124,39 +113,18 @@ public class RepeatTests
         });
     }
 
-    // ===== What the repeat is built into =====
-
-    [Test]
-    public void OligoExport_UsesTheGivenRepeat_AndTheDefaultWhenNoneIsGiven()
-    {
-        Assert.Multiple(() =>
-        {
-            Assert.That(OligoExport.Template(Spacer, false, OligoStrand.Sense, "GAUUUC"), Is.EqualTo("GATTTC" + Spacer.Replace('U', 'T')));
-            Assert.That(OligoExport.Template(Spacer, false, OligoStrand.Sense, null), Is.EqualTo(OligoExport.Template(Spacer, false, OligoStrand.Sense)));
-            Assert.That(OligoExport.Template(Spacer, false, OligoStrand.Sense, ""), Is.EqualTo(OligoExport.Template(Spacer, false, OligoStrand.Sense)));
-        });
-    }
-
-    [Test]
-    public void RestrictionSites_ScanTheChosenRepeat()
-    {
-        // A BsaI site (GGTCTC) sits inside this custom repeat but not in the standard one.
-        Assert.Multiple(() =>
-        {
-            Assert.That(RestrictionSites.ForGuide(Spacer, false, "AAGGUCUCAA"), Does.Contain("BsaI"));
-            Assert.That(RestrictionSites.ForGuide(Spacer, false), Does.Not.Contain("BsaI"));
-        });
-    }
-
     // ===== The run carries the choice to the analysis =====
 
     private sealed class RecordingAnalysis : IGrnaAnalysis
     {
-        public readonly List<string?> Repeats = new();
+        public readonly List<(string? Repeat, int SnpPos, int MismatchPos)> Calls = new();
 
-        public Task<ResultFromHGVS> GetBestgRNAFromHgvs(string hgvs, int window, int seedStart, int seedEnd, bool complement = false, CancellationToken cancellationToken = default, string? repeat = null)
+        public Task<ResultFromHGVS> GetBestgRNAFromHgvs(string hgvs, int window, int seedStart, int seedEnd, bool complement = false, CancellationToken cancellationToken = default) =>
+            throw new NotSupportedException("the runner must use the rule-aware call");
+
+        public Task<ResultFromHGVS> GetBestgRNAFromHgvsWithRule(string hgvs, int window, int seedStart, int seedEnd, int snpPos, int mismatchPos, bool complement = false, CancellationToken cancellationToken = default, string? repeat = null)
         {
-            lock (Repeats) Repeats.Add(repeat);
+            lock (Calls) Calls.Add((repeat, snpPos, mismatchPos));
             return Task.FromResult(new ResultFromHGVS { gRNA = new(), OriginalGRNA = new(), MutatedSequence = "ACGT", OriginalSequence = "ACGA" });
         }
 
@@ -172,10 +140,33 @@ public class RepeatTests
         var fake = new RecordingAnalysis();
         var runner = new AnalysisRunner(fake, new AppStateService(), Options.Create(new AnalysisOptions()), NullLogger<AnalysisRunner>.Instance);
 
-        Assert.That(runner.TryStart("NG_1.1:g.1A>T, NG_1.1:g.2A>T", new RunParameters(28, 10, 17, repeat)), Is.True);
+        Assert.That(runner.TryStart("NG_1.1:g.1A>T, NG_1.1:g.2A>T", new RunParameters(28, 10, 17, 2, 5, repeat)), Is.True);
         await runner.WaitForRunAsync();
 
-        Assert.That(fake.Repeats, Is.EqualTo(new[] { repeat, repeat }));
+        Assert.That(fake.Calls, Is.EqualTo(new[] { (repeat, 2, 5), (repeat, 2, 5) }), "the repeat travels together with the substitution rule");
+    }
+
+    // ===== Checks on the fold of a larger construct =====
+
+    [Test]
+    public async Task CheckWithin_MeasuresTheSpacerWhereItSitsInTheConstruct()
+    {
+        // No repeat: nothing to fold, so this needs no ViennaRNA. The spacer is the last four letters, all unpaired.
+        var (intact, unpaired) = await SpacerFinder.checkWithin("", 0, 6, 4, "((..))....");
+        Assert.Multiple(() =>
+        {
+            Assert.That(intact, Is.True, "no repeat, so no hairpin to break");
+            Assert.That(unpaired, Is.EqualTo(1.0));
+        });
+        var (_, paired) = await SpacerFinder.checkWithin("", 0, 4, 4, "((..))....");
+        Assert.That(paired, Is.EqualTo(0.5), "positions 4-7 are ')', ')', '.', '.'");
+    }
+
+    [Test]
+    public async Task CheckWithin_ASpacerThatDoesNotFitTheStructureIsNotComputed()
+    {
+        var (_, unpaired) = await SpacerFinder.checkWithin("", 0, 8, 4, "((..))....");
+        Assert.That(unpaired, Is.EqualTo(-1.0));
     }
 
     // ===== Folding with the real ViennaRNA (skipped without it) =====

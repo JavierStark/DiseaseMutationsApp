@@ -7,6 +7,9 @@ namespace DiseaseMutationsApp.E2E;
 /// <summary>The Diana page ("/"): inputs, runs, results, limits and permalinks, against the fake pipeline.</summary>
 public class DesignPageTests : E2EBase
 {
+    /// <summary>The header of the collapsible original-sequence results panel, which starts closed.</summary>
+    private ILocator OriginalPanelSummary => Page.Locator("details.grna-collapsible > summary").Filter(new() { HasText = "original sequence" });
+
     [Test]
     public async Task PageHasATitle_AndOneH1()
     {
@@ -23,8 +26,11 @@ public class DesignPageTests : E2EBase
 
         await Expect(DoneStatus).ToContainTextAsync("1 of 1 variants analysed");
         await Expect(Page.GetByRole(AriaRole.Tab, new() { Name = "NC_000017.11:g.7674220C>T" })).ToHaveAttributeAsync("aria-selected", "true");
-        await Expect(Page.GetByRole(AriaRole.Table)).ToHaveCountAsync(2);
+        // The original-sequence table starts collapsed: only the mutated one is visible until its panel is opened.
+        await Expect(Page.GetByRole(AriaRole.Table)).ToHaveCountAsync(1);
         await Expect(Page.Locator("table").First.Locator("tbody tr")).ToHaveCountAsync(5);
+        await OriginalPanelSummary.ClickAsync();
+        await Expect(Page.GetByRole(AriaRole.Table)).ToHaveCountAsync(2);
     }
 
     [Test]
@@ -52,6 +58,8 @@ public class DesignPageTests : E2EBase
         await Expect(Page.GetByRole(AriaRole.Button, new() { Name = "Retry this variant" })).ToBeVisibleAsync();
         // The good variant is untouched.
         await Page.GetByRole(AriaRole.Tab, new() { Name = "NC_000017.11:g.7674220C>T" }).ClickAsync();
+        await Expect(Page.GetByRole(AriaRole.Table)).ToHaveCountAsync(1);   // the original-sequence table is collapsed
+        await OriginalPanelSummary.ClickAsync();
         await Expect(Page.GetByRole(AriaRole.Table)).ToHaveCountAsync(2);
     }
 
@@ -122,7 +130,7 @@ public class DesignPageTests : E2EBase
     }
 
     [Test]
-    public async Task CustomRepeat_IsTheOneTheCompleteGrnaIsBuiltWith()
+    public async Task CustomScreeningRepeat_IsNamedInTheCompleteGrnaCard_WhichKeepsItsOwnRepeat()
     {
         await GotoAsync("/");
         await RepeatSelect.SelectOptionAsync("Custom");
@@ -132,12 +140,13 @@ public class DesignPageTests : E2EBase
 
         await Page.GetByRole(AriaRole.Button, new() { Name = "Use" }).First.ClickAsync();
 
-        await Expect(Page.Locator(".scaffold-seq")).ToHaveTextAsync("GAUUUC");
-        await Expect(Page.Locator(".complete-grna-card")).ToContainTextAsync("your custom repeat (6 nt)");
+        await Expect(Page.Locator(".complete-grna-card")).ToContainTextAsync("folded the spacers with your custom repeat (6 nt)");
+        // What is built is chosen in the card (LwaCas13a by default), not by the screening repeat.
+        await Expect(Page.Locator(".complete-grna-card .scaffold-seq")).ToHaveTextAsync("GAUUUAGACUACCCCAAAAACGAAGGGGACUAAAAC");
     }
 
     [Test]
-    public async Task NoRepeat_StillBuildsTheGuideWithTheStandardRepeat_AndSaysSo()
+    public async Task NoScreeningRepeat_IsNamedInTheCompleteGrnaCard()
     {
         await GotoAsync("/");
         await RepeatSelect.SelectOptionAsync("None");
@@ -146,8 +155,7 @@ public class DesignPageTests : E2EBase
 
         await Page.GetByRole(AriaRole.Button, new() { Name = "Use" }).First.ClickAsync();
 
-        await Expect(Page.Locator(".scaffold-seq")).ToHaveTextAsync("GAUUUAGACUACCCCAAAAACGAAGGGGACUAAAAC");
-        await Expect(Page.Locator(".complete-grna-card")).ToContainTextAsync("none was used for screening");
+        await Expect(Page.Locator(".complete-grna-card")).ToContainTextAsync("folded the spacers with the spacer alone (no repeat)");
     }
 
     [Test]
@@ -202,7 +210,7 @@ public class DesignPageTests : E2EBase
             Assert.That(download.SuggestedFilename, Does.EndWith(".csv"));
             Assert.That(bytes.Take(3).ToArray(), Is.EqualTo(new byte[] { 0xEF, 0xBB, 0xBF }), "UTF-8 byte-order mark for Excel");
             var text = System.Text.Encoding.UTF8.GetString(bytes);
-            Assert.That(text, Does.Contain("RS ID,HGVS,Sequence Type,Rank,Sequence,Score,GC Content,Alignments,Seed Region,Homopolymers,Fold Energy,Strand"));
+            Assert.That(text, Does.Contain("RS ID,HGVS,Sequence Type,Rank,Sequence,Score,GC Content,Offtargets,Seed Region,Homopolymers,Fold Energy,Strand"));
             Assert.That(text, Does.Contain("Mutated").And.Contain("Original"));
         });
     }

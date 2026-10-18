@@ -51,7 +51,7 @@ chart flask dna sort sort-up sort-down close play stop chevron external plus tra
 - **SequenceView / SequenceSpan**: structured, escaped output (no `MarkupString`): rows of 60 nt in blocks of 10, 1-based
   coordinates, mutation and seed highlighting, collapse beyond 6 rows, copy-as-FASTA.
 - **GrnaResultsTable**: sortable headers are `<button>`s inside `<th aria-sort>`; right-aligned tabular numerals; inline
-  bars behind Score and GC; filter row (min score, max alignments, GC range, sequence substring) and page size; alignment
+  bars behind Score and GC; filter row (min score, max offtargets, GC range, sequence substring) and page size; offtarget
   **risk chips** with text and glyph (`0 none`, `1 unique`, `2-3 caution`, `4-5 high`, `6+ saturated`: the count saturates at
   Bowtie's `-k 6`).
 - **PoolPlateMap**: CSS-grid plate with a roving tab stop (arrow keys, Home/End), a hover/focus readout panel and positive-well marking.

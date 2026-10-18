@@ -7,7 +7,7 @@ open System.Globalization
 
 let columns =
     [ "RS ID"; "HGVS"; "Sequence Type"; "Rank"; "Sequence"; "Score"; "GC Content"
-      "Alignments"; "Seed Region"; "Homopolymers"; "Fold Energy"; "Strand"
+      "Offtargets"; "Seed Region"; "Homopolymers"; "Fold Energy"; "Strand"
       "WT Mismatches"; "Engineered"; "Scaffold Intact"; "Spacer Unpaired" ]
 
 let header = String.Join(",", columns)
@@ -68,7 +68,7 @@ let row (rsId: string option) (hgvs: string) (sequenceType: string) (isComplemen
           g.Sequence
           inv g.Score
           inv g.GCContent
-          string g.Allignments
+          string g.Offtargets
           g.SeedRegion
           string g.HomopolymerCount
           inv g.RnaFoldResult.Energy
@@ -84,14 +84,30 @@ let repeatToken (repeat: string) = if repeat = "" then "none" else repeat
 
 /// A leading comment line recording the parameters so a report can be reproduced. `repeat` is the 5' context the
 /// spacers were folded with while screening ("" = the spacer alone).
-let provenanceWithRepeat (repeat: string) (spacer: int) (seedStart: int) (seedEnd: int) =
+let provenanceWithRuleAndRepeat (snpPos: int) (mismatchPos: int) (repeat: string) (spacer: int) (seedStart: int) (seedEnd: int) =
     // After the three parameters the line records the fixed choices behind the numbers, so a report can be reproduced and read later.
-    sprintf "# Diana report; spacer=%d; seed=%d-%d; generated=%s; gc-score-range=40-60; special-rule=variant at N-3, mismatch at N-4; repeat=%s; off-target index=GRCh38 genome (not a transcriptome)"
-        spacer seedStart seedEnd (DateTime.UtcNow.ToString("yyyy-MM-ddTHH:mm:ssZ")) (repeatToken repeat)
+    // "variant at N-3" means the variant is the 3rd letter from the spacer's 3' end (N = spacer length).
+    sprintf "# Diana report; spacer=%d; seed=%d-%d; generated=%s; gc-score-range=40-60; special-rule=variant at N-%d, mismatch at N-%d; repeat=%s; off-target index=GRCh38 genome (not a transcriptome)"
+        spacer seedStart seedEnd (DateTime.UtcNow.ToString("yyyy-MM-ddTHH:mm:ssZ")) snpPos mismatchPos (repeatToken repeat)
 
-/// `provenanceWithRepeat` for the default direct repeat (the 36 nt Cas13 scaffold).
+/// The provenance line with the default direct repeat (the 36 nt Cas13 scaffold).
+let provenanceWithRule (snpPos: int) (mismatchPos: int) (spacer: int) (seedStart: int) (seedEnd: int) =
+    provenanceWithRuleAndRepeat snpPos mismatchPos SpacerFinder.scaffold spacer seedStart seedEnd
+
+/// The provenance line with the default rule (variant 3rd, mismatch 4th from the 3' end).
+let provenanceWithRepeat (repeat: string) (spacer: int) (seedStart: int) (seedEnd: int) =
+    provenanceWithRuleAndRepeat SpacerFinder.DefaultSnpPosition SpacerFinder.DefaultMismatchPosition repeat spacer seedStart seedEnd
+
+/// The provenance line with the default rule and the default direct repeat.
 let provenance (spacer: int) (seedStart: int) (seedEnd: int) =
     provenanceWithRepeat SpacerFinder.scaffold spacer seedStart seedEnd
+
+/// Reads the rule positions back from a provenance line; reports made before the rule was recorded used the default.
+let tryParseRule (line: string) : (int * int) option =
+    let m = System.Text.RegularExpressions.Regex.Match(line, @"^#\s*Diana report;.*special-rule=variant at N-(\d+), mismatch at N-(\d+)")
+    if m.Success then Some(int m.Groups.[1].Value, int m.Groups.[2].Value)
+    elif line.StartsWith "# Diana report;" then Some(SpacerFinder.DefaultSnpPosition, SpacerFinder.DefaultMismatchPosition)
+    else None
 
 /// Reads spacer and seed back from a provenance line written by `provenance`; None when the line is not one.
 let tryParseProvenance (line: string) : (int * int * int) option =

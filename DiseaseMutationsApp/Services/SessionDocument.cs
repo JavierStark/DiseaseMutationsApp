@@ -8,7 +8,7 @@ namespace DiseaseMutationsApp.Services;
 /// the browser can be reproduced headless and vice versa. <c>Repeat</c> is the screening's direct repeat as a
 /// <see cref="RepeatChoice"/> token ("default", "none" or a sequence); absent in older files, which means the default.
 /// </summary>
-public record SessionDocument(int Version, string Input, int Spacer, string Seed, List<ShortlistItem> Shortlist, string? Repeat = null)
+public record SessionDocument(int Version, string Input, int Spacer, string Seed, List<ShortlistItem> Shortlist, ConstructOptions? Construct = null, string? Repeat = null)
 {
     public const int CurrentVersion = 1;
 

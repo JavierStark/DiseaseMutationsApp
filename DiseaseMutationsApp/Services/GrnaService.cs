@@ -5,10 +5,18 @@ namespace DiseaseMutationsApp.Services;
 /// <summary>The slice of the gRNA pipeline the analysis runner depends on; lets tests substitute a fake.</summary>
 public interface IGrnaAnalysis
 {
-    /// <param name="repeat">The 5' context the spacers are folded with while screening: null = the default Cas13 repeat, "" = the spacer alone, otherwise a direct repeat (see <see cref="RepeatChoice"/>).</param>
-    Task<ResultFromHGVS> GetBestgRNAFromHgvs(string hgvs, int window, int seedStart, int seedEnd, bool complement = false, CancellationToken cancellationToken = default, string? repeat = null);
+    Task<ResultFromHGVS> GetBestgRNAFromHgvs(string hgvs, int window, int seedStart, int seedEnd, bool complement = false, CancellationToken cancellationToken = default);
     Task<List<string>> GetHgvsFromSnp(string rsid, CancellationToken cancellationToken = default);
     string? GetNcbiNuccoreUrl(string hgvs);
+
+    /// <summary>
+    /// Same as <see cref="GetBestgRNAFromHgvs"/> with the substitution rule's positions, both counted from the spacer's
+    /// 3' end (1 = last letter): the variant at <paramref name="snpPos"/>, the engineered mismatch at <paramref name="mismatchPos"/>.
+    /// The default implementation ignores the positions.
+    /// </summary>
+    /// <param name="repeat">The 5' context the spacers are folded with while screening: null = the default Cas13 repeat, "" = the spacer alone, otherwise a direct repeat (see <see cref="RepeatChoice"/>). Like the rule, the default implementation ignores it.</param>
+    Task<ResultFromHGVS> GetBestgRNAFromHgvsWithRule(string hgvs, int window, int seedStart, int seedEnd, int snpPos, int mismatchPos, bool complement = false, CancellationToken cancellationToken = default, string? repeat = null) =>
+        GetBestgRNAFromHgvs(hgvs, window, seedStart, seedEnd, complement, cancellationToken);
 
     /// <summary>
     /// The notations of an rsID with their context (gene, orientation, significance). By default only the relevant allele(s)
@@ -42,13 +50,18 @@ public class GrnaService : IGrnaAnalysis
     /// </summary>
     public static string Scaffold => gRNA.SpacerFinder.scaffold;
 
-    public async Task<ResultFromHGVS> GetBestgRNAFromHgvs(string hgvs, int window, int seedStart, int seedEnd, bool complement = false, CancellationToken cancellationToken = default, string? repeat = null)
+    public Task<ResultFromHGVS> GetBestgRNAFromHgvs(string hgvs, int window, int seedStart, int seedEnd, bool complement = false, CancellationToken cancellationToken = default) =>
+        GetBestgRNAFromHgvsWithRule(hgvs, window, seedStart, seedEnd, SpacerFinder.DefaultSnpPosition, SpacerFinder.DefaultMismatchPosition, complement, cancellationToken);
+
+    /// <param name="repeat">The 5' context the spacers are folded with while screening: null = the default Cas13 repeat, "" = the spacer alone, otherwise a direct repeat (see <see cref="RepeatChoice"/>).</param>
+    public async Task<ResultFromHGVS> GetBestgRNAFromHgvsWithRule(string hgvs, int window, int seedStart, int seedEnd, int snpPos, int mismatchPos, bool complement = false, CancellationToken cancellationToken = default, string? repeat = null)
     {
         try
         {
-            _logger.LogDebug("Getting best gRNA from HGVS: {Hgvs}, Window: {Window}, Seed: [{SeedStart}, {SeedEnd}], Complement: {Complement}, Repeat: {Repeat}", hgvs, window, seedStart, seedEnd, complement, repeat is null ? "default" : repeat.Length == 0 ? "none" : $"{repeat.Length} nt");
+            _logger.LogDebug("Getting best gRNA from HGVS: {Hgvs}, Window: {Window}, Seed: [{SeedStart}, {SeedEnd}], Rule: variant {SnpPos}, mismatch {MismatchPos}, Complement: {Complement}, Repeat: {Repeat}", hgvs, window, seedStart, seedEnd, snpPos, mismatchPos, complement, repeat is null ? "default" : repeat.Length == 0 ? "none" : $"{repeat.Length} nt");
 
-            var fsharpResult = await Main.getBestgRNAFromHGVSWith(repeat ?? gRNA.SpacerFinder.scaffold, hgvs, window, seedStart, seedEnd, _bowtieService, cancellationToken, complement);
+            var rule = new Main.SpecialRuleOptions(snpPos, mismatchPos);
+            var fsharpResult = await Main.getBestgRNAFromHGVSWithRuleAndRepeat(rule, repeat ?? gRNA.SpacerFinder.scaffold, hgvs, window, seedStart, seedEnd, _bowtieService, cancellationToken, complement);
 
             return new ResultFromHGVS
             {
@@ -79,7 +92,7 @@ public class GrnaService : IGrnaAnalysis
                 GCContent = (float)g.GCContent,
                 HomopolymerCount = g.HomopolymerCount,
                 SeedRegion = g.SeedRegion,
-                Allignments = g.Allignments,
+                Offtargets = g.Offtargets,
                 RnaFoldResult = new RNAFoldResult
                 {
                     Structure = g.RnaFoldResult.Structure,
@@ -150,16 +163,22 @@ public class GrnaService : IGrnaAnalysis
     }
 
     /// <summary>
-    /// Folds one complete gRNA (<paramref name="repeat"/> + spacer) and runs the same checks as the screening, so the
-    /// Builder's numbers are comparable with the table's. A null or empty repeat means the default one: a gRNA that is
-    /// built always carries a direct repeat.
+    /// Folds the guide as built (direct repeat, adapters, custom flanks, spacer) and runs the same two checks as the
+    /// screening on that fold: is the repeat's own hairpin still formed, and how much of the spacer is left unpaired.
     /// </summary>
-    public async Task<ConstructFoldResult> GetConstructFold(string? repeat, string spacer, CancellationToken cancellationToken = default)
+    public async Task<ConstructFoldResult> GetBuiltFold(string spacer, ConstructOptions options, CancellationToken cancellationToken = default)
     {
-        var effective = RepeatChoice.Effective(repeat);
-        var folds = await SpacerFinder.foldConstructs(effective, Microsoft.FSharp.Collections.ListModule.OfSeq(new[] { spacer }), cancellationToken);
-        var c = folds.Single();
-        return new ConstructFoldResult(effective, new RNAFoldResult { Structure = c.Fold.Structure, Energy = c.Fold.Energy }, c.Intact, c.Unpaired);
+        var parts = GuideConstruct.Parts(spacer, options);
+        var complete = string.Concat(parts.Select(p => p.Rna));
+        var fold = await RNAFoldWrapper.fold(complete, cancellationToken);
+
+        var repeat = parts.FirstOrDefault(p => p.Kind == ConstructPartKind.DirectRepeat);
+        var repeatStart = repeat is null ? 0 : parts.TakeWhile(p => p != repeat).Sum(p => p.Rna.Length);
+        var spacerPart = parts.First(p => p.Kind == ConstructPartKind.Spacer);
+        var spacerStart = parts.TakeWhile(p => p != spacerPart).Sum(p => p.Rna.Length);
+        var checks = await SpacerFinder.checkWithin(repeat?.Rna ?? "", repeatStart, spacerStart, spacerPart.Rna.Length, fold.Structure);
+
+        return new ConstructFoldResult(complete, new RNAFoldResult { Structure = fold.Structure, Energy = fold.Energy }, checks.Item1, checks.Item2);
     }
 
     /// <summary>Maximum alignments requested when listing off-target loci (the batch path caps at 6).</summary>
@@ -188,7 +207,7 @@ public class GrnaService : IGrnaAnalysis
     /// the query string itself WITHOUT percent-decoding, so encoded values (e.g. %28 for a bracket) reach its API verbatim
     /// and are rejected with HTTP 400. Sequence and dot-bracket characters are all URL-safe, so they go in raw; anything
     /// else is refused rather than allowed to inject extra query parameters. Browsers block the http frame inside an https
-    /// page, so the UI draws the structure itself (see StructureDiagram) and offers this URL only as an opt-in new-tab link.
+    /// page, so the UI draws the structure itself with the bundled fornac library and offers this URL only as an opt-in new-tab link.
     /// </summary>
     public string GetFornaUrl(string sequence, string structure)
     {
@@ -222,7 +241,7 @@ public record GRNAResult
     public float GCContent { get; init; }
     public int HomopolymerCount { get; init; }
     public required string SeedRegion { get; init; }
-    public int Allignments { get; init; }
+    public int Offtargets { get; init; }
     public required RNAFoldResult RnaFoldResult { get; init; }
     public int Rank { get; init; }
     public double Score { get; init; }
@@ -252,8 +271,8 @@ public record ResultFromHGVS
     public List<string> Notices { get; init; } = new();
 }
 
-/// <summary>The fold of a built gRNA (<see cref="Repeat"/> + spacer) with the hairpin and accessibility checks.</summary>
-public record ConstructFoldResult(string Repeat, RNAFoldResult Fold, bool ScaffoldIntact, double SpacerUnpaired);
+/// <summary>The fold of a built gRNA (<see cref="Complete"/>, as RNA) with the hairpin and accessibility checks.</summary>
+public record ConstructFoldResult(string Complete, RNAFoldResult Fold, bool ScaffoldIntact, double SpacerUnpaired);
 
 public record RNAFoldResult
 {

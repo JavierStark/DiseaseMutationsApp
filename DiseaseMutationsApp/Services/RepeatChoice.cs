@@ -15,9 +15,6 @@ public static class RepeatChoice
     public const string DefaultToken = "default";
     public const string NoneToken = "none";
 
-    /// <summary>The direct repeat that is folded and ordered when the screening used none: a complete gRNA always needs one.</summary>
-    public static string Effective(string? repeat) => string.IsNullOrEmpty(repeat) ? SpacerFinder.scaffold : repeat;
-
     /// <summary>The value to pass on for a form choice. Throws <see cref="GrnaInputException"/> for an unusable custom repeat.</summary>
     public static string? Resolve(RepeatMode mode, string? custom) => mode switch
     {

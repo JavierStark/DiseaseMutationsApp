@@ -34,10 +34,11 @@ Record every run in section 9. A step that was not run is written as "not run", 
 |---|---|---|
 | 2.1b | `grna design --hgvs NG_000007.3:g.81703T>C` (3 bases from the end of the record), then with `--complement` | Normal strand: ordinary ranking and a `note ...` line on stderr (the web page shows the same text as a warning); complement strand: the engineered spacer first and the ordinary list after it, no note |
 | 2.1 | Web app: enter `NC_000017.11:g.7674220C>T`, **Run analysis** | Done within about 30 s; one tab; mutated and original sequence cards; two tables; the engineered spacer is the FIRST row of each table (highlighted, "Engineered" chip, Rank 1, Score 100%) and the ordinary ranked list follows it; every row has a *Mismatches vs other allele* value |
+| 2.1b2 | Web app: `NC_000017.11:g.7674220C>T`, set *Variant position* 5 and *Engineered mismatch position* 7, **Run analysis**; then enter 5 and 5, and 0 | The engineered row differs from the default (its seed-side letters change at position 7 from the 3' end); equal positions or 0 show a red message and disable **Run analysis**; **Copy link** adds `snp=5&mm=7`. CLI: `--snp-pos 5 --mismatch-pos 7` changes the provenance line, `--mismatch-pos 5` exits 2 |
 | 2.1c | Web app: enter `rs334`, **Run analysis** | One input tab with one variant, `NG_000007.3:g.70614A>T`, gene **HBB**; its first tab is marked **mRNA** and the second **antisense** (with a warning panel). Tick *Show all alleles and gene records* and run again: 12 notations (24 tabs). CLI: `grna resolve rs334` gives 1 line, `--all-alleles` gives 12 |
 | 2.1d | Web app: `NC_000007.14:g.117559592_117559594del` (CFTR F508del) | Top mutated guides show 6 or more *Mismatches vs other allele*; a guide lying wholly in unchanged sequence shows a red "not discriminating" chip; the filter *Min mismatches vs other allele = 2* hides it. The page says the gene orientation is unknown |
 | 2.1e | Hover each column header, filter label and the form options of the Builder, Disease variants and Pooling pages | A native tooltip explains each term; none is empty or off-topic |
-| 2.2 | Same variant, the `C` (complement) result of an rsID, or `grna design ... --complement` | Spacer sequence differs from 2.1; **Alignments is 1**, not 0; strand shown as "− strand, reverse complement, shown 5'→3'" |
+| 2.2 | Same variant, the `C` (complement) result of an rsID, or `grna design ... --complement` | Spacer sequence differs from 2.1; **Offtargets is 1**, not 0; strand shown as "− strand, reverse complement, shown 5'→3'" |
 | 2.3 | Change the spacer to 17, then to 61 | Message "between 18 and 60", **Run analysis** disabled |
 | 2.4 | Enter `NC_000017.11:g.7674220A>T` (wrong reference base) | The variant's tab fails with "Reference mismatch ... states A but the sequence has C"; no stack trace; the other variants are unaffected |
 | 2.5 | Enter `NM_000518.5:c.20A>T` (needs internet) | Converted to `NM_000518.5:n.70A>T` (a notice says so; HBB CDS starts at 51); the sickle-cell guides appear, designed on the mRNA, and the tab says the spacers bind the mRNA |
@@ -140,7 +141,7 @@ Run through `.claude/skills/diana/scripts/grna.sh` or `grna.ps1` as well as `doc
 Run after any edit to `gRNA/SpacerFinder.fs`, `Main.fs`, `HGVS.fs`, `Sequence.fs` or the Bowtie wrapper.
 
 - 2.1 and 2.2 produce the same spacers and counts as the previous release, or the difference is explained in `BIOLOGICAL_REPORT.md`.
-- A 3-nt delins, a 1-nt insertion, a 3-nt duplication and a 3-nt inversion at `NC_000017.11:g.7674220` still run (the first three give 0 alignments for the top candidates, by the documented rule).
+- A 3-nt delins, a 1-nt insertion, a 3-nt duplication and a 3-nt inversion at `NC_000017.11:g.7674220` still run (the first three give 0 offtargets for the top candidates, by the documented rule).
 - The numbers quoted in `BIOLOGICAL_REPORT.md` and the README are re-checked against the code.
 
 ## 9. Execution log
@@ -154,8 +155,8 @@ Run by Claude Code at the request of the team lead; **not** a replacement for a 
 | Step | Result |
 |---|---|
 | 1.2, 1.3 | Run on the final image: all PASS, also from `-w /tmp` |
-| 2.1 | Run: one engineered spacer per table, alignments 1 |
-| 2.2 | Run: complement result had Alignments 1 after the fix (0 before) |
+| 2.1 | Run: one engineered spacer per table, offtargets 1 |
+| 2.2 | Run: complement result had Offtargets 1 after the fix (0 before) |
 | 2.4, 2.5, 2.6 | Run: the three messages above, exit 2 |
 | 2.7 | Run: exit 0 after 4 min 20 s, 1.8 MB report |
 | 3.6 | Run on the final image: unknown option exit 2, `--capacity 0` exit 2, `design --help` exit 0 |

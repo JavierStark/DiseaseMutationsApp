@@ -139,6 +139,33 @@ public class CliTests
         });
     }
 
+    [TestCase("--snp-pos", "0")]
+    [TestCase("--snp-pos", "29")]
+    [TestCase("--mismatch-pos", "0")]
+    [TestCase("--mismatch-pos", "29")]
+    [TestCase("--mismatch-pos", "3")]   // equal to the default variant position
+    public void Design_SubstitutionRulePositionsOutOfRange_AreBadInput(string option, string value)
+    {
+        var r = Run("design", "--hgvs", "NC_000017.11:g.7674220C>T", option, value);
+        Assert.Multiple(() =>
+        {
+            Assert.That(r.Exit, Is.EqualTo(CliProgram.ExitBadInput));
+            Assert.That(r.Err, Does.Contain("position").Or.Contain("different positions"));
+        });
+    }
+
+    [Test]
+    public void Design_SubstitutionRuleOptionsNeedAValue_AndAreListedInHelp()
+    {
+        Assert.That(Run("design", "--hgvs", "x", "--snp-pos").Exit, Is.EqualTo(CliProgram.ExitBadInput));
+        var help = Run("--help");
+        Assert.Multiple(() =>
+        {
+            Assert.That(help.Out, Does.Contain("--snp-pos"));
+            Assert.That(help.Out, Does.Contain("--mismatch-pos"));
+        });
+    }
+
     [TestCase("20-5")]
     [TestCase("10-28")]
     [TestCase("abc")]

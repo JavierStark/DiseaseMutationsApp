@@ -156,33 +156,56 @@
                             <button type="button" class="btn btn-sm btn-outline-secondary" @onclick="ToggleShortlist">
                                 <Icon Name="@(Shortlisted ? "check" : "list")" />@(Shortlisted ? "In shortlist (remove)" : "Add to shortlist")
                             </button>
+                            <button type="button" class="btn btn-sm btn-outline-secondary" title="@HelpText.Fasta" @onclick="DownloadFasta">
+                                <Icon Name="download" />FASTA
+                            </button>
                         </div>
+                    }
+                </div>
+                <div class="construct-options mb-3">
+                    <div class="d-flex flex-wrap align-items-center gap-3 mb-2">
+                        <label class="form-label mb-0" for="@Id("dr")" title="@HelpText.DrSelect">Direct repeat</label>
+                        <select id="@Id("dr")" class="form-select form-select-sm w-auto" value="@Construct.DrId" @onchange="OnDrChanged">
+                            @foreach (var preset in GuideConstruct.DrPresets)
+                            {
+                                <option value="@preset.Id">@preset.Name</option>
+                            }
+                        </select>
+                        <div class="form-check mb-0"><input id="@Id("frida")" class="form-check-input" type="checkbox" checked="@Construct.Frida" @onchange="e => SetConstruct(Construct with { Frida = (bool)e.Value! })" /><label class="form-check-label" for="@Id("frida")" title="@HelpText.Frida">Frida adapter</label></div>
+                        <div class="form-check mb-0"><input id="@Id("bb")" class="form-check-input" type="checkbox" checked="@Construct.BioBricks" @onchange="e => SetConstruct(Construct with { BioBricks = (bool)e.Value! })" /><label class="form-check-label" for="@Id("bb")" title="@HelpText.BioBricks">BioBricks assembly adapter</label></div>
+                    </div>
+                    <div class="row g-2">
+                        <div class="col-12 col-md-6">
+                            <input id="@Id("c5")" class="form-control form-control-sm font-monospace @(GuideConstruct.IsValidCustom(Construct.Custom5) ? "" : "is-invalid")" placeholder="Custom 5' sequence (optional)" title="@HelpText.CustomWrapper"
+                                   aria-label="Custom 5' sequence" value="@Construct.Custom5" @onchange="e => SetConstruct(Construct with { Custom5 = e.Value?.ToString() ?? string.Empty })" />
+                        </div>
+                        <div class="col-12 col-md-6">
+                            <input id="@Id("c3")" class="form-control form-control-sm font-monospace @(GuideConstruct.IsValidCustom(Construct.Custom3) ? "" : "is-invalid")" placeholder="Custom 3' sequence (optional)" title="@HelpText.CustomWrapper"
+                                   aria-label="Custom 3' sequence" value="@Construct.Custom3" @onchange="e => SetConstruct(Construct with { Custom3 = e.Value?.ToString() ?? string.Empty })" />
+                        </div>
+                    </div>
+                    @if (!GuideConstruct.IsValidCustom(Construct.Custom5) || !GuideConstruct.IsValidCustom(Construct.Custom3))
+                    {
+                        <p class="text-danger small mt-2 mb-0" role="alert"><Icon Name="alert" />Custom sequences may only contain A, C, G, T or U. An invalid box is ignored until fixed.</p>
                     }
                 </div>
                 <div class="complete-grna-sequence">
                     <span class="text-muted">5'</span>
-                    <span class="scaffold-seq">@BuiltRepeat</span>@if (Data.SelectedSpacer != null){<span class="spacer-seq">@Data.SelectedSpacer</span>}
+                    @foreach (var part in GuideConstruct.Parts(Data.SelectedSpacer ?? "", Construct).Where(p => p.Kind != ConstructPartKind.Spacer || Data.SelectedSpacer != null))
+                    {
+                        <span class="@PartClass(part.Kind)" title="@part.Label">@part.Rna</span>
+                    }
                     <span class="text-muted">3'</span>
                 </div>
-                <p class="helper-note mt-2 mb-0">
-                    <Icon Name="info" />
-                    @if (Repeat == "")
-                    {
-                        <text>Built with the standard Cas13 repeat, because none was used for screening: the table's fold is of the spacer alone, so use "Get structure" to fold the guide as it will be made.</text>
-                    }
-                    else
-                    {
-                        <text>Built with @RepeatChoice.Describe(Repeat), the same context the screening folded the spacers with.</text>
-                    }
-                </p>
+                <p class="helper-note mt-2 mb-0"><Icon Name="info" />The table folded the spacers with @RepeatChoice.Describe(Repeat). "Get structure" folds the guide as built here, with the direct repeat, adapters and flanks chosen above.</p>
                 @if (Data.SelectedSpacer == null)
                 {
                     <p class="helper-note mt-3 mb-0"><Icon Name="info" />Press "Use" on a spacer above to add it here.</p>
                 }
                 else
                 {
-                    <div class="mt-3"><AssemblyCompatibilityBadges Found="RestrictionSites.ForGuide(Data.SelectedSpacer, false, Repeat)" /></div>
-                    @foreach (var enzyme in RestrictionSites.ForGuide(Data.SelectedSpacer, false, Repeat))
+                    <div class="mt-3"><AssemblyCompatibilityBadges Found="RestrictionSites.ForGuide(Data.SelectedSpacer, false, Construct)" /></div>
+                    @foreach (var enzyme in RestrictionSites.ForGuide(Data.SelectedSpacer, false, Construct))
                     {
                         <div class="alert alert-warning mt-3 mb-0" role="alert">
                             <Icon Name="alert" />@RestrictionSites.Warning(enzyme)
@@ -202,7 +225,7 @@
                             <strong>Minimum free energy:</strong>
                             <span class="energy-value">@Data.RnaFoldResult.Energy.ToString("F2") kcal/mol</span>
                         </p>
-                        @if (Data.Construct is { } construct)
+                        @if (Data.FoldChecks is { } construct)
                         {
                             <p class="mb-3">
                                 <strong>Repeat hairpin:</strong>
@@ -216,7 +239,7 @@
                                 }
                                 <span class="ms-3" title="@HelpText.SpacerUnpaired"><strong>Spacer unpaired:</strong> @(construct.SpacerUnpaired < 0 ? "n/a" : construct.SpacerUnpaired.ToString("P0"))</span>
                             </p>
-                            @if (ConstructNotice(construct) is { } notice)
+                            @if (FoldNotice(construct) is { } notice)
                             {
                                 <div class="alert alert-warning mb-3" role="status"><Icon Name="alert" />@notice</div>
                             }
@@ -225,30 +248,19 @@
                         @if (!string.IsNullOrEmpty(Data.FornaUrl))
                         {
                             <div class="d-flex flex-wrap gap-2 mb-3">
-                                <button type="button" class="btn btn-sm btn-outline-secondary" aria-expanded="@(Data.ShowStructure ? "true" : "false")"
-                                        @onclick="() => Data.ShowStructure = !Data.ShowStructure">
-                                    @(Data.ShowStructure ? "Hide diagram" : "Show diagram")
+                                <button type="button" class="btn btn-sm btn-outline-secondary" aria-expanded="@(Data.ShowForna ? "true" : "false")"
+                                        @onclick="() => Data.ShowForna = !Data.ShowForna">
+                                    @(Data.ShowForna ? "Hide diagram" : "Show diagram")
                                 </button>
                                 <a class="btn btn-sm btn-outline-secondary" href="@Data.FornaUrl" target="_blank" rel="noopener noreferrer">
                                     <Icon Name="external" />Open in FORNA
                                 </a>
                             </div>
-                            <p class="helper-note mb-3">The diagram is drawn here from the dot-bracket notation. "Open in FORNA" sends this gRNA sequence and its structure to the FORNA server at the University of Vienna, which only serves plain http, so it opens in a new tab only when you choose it.</p>
-                            @if (Data.ShowStructure)
+                            <p class="helper-note mb-3">The diagram is FORNA's own viewer, drawn in your browser by a bundled copy of the library, so it also works on https. "Open in FORNA" instead sends this gRNA sequence and its structure to the FORNA server at the University of Vienna, which only serves plain http, and opens in a new tab only when you choose it.</p>
+                            @if (Data.ShowForna)
                             {
-                                var seq = (Data.Construct?.Repeat ?? BuiltRepeat) + Data.SelectedSpacer;
-                                var length = Data.RnaFoldResult.Structure.Length;
-                                <div class="structure-diagram-wrap">
-                                    <svg class="structure-diagram" viewBox="0 0 @StructureDiagram.Width(length).ToString("0.##", CultureInfo.InvariantCulture) @StructureDiagram.Height(length).ToString("0.##", CultureInfo.InvariantCulture)"
-                                         role="img" aria-label="RNA secondary structure of @length nucleotides, drawn from dot-bracket notation">
-                                        @foreach (var pair in StructureDiagram.BasePairs(Data.RnaFoldResult.Structure))
-                                        {
-                                            <path d="@StructureDiagram.ArcPath(pair, length)" />
-                                        }
-                                        @((MarkupString)NucleotideLabelsMarkup(seq, length))
-                                    </svg>
-                                </div>
-                                <p class="helper-note mt-2 mb-0">Arcs join paired bases. The 5' end is on the left.</p>
+                                <div id="@FornaElementId" class="forna-frame mt-3" role="img" aria-label="Force-directed RNA secondary structure drawn with FORNA"></div>
+                                <p class="helper-note mt-2 mb-0">Drag nodes, scroll to zoom.</p>
                             }
                         }
                     </div>
@@ -275,37 +287,16 @@
     /// <summary>The 5' context the run folded its spacers with: null = the default repeat, "" = the spacer alone, otherwise a direct repeat.</summary>
     [Parameter] public string? Repeat { get; set; }
 
-    /// <summary>The direct repeat the guide is built with; the default one when the screening used none.</summary>
-    private string BuiltRepeat => RepeatChoice.Effective(Repeat);
-
     /// <summary>
-    /// Says so when the guide's own fold disagrees with the table row it came from: the table may have folded the spacer
-    /// alone or with another repeat, and the engineered spacer shows the fold of the spacer before its extra mismatch.
+    /// Says so when the built guide's hairpin check disagrees with the table row it came from: the table folded the spacer
+    /// with the screening context (possibly alone), the guide below with everything it is built with.
     /// </summary>
-    private string? ConstructNotice(ConstructFoldResult construct)
+    private string? FoldNotice(ConstructFoldResult built)
     {
         var row = (Data.GRNAs ?? new()).Concat(Data.OriginalGRNAs ?? new()).FirstOrDefault(g => g.Sequence == Data.SelectedSpacer);
-        if (row is null) return null;
-        var tableEnergy = row.RnaFoldResult.Energy;
-        if (row.ScaffoldIntact == construct.ScaffoldIntact && Math.Abs(tableEnergy - construct.Fold.Energy) <= 0.05) return null;
-        var why = Repeat == "" ? "The table folded this spacer alone"
-            : row.Engineered ? "The table shows the fold of the spacer before its engineered mismatch"
-            : "The table's fold differs";
+        if (row is null || row.ScaffoldIntact == built.ScaffoldIntact) return null;
         string Hairpin(bool intact) => intact ? "intact" : "broken";
-        return $"{why} ({tableEnergy:F2} kcal/mol, hairpin {Hairpin(row.ScaffoldIntact)}); this guide folds to {construct.Fold.Energy:F2} kcal/mol, hairpin {Hairpin(construct.ScaffoldIntact)}. Judge the guide by this fold.";
-    }
-
-    /// <summary>SVG text labels for each nucleotide, placed under the arc diagram's baseline.</summary>
-    private static string NucleotideLabelsMarkup(string sequence, int length)
-    {
-        var y = (StructureDiagram.Baseline(length) + 14).ToString("0.##", CultureInfo.InvariantCulture);
-        var sb = new System.Text.StringBuilder();
-        for (var i = 0; i < length && i < sequence.Length; i++)
-        {
-            var x = StructureDiagram.X(i).ToString("0.##", CultureInfo.InvariantCulture);
-            sb.Append($"<text x=\"{x}\" y=\"{y}\" text-anchor=\"middle\">{System.Net.WebUtility.HtmlEncode(sequence[i].ToString())}</text>");
-        }
-        return sb.ToString();
+        return $"The table folded this spacer with {RepeatChoice.Describe(Repeat)} and its repeat hairpin was {Hairpin(row.ScaffoldIntact)} ({row.RnaFoldResult.Energy:F2} kcal/mol); in the guide as built it is {Hairpin(built.ScaffoldIntact)} ({built.Fold.Energy:F2} kcal/mol). Judge the guide by this fold.";
     }
 
     /// <summary>Locus window plus strand and reading direction under a sequence card title.</summary>
@@ -348,7 +339,7 @@
             GrnaSortColumn.GCScore => ascending ? list.OrderBy(g => g.GCScore) : list.OrderByDescending(g => g.GCScore),
             GrnaSortColumn.GCContent => ascending ? list.OrderBy(g => g.GCContent) : list.OrderByDescending(g => g.GCContent),
             GrnaSortColumn.HomopolymerCount => ascending ? list.OrderBy(g => g.HomopolymerCount) : list.OrderByDescending(g => g.HomopolymerCount),
-            GrnaSortColumn.Alignments => ascending ? list.OrderBy(g => g.Allignments) : list.OrderByDescending(g => g.Allignments),
+            GrnaSortColumn.Offtargets => ascending ? list.OrderBy(g => g.Offtargets) : list.OrderByDescending(g => g.Offtargets),
             GrnaSortColumn.Energy => ascending ? list.OrderBy(g => g.RnaFoldResult?.Energy ?? double.MaxValue) : list.OrderByDescending(g => g.RnaFoldResult?.Energy ?? double.MinValue),
             GrnaSortColumn.SpacerUnpaired => ascending ? list.OrderBy(g => g.SpacerUnpaired) : list.OrderByDescending(g => g.SpacerUnpaired),
             GrnaSortColumn.WtMismatches => ascending ? list.OrderBy(g => g.WtMismatches) : list.OrderByDescending(g => g.WtMismatches),
@@ -372,15 +363,75 @@
         }
     }
 
+    private ConstructOptions Construct => State.Construct;
+
+    private string FornaElementId => $"forna-{Data.Id}";
+    private string? _fornaDrawnFor;
+
+    protected override async Task OnAfterRenderAsync(bool firstRender)
+    {
+        if (!Data.ShowForna || Data.RnaFoldResult == null || Data.SelectedSpacer == null)
+        {
+            _fornaDrawnFor = null;
+            return;
+        }
+
+        var sequence = GuideConstruct.Build(Data.SelectedSpacer, Construct);
+        var key = sequence + "|" + Data.RnaFoldResult.Structure;
+        if (_fornaDrawnFor == key) return;
+        _fornaDrawnFor = key;
+        try
+        {
+            await JS.InvokeVoidAsync("renderForna", FornaElementId, Data.RnaFoldResult.Structure, sequence);
+        }
+        catch (JSException ex) { Data.RnaFoldError = "Could not draw the FORNA view: " + ex.Message; StateHasChanged(); }
+        catch (JSDisconnectedException) { }
+    }
+
+    private string Id(string name) => $"construct-{name}-{Data.GetHashCode()}";
+
+    private static string PartClass(ConstructPartKind kind) => kind switch
+    {
+        ConstructPartKind.Spacer => "spacer-seq",
+        ConstructPartKind.DirectRepeat => "scaffold-seq",
+        ConstructPartKind.Custom => "custom-seq",
+        _ => "adapter-seq",
+    };
+
+    /// <summary>Changing the construct changes what a fold would be of, so a shown structure is dropped.</summary>
+    private void SetConstruct(ConstructOptions options)
+    {
+        State.Construct = options;
+        Data.RnaFoldResult = null;
+        Data.FoldChecks = null;
+        Data.RnaFoldError = null;
+        Data.FornaUrl = null;
+        Data.ShowForna = false;
+        State.NotifyStateChanged();
+    }
+
+    private void OnDrChanged(ChangeEventArgs e) => SetConstruct(Construct with { DrId = e.Value?.ToString() ?? GuideConstruct.LwaId });
+
+    private async Task DownloadFasta()
+    {
+        if (Data.SelectedSpacer == null) return;
+        var fasta = OligoExport.FastaRecord(Data.Hgvs, Data.IsComplement, Data.SelectedSpacer, Construct, rna: true);
+        try
+        {
+            await JS.InvokeVoidAsync("downloadFile", $"gRNA_{DateTime.Now:yyyyMMdd_HHmmss}.fasta", "text/plain;charset=utf-8", fasta);
+        }
+        catch (JSDisconnectedException) { }
+    }
+
     private void SelectSpacer(string spacer)
     {
         Data.SelectedSpacer = spacer;
         Data.CopiedToClipboard = false;
         Data.RnaFoldResult = null;
-        Data.Construct = null;
+        Data.FoldChecks = null;
         Data.RnaFoldError = null;
         Data.FornaUrl = null;
-        Data.ShowStructure = false;
+        Data.ShowForna = false;
     }
 
     private async Task CopyComplete()
@@ -388,7 +439,7 @@
         if (Data.SelectedSpacer == null) return;
         try
         {
-            Data.CopiedToClipboard = await JS.InvokeAsync<bool>("grnaCopy", BuiltRepeat + Data.SelectedSpacer);
+            Data.CopiedToClipboard = await JS.InvokeAsync<bool>("grnaCopy", GuideConstruct.Build(Data.SelectedSpacer, Construct));
         }
         catch (JSDisconnectedException) { }
     }
@@ -402,14 +453,13 @@
             leaf.IsLoadingRnaFold = true;
             leaf.RnaFoldError = null;
             leaf.RnaFoldResult = null;
-            leaf.Construct = null;
+            leaf.FoldChecks = null;
             leaf.FornaUrl = null;
-            // The same fold and checks as the screening, but with the repeat the guide is built with.
-            var construct = await Grna.GetConstructFold(Repeat, leaf.SelectedSpacer);
-            var complete = construct.Repeat + leaf.SelectedSpacer;
-            leaf.Construct = construct;
-            leaf.RnaFoldResult = construct.Fold;
-            leaf.FornaUrl = Grna.GetFornaUrl(complete, construct.Fold.Structure);
+            // The fold of the guide as built (repeat, adapters, flanks), with the same two checks as the screening.
+            var built = await Grna.GetBuiltFold(leaf.SelectedSpacer, Construct);
+            leaf.FoldChecks = built;
+            leaf.RnaFoldResult = built.Fold;
+            leaf.FornaUrl = Grna.GetFornaUrl(built.Complete, built.Fold.Structure);
         }
         catch (Exception ex)
         {
@@ -431,6 +481,6 @@
         }
 
         var candidate = (Data.GRNAs ?? new()).Concat(Data.OriginalGRNAs ?? new()).FirstOrDefault(g => g.Sequence == Data.SelectedSpacer);
-        State.AddToShortlist(new ShortlistItem(Data.Hgvs, Data.IsComplement, Data.SelectedSpacer, RsId, candidate?.Score ?? 0, candidate?.Allignments ?? 0));
+        State.AddToShortlist(new ShortlistItem(Data.Hgvs, Data.IsComplement, Data.SelectedSpacer, RsId, candidate?.Score ?? 0, candidate?.Offtargets ?? 0));
     }
 }

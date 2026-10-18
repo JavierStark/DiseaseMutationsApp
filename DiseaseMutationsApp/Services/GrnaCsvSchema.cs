@@ -30,9 +30,11 @@ public static class GrnaCsvSchema
     public const string ComplementStrand = "Complement";
 
     /// <summary>A leading comment line recording the parameters, so an exported report can be reproduced.</summary>
+    /// <param name="snpPos">Where the substitution rule puts the variant, counted from the spacer's 3' end (1 = last letter).</param>
+    /// <param name="mismatchPos">Where it puts the engineered mismatch, counted the same way.</param>
     /// <param name="repeat">The screening's direct repeat as <see cref="RunParameters.Repeat"/> holds it: null = default, "" = none.</param>
-    public static string ProvenanceLine(int spacerSize, int seedStart, int seedEnd, string? repeat = null) =>
-        gRNA.ReportSchema.provenanceWithRepeat(repeat ?? gRNA.SpacerFinder.scaffold, spacerSize, seedStart, seedEnd);
+    public static string ProvenanceLine(int spacerSize, int seedStart, int seedEnd, int snpPos = 3, int mismatchPos = 4, string? repeat = null) =>
+        gRNA.ReportSchema.provenanceWithRuleAndRepeat(snpPos, mismatchPos, repeat ?? gRNA.SpacerFinder.scaffold, spacerSize, seedStart, seedEnd);
 
     public static string Header => string.Join(",", Columns);
 
@@ -44,7 +46,7 @@ public static class GrnaCsvSchema
         var energy = g.RnaFoldResult?.Energy.ToString(inv) ?? "N/A";
         return string.Join(",",
             Csv(rsId ?? ""), Csv(hgvs), sequenceType, g.Rank.ToString(inv), g.Sequence,
-            g.Score.ToString(inv), g.GCContent.ToString(inv), g.Allignments.ToString(inv),
+            g.Score.ToString(inv), g.GCContent.ToString(inv), g.Offtargets.ToString(inv),
             g.SeedRegion, g.HomopolymerCount.ToString(inv), energy, Strand(isComplement),
             g.WtMismatches < 0 ? "" : g.WtMismatches.ToString(inv), g.Engineered ? "Yes" : "No",
             g.ScaffoldIntact ? "Yes" : "No",

@@ -14,12 +14,11 @@ public class AnalysisRunnerTests
         public Func<string, CancellationToken, Task>? OnAnalyze;
         public Func<string, Task<List<string>>>? OnResolve;
         public readonly List<string> Analyzed = new();
-        public readonly List<string?> Repeats = new();
 
-        public async Task<ResultFromHGVS> GetBestgRNAFromHgvs(string hgvs, int window, int seedStart, int seedEnd, bool complement = false, CancellationToken cancellationToken = default, string? repeat = null)
+        public async Task<ResultFromHGVS> GetBestgRNAFromHgvs(string hgvs, int window, int seedStart, int seedEnd, bool complement = false, CancellationToken cancellationToken = default)
         {
             var now = Interlocked.Increment(ref Current);
-            lock (this) { MaxObserved = Math.Max(MaxObserved, now); Analyzed.Add(hgvs); Repeats.Add(repeat); }
+            lock (this) { MaxObserved = Math.Max(MaxObserved, now); Analyzed.Add(hgvs); }
             try
             {
                 if (OnAnalyze != null) await OnAnalyze(hgvs, cancellationToken);

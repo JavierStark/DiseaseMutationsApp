@@ -1,0 +1,139 @@
+/* fornac 1.1.8 fornac.css (Apache-2.0, see LICENSE-fornac-Apache-2.0.txt). Modified: every selector is scoped to .forna-frame so
+   that its global rules (svg, text, .transparent ...) cannot restyle the rest of the app. */
+.forna-frame svg {
+  display: block;
+  min-width: 100%;
+  width: 100%;
+  min-height: 100%;
+}
+
+.forna-frame circle.node {
+  stroke: #ccc;
+  stroke-width: 1px;
+  opacity: 1;
+  fill: white;
+}
+
+.forna-frame polygon.node {
+  stroke: #ccc;
+  stroke-width: 1px;
+  opacity: 1;
+  fill: white;
+}
+
+.forna-frame circle.node.label {
+    stroke: transparent;
+    stroke-width: 0;
+    fill: white;
+    display: inline;
+}
+
+.forna-frame circle.outline_node {
+    stroke-width: 1px;
+    fill: red;
+}
+
+.forna-frame circle.protein {
+    fill: gray;
+    fill-opacity: 0.5;
+    stroke-width: 4;
+}
+
+.forna-frame circle.hidden_outline {
+    stroke-width: 0px;
+}
+
+
+.forna-frame line.link {
+  stroke: #999;
+  stroke-opacity: 0.8;
+  stroke-width: 2;
+}
+
+.forna-frame line.pseudoknot {
+    stroke: red;
+}
+
+.forna-frame line.basepair {
+  stroke: red;
+}
+
+.forna-frame line.intermolecule {
+  stroke: blue;
+}
+
+.forna-frame line.chain_chain {
+  stroke-dasharray: 3,3;
+}
+
+.forna-frame line.fake {
+  stroke: green;
+}
+
+.forna-frame .transparent {
+    fill: transparent;
+    stroke-width: 0;
+    stroke-opacity: 0;
+    opacity: 0;
+    visibility: hidden;
+}
+
+.forna-frame .drag_line {
+  stroke: #999;
+  stroke-width: 2;
+  pointer-events: none;
+}
+
+.forna-frame .drag_line_hidden {
+  stroke: #999;
+  stroke-width: 0;
+  pointer-events: none;
+}
+
+.forna-frame .d3-tip {
+    line-height: 1;
+    font-weight: bold;
+    padding: 6px;
+    background: rgba(0, 0, 0, 0.6);
+    color: #fff;
+    border-radius: 4px;
+    pointer-events: none;
+          }
+
+.forna-frame text.node-label {
+    font-weight: bold;
+    font-family: Tahoma, Geneva, sans-serif;
+    color: rgb(100,100,100);
+    pointer-events: none;
+}
+
+.forna-frame text {
+    pointer-events: none;
+}
+
+.forna-frame g.gnode {
+
+}
+
+.forna-frame circle.outline_node.selected {
+    visibility: visible;
+}
+
+.forna-frame circle.outline_node {
+    visibility: hidden;
+}
+
+.forna-frame .brush .extent {
+  fill-opacity: .1;
+  stroke: #fff;
+  shape-rendering: crispEdges;
+}
+
+.forna-frame .noselect {
+    -webkit-touch-callout: none;
+    -webkit-user-select: none;
+    -khtml-user-select: none;
+    -moz-user-select: none;
+    -ms-user-select: none;
+    user-select: none;
+}

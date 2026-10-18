@@ -30,6 +30,7 @@ Usage:
                                               [--format rs|csv|tsv|json] [--out file]
   grna design --hgvs <HGVS> [--spacer 28] [--seed 10-17] [--repeat default|none|<RNA>] [--complement] [--format csv|json|tsv] [--out file]
   grna design --input <list.txt|session.json> --out <report.csv> [--spacer 28] [--seed 10-17] [--repeat default|none|<RNA>] [--complement] [--concurrency 2] [--all-alleles]
+                                      [--snp-pos 3] [--mismatch-pos 4]
   grna fold <RNA sequence>
   grna pool --guides <report.csv> [--capacity 5] [--plate 96|384] [--model auto|2df|2dm|3d] [--out plan.csv]
   grna pool --count <V>          [--capacity 5] [--plate 96|384] [--model auto|2df|2dm|3d] [--out plan.csv]
@@ -74,7 +75,7 @@ let private allowed =
         [ "doctor", (Set.empty, set [ "network"; "help" ])
           "resolve", (Set.empty, set [ "all-alleles"; "help" ])
           "disease", (set [ "pick"; "min-significance"; "format"; "out" ], set [ "list"; "subtypes"; "help" ])
-          "design", (set [ "hgvs"; "input"; "spacer"; "seed"; "repeat"; "format"; "out"; "concurrency" ], set [ "complement"; "all-alleles"; "help" ])
+          "design", (set [ "hgvs"; "input"; "spacer"; "seed"; "repeat"; "format"; "out"; "concurrency"; "snp-pos"; "mismatch-pos" ], set [ "complement"; "all-alleles"; "help" ])
           "fold", (Set.empty, set [ "help" ])
           "pool", (set [ "guides"; "count"; "capacity"; "plate"; "model"; "out" ], set [ "help" ]) ]
 
@@ -243,7 +244,7 @@ let private jsonOf (rows: DesignRow list) =
                        sequence = g.Sequence
                        score = g.Score
                        gcContent = g.GCContent
-                       alignments = g.Allignments
+                       offtargets = g.Offtargets
                        seedRegion = g.SeedRegion
                        homopolymers = g.HomopolymerCount
                        energy = g.RnaFoldResult.Energy
@@ -260,10 +261,10 @@ let private jsonOf (rows: DesignRow list) =
                original = cands r.Result.originalGRNA |})
     JsonSerializer.Serialize(items, opts)
 
-let private csvOf (rows: DesignRow list) (repeat: string) (spacer, seedS, seedE) (includeHeader: bool) =
+let private csvOf (rows: DesignRow list) (rule: Main.SpecialRuleOptions) (repeat: string) (spacer, seedS, seedE) (includeHeader: bool) =
     let sb = StringBuilder()
     if includeHeader then
-        sb.AppendLine(ReportSchema.provenanceWithRepeat repeat spacer seedS seedE) |> ignore
+        sb.AppendLine(ReportSchema.provenanceWithRuleAndRepeat rule.SnpPos rule.MismatchPos repeat spacer seedS seedE) |> ignore
         sb.AppendLine ReportSchema.header |> ignore
     for r in rows do
         for g in r.Result.gRNA do
@@ -272,9 +273,9 @@ let private csvOf (rows: DesignRow list) (repeat: string) (spacer, seedS, seedE)
             sb.AppendLine(ReportSchema.row r.RsId r.Hgvs ReportSchema.originalType r.Complement g) |> ignore
     sb.ToString()
 
-let private tsvOf (rows: DesignRow list) =
+let private tsvOf (rows: DesignRow list) (rule: Main.SpecialRuleOptions) =
     // Split each CSV row into fields first: a plain Replace(',', '\t') would also break quoted fields that contain commas.
-    (csvOf rows "" (0, 0, 0) false).Split([| '\n' |], StringSplitOptions.RemoveEmptyEntries)
+    (csvOf rows rule "" (0, 0, 0) false).Split([| '\n' |], StringSplitOptions.RemoveEmptyEntries)
     |> Array.map (fun l -> l.TrimEnd('\r') |> ReportSchema.splitCsvLine |> String.concat "\t")
     |> String.concat "\n"
     |> fun s -> ReportSchema.header.Replace(',', '\t') + "\n" + s + "\n"
@@ -310,6 +311,11 @@ let design (args: Args) (ct: CancellationToken) : Task<int> =
             | r when r.Equals("default", StringComparison.OrdinalIgnoreCase) -> SpacerFinder.scaffold
             | r when r.Equals("none", StringComparison.OrdinalIgnoreCase) -> ""
             | r -> SpacerFinder.normaliseRepeat r
+        // Where the substitution rule puts the variant and its extra mismatch, counted from the spacer's 3' end (1 = last letter).
+        let rule : Main.SpecialRuleOptions =
+            { SnpPos = intOpt args "snp-pos" Main.defaultSpecialRule.SnpPos
+              MismatchPos = intOpt args "mismatch-pos" Main.defaultSpecialRule.MismatchPos }
+        Main.validateSpecialRule spacer rule
         let complement = args.Flags.Contains "complement"
         let concurrency = max 1 (min 4 (intOpt args "concurrency" 2))
         let out = opt args "out"
@@ -354,6 +360,11 @@ let design (args: Args) (ct: CancellationToken) : Task<int> =
         | Some earlier when earlier <> repeat ->
             raise (BadArgs(sprintf "'%s' was made with another direct repeat (%s), not %s. Use a new --out file or the same --repeat." out.Value (ReportSchema.repeatToken earlier) (ReportSchema.repeatToken repeat)))
         | _ -> ()
+        // Rows made with another substitution rule would be mixed with these: refuse, like a different spacer or seed.
+        match existingLines |> Array.tryHead |> Option.bind ReportSchema.tryParseRule with
+        | Some (sn, mm) when (sn, mm) <> (rule.SnpPos, rule.MismatchPos) ->
+            raise (BadArgs(sprintf "'%s' was made with --snp-pos %d --mismatch-pos %d, not --snp-pos %d --mismatch-pos %d. Use a new --out file or the same positions." out.Value sn mm rule.SnpPos rule.MismatchPos))
+        | _ -> ()
         let alreadyDone =
             existingLines
             |> Array.filter (fun l -> not (l.StartsWith "#"))
@@ -396,7 +407,7 @@ let design (args: Args) (ct: CancellationToken) : Task<int> =
                     do! sem.WaitAsync ct
                     try
                         try
-                            let! r = Main.getBestgRNAFromHGVSWith repeat h spacer seedS seedE bowtie ct complement
+                            let! r = Main.getBestgRNAFromHGVSWithRuleAndRepeat rule repeat h spacer seedS seedE bowtie ct complement
                             results.Add((i, { Hgvs = h; RsId = rs; Complement = complement; Result = r }))
                             eprintfn "ok   %s" h
                             for notice in r.notices do eprintfn "note %s: %s" h notice
@@ -415,8 +426,8 @@ let design (args: Args) (ct: CancellationToken) : Task<int> =
         let body =
             match format with
             | "json" -> jsonOf rows
-            | "tsv" -> tsvOf rows
-            | _ -> csvOf rows repeat (spacer, seedS, seedE) (not isBatchCsv || not (File.Exists out.Value) || alreadyDone.IsEmpty)
+            | "tsv" -> tsvOf rows rule
+            | _ -> csvOf rows rule repeat (spacer, seedS, seedE) (not isBatchCsv || not (File.Exists out.Value) || alreadyDone.IsEmpty)
 
         if isBatchCsv && File.Exists out.Value && not alreadyDone.IsEmpty then
             File.AppendAllText(out.Value, body, UTF8Encoding(false))

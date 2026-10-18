@@ -95,7 +95,7 @@ else
     {
         var size = Filter.PageSize;
         Filter.MinScore = null;
-        Filter.MaxAlignments = null;
+        Filter.MaxOfftargets = null;
         Filter.MinWtMismatches = null;
         Filter.MinGc = null;
         Filter.MaxGc = null;
@@ -120,9 +120,9 @@ else
                        @bind="Filter.MinScore" @bind:after="FilterChanged" />
             </div>
             <div>
-                <label class="form-label" for="@Id("max-aln")" title="@HelpText.MaxAlignments">Max alignments</label>
+                <label class="form-label" for="@Id("max-aln")" title="@HelpText.MaxOfftargets">Max offtargets</label>
                 <input id="@Id("max-aln")" type="number" class="form-control form-control-sm" min="0" max="6"
-                       @bind="Filter.MaxAlignments" @bind:after="FilterChanged" />
+                       @bind="Filter.MaxOfftargets" @bind:after="FilterChanged" />
             </div>
             <div>
                 <label class="form-label" for="@Id("min-wt")" title="@HelpText.MinWtMismatches">Min mismatches vs other allele</label>
@@ -161,7 +161,7 @@ else
 
         <p class="helper-note" role="status">
             Showing @PageItems.Count of @Filtered.Count candidate@(Filtered.Count == 1 ? "" : "s")@(Filtered.Count != (GRNAs?.Count ?? 0) ? $" (filtered from {GRNAs?.Count})" : "").
-            Alignments saturate at 6, so "6+" means six or more.
+            Offtargets saturate at 6, so "6+" means six or more.
         </p>
 
         <div class="grna-table-wrap" tabindex="0" role="region" aria-label="@($"{Title}, scrollable")">
@@ -174,7 +174,7 @@ else
                     @Header("GC score", GrnaSortColumn.GCScore, true, HelpText.GcScore)
                     @Header("GC %", GrnaSortColumn.GCContent, true, HelpText.GcPercent)
                     @Header("Homopolymers", GrnaSortColumn.HomopolymerCount, true, HelpText.Homopolymers)
-                    @Header("Alignments", GrnaSortColumn.Alignments, false, HelpText.Alignments)
+                    @Header("Offtargets", GrnaSortColumn.Offtargets, false, HelpText.Offtargets)
                     <th scope="col" title="@HelpText.Assembly">Assembly compatibility</th>
                     @Header("Energy (kcal/mol)", GrnaSortColumn.Energy, true, HelpText.Energy)
                     @Header("Spacer unpaired", GrnaSortColumn.SpacerUnpaired, true, HelpText.SpacerUnpaired)
@@ -188,7 +188,7 @@ else
                     var spacer = g.Sequence;
                     var rowKey = $"{rowIndex}|{spacer}";   // position + text: identical windows must not share a key
                     var lociKey = rowKey + "-loci";
-                    var risk = AlignmentRisk.Describe(g.Allignments);
+                    var risk = OfftargetRisk.Describe(g.Offtargets);
                     <tr class="@(spacer == SelectedSpacer ? "row-selected" : null) @(g.Engineered ? "row-engineered" : null)" @key="rowKey">
                         <td class="text-nowrap">
                             <button type="button" class="btn btn-sm btn-outline-secondary" @onclick="() => OnCreateGrna.InvokeAsync(spacer)"
@@ -268,7 +268,7 @@ else
                                 else if (state.Report is { } report)
                                 {
                                     <div class="helper-note mb-1" role="status">
-                                        @(report.Truncated ? $"{report.Loci.Count}+ alignments (capped at {GrnaService.MaxLociHits})" : $"{report.Loci.Count} alignment{(report.Loci.Count == 1 ? "" : "s")}") with up to 2 mismatches.
+                                        @(report.Truncated ? $"{report.Loci.Count}+ offtargets (capped at {GrnaService.MaxLociHits})" : $"{report.Loci.Count} offtarget{(report.Loci.Count == 1 ? "" : "s")}") with up to 2 mismatches.
                                     </div>
                                     <table class="table table-sm mb-0 loci-table">
                                         <caption class="visually-hidden">Genomic loci of @spacer</caption>
