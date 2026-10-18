@@ -161,17 +161,28 @@
                 </div>
                 <div class="complete-grna-sequence">
                     <span class="text-muted">5'</span>
-                    <span class="scaffold-seq">@GrnaService.Scaffold</span>@if (Data.SelectedSpacer != null){<span class="spacer-seq">@Data.SelectedSpacer</span>}
+                    <span class="scaffold-seq">@BuiltRepeat</span>@if (Data.SelectedSpacer != null){<span class="spacer-seq">@Data.SelectedSpacer</span>}
                     <span class="text-muted">3'</span>
                 </div>
+                <p class="helper-note mt-2 mb-0">
+                    <Icon Name="info" />
+                    @if (Repeat == "")
+                    {
+                        <text>Built with the standard Cas13 repeat, because none was used for screening: the table's fold is of the spacer alone, so use "Get structure" to fold the guide as it will be made.</text>
+                    }
+                    else
+                    {
+                        <text>Built with @RepeatChoice.Describe(Repeat), the same context the screening folded the spacers with.</text>
+                    }
+                </p>
                 @if (Data.SelectedSpacer == null)
                 {
                     <p class="helper-note mt-3 mb-0"><Icon Name="info" />Press "Use" on a spacer above to add it here.</p>
                 }
                 else
                 {
-                    <div class="mt-3"><AssemblyCompatibilityBadges Found="RestrictionSites.ForGuide(Data.SelectedSpacer, false)" /></div>
-                    @foreach (var enzyme in RestrictionSites.ForGuide(Data.SelectedSpacer, false))
+                    <div class="mt-3"><AssemblyCompatibilityBadges Found="RestrictionSites.ForGuide(Data.SelectedSpacer, false, Repeat)" /></div>
+                    @foreach (var enzyme in RestrictionSites.ForGuide(Data.SelectedSpacer, false, Repeat))
                     {
                         <div class="alert alert-warning mt-3 mb-0" role="alert">
                             <Icon Name="alert" />@RestrictionSites.Warning(enzyme)
@@ -191,6 +202,25 @@
                             <strong>Minimum free energy:</strong>
                             <span class="energy-value">@Data.RnaFoldResult.Energy.ToString("F2") kcal/mol</span>
                         </p>
+                        @if (Data.Construct is { } construct)
+                        {
+                            <p class="mb-3">
+                                <strong>Repeat hairpin:</strong>
+                                @if (construct.ScaffoldIntact)
+                                {
+                                    <span>intact</span>
+                                }
+                                else
+                                {
+                                    <span class="risk-chip risk-caution" title="@HelpText.ScaffoldBroken"><span class="risk-glyph" aria-hidden="true"></span>hairpin broken</span>
+                                }
+                                <span class="ms-3" title="@HelpText.SpacerUnpaired"><strong>Spacer unpaired:</strong> @(construct.SpacerUnpaired < 0 ? "n/a" : construct.SpacerUnpaired.ToString("P0"))</span>
+                            </p>
+                            @if (ConstructNotice(construct) is { } notice)
+                            {
+                                <div class="alert alert-warning mb-3" role="status"><Icon Name="alert" />@notice</div>
+                            }
+                        }
 
                         @if (!string.IsNullOrEmpty(Data.FornaUrl))
                         {
@@ -206,7 +236,7 @@
                             <p class="helper-note mb-3">The diagram is drawn here from the dot-bracket notation. "Open in FORNA" sends this gRNA sequence and its structure to the FORNA server at the University of Vienna, which only serves plain http, so it opens in a new tab only when you choose it.</p>
                             @if (Data.ShowStructure)
                             {
-                                var seq = GrnaService.Scaffold + Data.SelectedSpacer;
+                                var seq = (Data.Construct?.Repeat ?? BuiltRepeat) + Data.SelectedSpacer;
                                 var length = Data.RnaFoldResult.Structure.Length;
                                 <div class="structure-diagram-wrap">
                                     <svg class="structure-diagram" viewBox="0 0 @StructureDiagram.Width(length).ToString("0.##", CultureInfo.InvariantCulture) @StructureDiagram.Height(length).ToString("0.##", CultureInfo.InvariantCulture)"
@@ -241,6 +271,29 @@
     [Parameter] public string? RsId { get; set; }
     [Parameter] public int SeedStart { get; set; }
     [Parameter] public int SeedEnd { get; set; }
+
+    /// <summary>The 5' context the run folded its spacers with: null = the default repeat, "" = the spacer alone, otherwise a direct repeat.</summary>
+    [Parameter] public string? Repeat { get; set; }
+
+    /// <summary>The direct repeat the guide is built with; the default one when the screening used none.</summary>
+    private string BuiltRepeat => RepeatChoice.Effective(Repeat);
+
+    /// <summary>
+    /// Says so when the guide's own fold disagrees with the table row it came from: the table may have folded the spacer
+    /// alone or with another repeat, and the engineered spacer shows the fold of the spacer before its extra mismatch.
+    /// </summary>
+    private string? ConstructNotice(ConstructFoldResult construct)
+    {
+        var row = (Data.GRNAs ?? new()).Concat(Data.OriginalGRNAs ?? new()).FirstOrDefault(g => g.Sequence == Data.SelectedSpacer);
+        if (row is null) return null;
+        var tableEnergy = row.RnaFoldResult.Energy;
+        if (row.ScaffoldIntact == construct.ScaffoldIntact && Math.Abs(tableEnergy - construct.Fold.Energy) <= 0.05) return null;
+        var why = Repeat == "" ? "The table folded this spacer alone"
+            : row.Engineered ? "The table shows the fold of the spacer before its engineered mismatch"
+            : "The table's fold differs";
+        string Hairpin(bool intact) => intact ? "intact" : "broken";
+        return $"{why} ({tableEnergy:F2} kcal/mol, hairpin {Hairpin(row.ScaffoldIntact)}); this guide folds to {construct.Fold.Energy:F2} kcal/mol, hairpin {Hairpin(construct.ScaffoldIntact)}. Judge the guide by this fold.";
+    }
 
     /// <summary>SVG text labels for each nucleotide, placed under the arc diagram's baseline.</summary>
     private static string NucleotideLabelsMarkup(string sequence, int length)
@@ -324,6 +377,7 @@
         Data.SelectedSpacer = spacer;
         Data.CopiedToClipboard = false;
         Data.RnaFoldResult = null;
+        Data.Construct = null;
         Data.RnaFoldError = null;
         Data.FornaUrl = null;
         Data.ShowStructure = false;
@@ -334,7 +388,7 @@
         if (Data.SelectedSpacer == null) return;
         try
         {
-            Data.CopiedToClipboard = await JS.InvokeAsync<bool>("grnaCopy", GrnaService.Scaffold + Data.SelectedSpacer);
+            Data.CopiedToClipboard = await JS.InvokeAsync<bool>("grnaCopy", BuiltRepeat + Data.SelectedSpacer);
         }
         catch (JSDisconnectedException) { }
     }
@@ -348,11 +402,14 @@
             leaf.IsLoadingRnaFold = true;
             leaf.RnaFoldError = null;
             leaf.RnaFoldResult = null;
+            leaf.Construct = null;
             leaf.FornaUrl = null;
-            var complete = GrnaService.Scaffold + leaf.SelectedSpacer;
-            var result = await Grna.GetRnaFold(complete);
-            leaf.RnaFoldResult = result;
-            leaf.FornaUrl = Grna.GetFornaUrl(complete, result.Structure);
+            // The same fold and checks as the screening, but with the repeat the guide is built with.
+            var construct = await Grna.GetConstructFold(Repeat, leaf.SelectedSpacer);
+            var complete = construct.Repeat + leaf.SelectedSpacer;
+            leaf.Construct = construct;
+            leaf.RnaFoldResult = construct.Fold;
+            leaf.FornaUrl = Grna.GetFornaUrl(complete, construct.Fold.Structure);
         }
         catch (Exception ex)
         {

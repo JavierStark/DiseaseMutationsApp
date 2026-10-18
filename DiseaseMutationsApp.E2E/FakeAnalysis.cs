@@ -11,7 +11,7 @@ namespace DiseaseMutationsApp.E2E;
 public sealed class FakeAnalysis : IGrnaAnalysis
 {
     public async Task<ResultFromHGVS> GetBestgRNAFromHgvs(string hgvs, int window, int seedStart, int seedEnd,
-        bool complement = false, CancellationToken cancellationToken = default)
+        bool complement = false, CancellationToken cancellationToken = default, string? repeat = null)
     {
         if (hgvs.Contains("SLOW", StringComparison.Ordinal))
             await Task.Delay(TimeSpan.FromMinutes(2), cancellationToken);

@@ -79,13 +79,30 @@ let row (rsId: string option) (hgvs: string) (sequenceType: string) (isComplemen
           (if g.SpacerUnpaired < 0.0 then "" else inv (Math.Round(g.SpacerUnpaired, 2))) ]
     )
 
-/// A leading comment line recording the parameters so a report can be reproduced.
-let provenance (spacer: int) (seedStart: int) (seedEnd: int) =
+/// How the direct repeat is written in a provenance line: "none" for the spacer alone, otherwise its RNA sequence.
+let repeatToken (repeat: string) = if repeat = "" then "none" else repeat
+
+/// A leading comment line recording the parameters so a report can be reproduced. `repeat` is the 5' context the
+/// spacers were folded with while screening ("" = the spacer alone).
+let provenanceWithRepeat (repeat: string) (spacer: int) (seedStart: int) (seedEnd: int) =
     // After the three parameters the line records the fixed choices behind the numbers, so a report can be reproduced and read later.
-    sprintf "# Diana report; spacer=%d; seed=%d-%d; generated=%s; gc-score-range=40-60; special-rule=variant at N-3, mismatch at N-4; scaffold=%d nt; off-target index=GRCh38 genome (not a transcriptome)"
-        spacer seedStart seedEnd (DateTime.UtcNow.ToString("yyyy-MM-ddTHH:mm:ssZ")) SpacerFinder.scaffold.Length
+    sprintf "# Diana report; spacer=%d; seed=%d-%d; generated=%s; gc-score-range=40-60; special-rule=variant at N-3, mismatch at N-4; repeat=%s; off-target index=GRCh38 genome (not a transcriptome)"
+        spacer seedStart seedEnd (DateTime.UtcNow.ToString("yyyy-MM-ddTHH:mm:ssZ")) (repeatToken repeat)
+
+/// `provenanceWithRepeat` for the default direct repeat (the 36 nt Cas13 scaffold).
+let provenance (spacer: int) (seedStart: int) (seedEnd: int) =
+    provenanceWithRepeat SpacerFinder.scaffold spacer seedStart seedEnd
 
 /// Reads spacer and seed back from a provenance line written by `provenance`; None when the line is not one.
 let tryParseProvenance (line: string) : (int * int * int) option =
     let m = System.Text.RegularExpressions.Regex.Match(line, @"^#\s*Diana report;\s*spacer=(\d+);\s*seed=(\d+)-(\d+)")
     if m.Success then Some(int m.Groups.[1].Value, int m.Groups.[2].Value, int m.Groups.[3].Value) else None
+
+/// Reads the direct repeat back from a provenance line: Some "" for "none", Some sequence otherwise. Reports written before
+/// the repeat was recorded (they say "scaffold=36 nt") were all made with the default one.
+let tryParseRepeat (line: string) : string option =
+    if not (System.Text.RegularExpressions.Regex.IsMatch(line, @"^#\s*Diana report;")) then None
+    else
+        let m = System.Text.RegularExpressions.Regex.Match(line, @"repeat=(none|[ACGU]+)")
+        if m.Success then Some(if m.Groups.[1].Value = "none" then "" else m.Groups.[1].Value)
+        else Some SpacerFinder.scaffold

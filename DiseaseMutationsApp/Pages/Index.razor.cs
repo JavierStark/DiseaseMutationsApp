@@ -20,6 +20,7 @@ namespace DiseaseMutationsApp.Pages
         [SupplyParameterFromQuery(Name = "hgvs")] private string? HgvsQuery { get; set; }
         [SupplyParameterFromQuery(Name = "spacer")] private int? SpacerQuery { get; set; }
         [SupplyParameterFromQuery(Name = "seed")] private string? SeedQuery { get; set; }
+        [SupplyParameterFromQuery(Name = "repeat")] private string? RepeatQuery { get; set; }
 
         private readonly Func<Action, Task> _marshal;
         private bool _disposed;
@@ -59,8 +60,31 @@ namespace DiseaseMutationsApp.Pages
             set => StateService.IndexSeedEnd = value;
         }
 
+        private RepeatMode _repeatMode
+        {
+            get => StateService.IndexRepeatMode;
+            set => StateService.IndexRepeatMode = value;
+        }
+
+        private string? _customRepeat
+        {
+            get => StateService.IndexCustomRepeat;
+            set => StateService.IndexCustomRepeat = value;
+        }
+
+        private string? RepeatValidationMessage => RepeatChoice.Validate(_repeatMode, _customRepeat);
+
+        /// <summary>The repeat the finished (or running) analysis used, not what the form says now: the tables show that run.</summary>
+        private string? RunRepeat => Runner.Parameters?.Repeat;
+
         private bool CanFetchData =>
-            !Runner.IsBusy && !string.IsNullOrWhiteSpace(_hgvs) && InputCountMessage == null && SeedRangeValidationMessage == null;
+            !Runner.IsBusy && !string.IsNullOrWhiteSpace(_hgvs) && InputCountMessage == null && SeedRangeValidationMessage == null && RepeatValidationMessage == null;
+
+        private void OnRepeatModeChanged(ChangeEventArgs e)
+        {
+            _repeatMode = Enum.TryParse<RepeatMode>(e.Value?.ToString(), out var mode) ? mode : RepeatMode.Default;
+            SaveSession();
+        }
 
         private string? InputCountMessage
         {
@@ -173,7 +197,7 @@ namespace DiseaseMutationsApp.Pages
             var input = !string.IsNullOrWhiteSpace(HgvsQuery) ? HgvsQuery : RsQuery;
             if (string.IsNullOrWhiteSpace(input)) return;
 
-            var claim = $"{input}|{SpacerQuery}|{SeedQuery}";
+            var claim = $"{input}|{SpacerQuery}|{SeedQuery}|{RepeatQuery}";
             if (StateService.IndexClaimedQuery == claim) return;
             StateService.IndexClaimedQuery = claim;
 
@@ -188,6 +212,8 @@ namespace DiseaseMutationsApp.Pages
                     _seedEnd = e;
                 }
             }
+
+            if (RepeatQuery is not null) (_repeatMode, _customRepeat) = RepeatChoice.FromToken(RepeatQuery);
 
             // A link only fills the form: a run starts on an explicit click. Opening a link used to start NCBI and Bowtie
             // work on the server at once.
@@ -212,6 +238,7 @@ namespace DiseaseMutationsApp.Pages
             if (snapshot.SpacerSize > 0) _gRnaSize = snapshot.SpacerSize;
             _seedStart = snapshot.SeedStart;
             _seedEnd = snapshot.SeedEnd;
+            (_repeatMode, _customRepeat) = RepeatChoice.FromToken(snapshot.Repeat);
             _restoredBanner = true;
             StateHasChanged();
         }
@@ -236,13 +263,14 @@ namespace DiseaseMutationsApp.Pages
             _linkBanner = false;
             _incoming = null;
             SaveSession();
-            Runner.TryStart(_hgvs, new RunParameters(_gRnaSize, _seedStart, _seedEnd));
+            Runner.TryStart(_hgvs, new RunParameters(_gRnaSize, _seedStart, _seedEnd, RepeatChoice.Resolve(_repeatMode, _customRepeat)));
         }
 
         private void SaveSession()
         {
             Session.SaveDebounced(new SessionSnapshot(
-                SessionSnapshot.CurrentVersion, _hgvs, _gRnaSize, _seedStart, _seedEnd, ActiveTab?.DisplayLabel, DateTimeOffset.UtcNow));
+                SessionSnapshot.CurrentVersion, _hgvs, _gRnaSize, _seedStart, _seedEnd, ActiveTab?.DisplayLabel, DateTimeOffset.UtcNow,
+                RepeatChoice.ToToken(_repeatMode, _customRepeat)));
         }
 
         private void OnInputChanged() => SaveSession();
@@ -265,7 +293,8 @@ namespace DiseaseMutationsApp.Pages
                 ["rs"] = null,
                 ["hgvs"] = _hgvs.Trim(),
                 ["spacer"] = _gRnaSize,
-                ["seed"] = $"{_seedStart}-{_seedEnd}"
+                ["seed"] = $"{_seedStart}-{_seedEnd}",
+                ["repeat"] = _repeatMode == RepeatMode.Default ? null : RepeatChoice.ToToken(_repeatMode, _customRepeat)
             });
             try
             {
@@ -328,8 +357,8 @@ namespace DiseaseMutationsApp.Pages
         /// <summary>Parameters go in the file so an exported report can be reproduced (leading # lines are ignored by the parser).</summary>
         private void AppendProvenance(StringBuilder sb)
         {
-            var p = Runner.Parameters ?? new RunParameters(_gRnaSize, _seedStart, _seedEnd);
-            sb.AppendLine(GrnaCsvSchema.ProvenanceLine(p.SpacerSize, p.SeedStart, p.SeedEnd));
+            var p = Runner.Parameters ?? new RunParameters(_gRnaSize, _seedStart, _seedEnd, RepeatChoice.Resolve(_repeatMode, _customRepeat));
+            sb.AppendLine(GrnaCsvSchema.ProvenanceLine(p.SpacerSize, p.SeedStart, p.SeedEnd, p.Repeat));
         }
 
         private bool _oligoT7 = true;
@@ -338,7 +367,7 @@ namespace DiseaseMutationsApp.Pages
         private async Task DownloadOligos()
         {
             if (StateService.Shortlist.Count == 0) return;
-            var csv = OligoExport.ShortlistCsv(StateService.Shortlist, _oligoT7, _oligoPairs, PlateKind.Plate96);
+            var csv = OligoExport.ShortlistCsv(StateService.Shortlist, _oligoT7, _oligoPairs, PlateKind.Plate96, RunRepeat);
             await JSRuntime.InvokeVoidAsync("downloadFile", $"Oligos_{DateTime.Now:yyyyMMdd_HHmmss}.csv", "text/csv;charset=utf-8", csv);
         }
 
@@ -366,6 +395,7 @@ namespace DiseaseMutationsApp.Pages
                     var parts = session.Seed.Split('-', 2);
                     if (parts.Length == 2 && int.TryParse(parts[0], out var s) && int.TryParse(parts[1], out var en)) { _seedStart = s; _seedEnd = en; }
                     StateService.Shortlist = session.Shortlist;
+                    (_repeatMode, _customRepeat) = RepeatChoice.FromToken(session.Repeat);
                 }
 
                 _uploadMessage = $"Loaded {AnalysisRunner.ParseInputs(input).Count} input(s) from {e.File.Name}. Press Run analysis.";
@@ -379,7 +409,8 @@ namespace DiseaseMutationsApp.Pages
 
         private async Task DownloadSession()
         {
-            var doc = new SessionDocument(SessionDocument.CurrentVersion, _hgvs ?? "", _gRnaSize, $"{_seedStart}-{_seedEnd}", StateService.Shortlist);
+            var doc = new SessionDocument(SessionDocument.CurrentVersion, _hgvs ?? "", _gRnaSize, $"{_seedStart}-{_seedEnd}", StateService.Shortlist,
+                RepeatChoice.ToToken(_repeatMode, _customRepeat));
             await JSRuntime.InvokeVoidAsync("downloadFile", $"Session_{DateTime.Now:yyyyMMdd_HHmmss}.json", "application/json;charset=utf-8", SessionDocument.Serialize(doc));
         }
 

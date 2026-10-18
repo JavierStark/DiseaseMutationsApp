@@ -75,6 +75,31 @@
                         }
                     </fieldset>
 
+                    <fieldset class="mb-4">
+                        <legend class="form-label" title="@HelpText.Repeat">Direct repeat for screening</legend>
+                        <div class="row g-3">
+                            <div class="col-sm-8">
+                                <label for="repeat-mode" class="form-label visually-hidden">Direct repeat</label>
+                                <select id="repeat-mode" class="form-select" value="@_repeatMode.ToString()" @onchange="OnRepeatModeChanged">
+                                    <option value="@nameof(RepeatMode.Default)">Standard Cas13 repeat (@gRNA.SpacerFinder.scaffold.Length nt)</option>
+                                    <option value="@nameof(RepeatMode.None)">None: fold the spacer alone</option>
+                                    <option value="@nameof(RepeatMode.Custom)">My own direct repeat</option>
+                                </select>
+                            </div>
+                        </div>
+                        @if (_repeatMode == RepeatMode.Custom)
+                        {
+                            <label for="repeat-custom" class="form-label mt-3" title="@HelpText.RepeatCustom">Direct repeat sequence (5' to 3')</label>
+                            <input id="repeat-custom" type="text" class="form-control font-monospace" @bind="_customRepeat" @bind:event="oninput" @bind:after="OnInputChanged"
+                                   maxlength="@(gRNA.SpacerFinder.MaxRepeatLength * 2)" autocomplete="off" spellcheck="false" placeholder="GAUUUAGACUACCCCAAAAACGAAGGGGACUAAAAC" />
+                            @if (RepeatValidationMessage != null)
+                            {
+                                <small class="text-danger mt-2 d-block" role="alert">@RepeatValidationMessage</small>
+                            }
+                        }
+                        <small class="helper-note mt-2 d-block">What each spacer is folded with while screening: it changes the energy, "hairpin broken" and "spacer unpaired" columns, not the off-target alignments. The guide you build below is folded again with its own repeat.</small>
+                    </fieldset>
+
                     <div class="mb-4">
                         <label for="upload" class="form-label" title="@HelpText.LoadFile">Load inputs from a file</label>
                         <InputFile id="upload" class="form-control" accept=".txt,.csv,.tsv,.json" OnChange="OnFileSelected" />
@@ -142,7 +167,7 @@
                             <tr @key="@($"{item.Hgvs}|{item.IsComplement}")">
                                 <td class="font-monospace">@item.Hgvs</td>
                                 <td>@(item.IsComplement ? "Complement" : "Normal")</td>
-                                <td class="seq-cell">@item.Spacer @{ var sites = RestrictionSites.ForGuide(item.Spacer, _oligoT7); }<RestrictionChip Enzymes="sites" /></td>
+                                <td class="seq-cell">@item.Spacer @{ var sites = RestrictionSites.ForGuide(item.Spacer, _oligoT7, RunRepeat); }<RestrictionChip Enzymes="sites" /></td>
                                 <td class="num">@item.Score.ToString("P0")</td>
                                 <td><span class="risk-chip @risk.CssClass"><span class="risk-glyph" aria-hidden="true"></span>@risk.Label</span></td>
                                 <td><AssemblyCompatibilityBadges Found="sites" ShowLabel="false" /></td>
@@ -224,7 +249,7 @@
                             </div>
                             <ErrorBoundary @key="tab.DirectHgvs.Id">
                                 <ChildContent>
-                                    <HgvsDetailPanel @key="tab.DirectHgvs.Id" Data="tab.DirectHgvs" SeedStart="_seedStart" SeedEnd="_seedEnd" />
+                                    <HgvsDetailPanel @key="tab.DirectHgvs.Id" Data="tab.DirectHgvs" SeedStart="_seedStart" SeedEnd="_seedEnd" Repeat="@RunRepeat" />
                                 </ChildContent>
                                 <ErrorContent>
                                     <div class="error-boundary" role="alert"><h3>Could not display this variant</h3><p class="mb-0">Switch tabs to continue; the other variants are unaffected.</p></div>
@@ -256,7 +281,7 @@
                                      aria-labelledby="@LeafTabId(tab, activeLeaf)" @key="activeLeaf.Id">
                                     <ErrorBoundary @key="activeLeaf.Id">
                                         <ChildContent>
-                                            <HgvsDetailPanel @key="activeLeaf.Id" Data="activeLeaf" RsId="@tab.RsId" SeedStart="_seedStart" SeedEnd="_seedEnd" />
+                                            <HgvsDetailPanel @key="activeLeaf.Id" Data="activeLeaf" RsId="@tab.RsId" SeedStart="_seedStart" SeedEnd="_seedEnd" Repeat="@RunRepeat" />
                                         </ChildContent>
                                         <ErrorContent>
                                             <div class="error-boundary" role="alert"><h3>Could not display this variant</h3><p class="mb-0">Switch tabs to continue; the other variants are unaffected.</p></div>

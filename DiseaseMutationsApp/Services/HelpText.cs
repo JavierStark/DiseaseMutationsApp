@@ -22,7 +22,7 @@ public static class HelpText
     public const string Homopolymers = "Number of runs of 4 or more identical letters (AAAA, CCCC, GGGG, UUUU). Such runs can cause synthesis or transcription problems; fewer is better.";
     public const string Alignments = "How many places the guide's DNA window matches the human genome (GRCh38) with up to 2 mismatches, counted up to 6 (Bowtie). 1 = unique. 0 = no match, ranked best by design: normal for edited sequences such as deletions. This is a genome check, not a transcriptome check.";
     public const string Assembly = "Whether the DNA you would order contains cut sites that break a cloning standard: BioBrick RFC[10] (EcoRI, NotI, XbaI, SpeI, PstI) and iGEM Type IIS RFC[1000] (BsaI, SapI). Green = compatible, red = a site is present.";
-    public const string Energy = "Minimum free energy of the complete gRNA (scaffold + spacer) folded by ViennaRNA, in kcal/mol. Closer to zero means a less tightly folded, more accessible guide, which ranks better.";
+    public const string Energy = "Minimum free energy of the gRNA folded by ViennaRNA with the direct repeat chosen for screening (or the spacer alone if you chose none), in kcal/mol. Closer to zero means a less tightly folded, more accessible guide, which ranks better.";
     public const string SpacerUnpaired = "Share of the spacer's letters left unpaired when the complete gRNA is folded by ViennaRNA. A spacer that folds on itself or sticks to the scaffold may bind its target less well; higher is more accessible.";
     public const string ScaffoldBroken = "In the fold of the complete gRNA the scaffold's own hairpin, which Cas13 recognises, is no longer formed: the spacer pairs with it. Such a guide may not load into Cas13.";
     public const string ScoreOnlyCandidate = "This is the only ordinary candidate, so a relative score would be meaningless (it would always read 100 %).";
@@ -46,7 +46,9 @@ public static class HelpText
     public const string OrientationUnknown = "The gene's orientation is not known for a typed HGVS. Cas13 needs a spacer complementary to the mRNA: check which strand the gene is read from.";
 
     // ----- Complete gRNA, shortlist, files -----
-    public const string Scaffold = "The constant 36-letter handle (direct repeat) that precedes the spacer; Cas13 recognises its hairpin. Diana uses one fixed scaffold; confirm that it is the one for your Cas13 protein.";
+    public const string Repeat = "The 5' sequence each spacer is folded with while screening. The energy, 'hairpin broken' and 'spacer unpaired' columns depend on it; the alignments, GC and ranking inputs other than the energy do not. Choose the standard Cas13 repeat, none (the spacer alone) or paste your own. The guide you build later always carries a repeat (the standard one when you chose none), and is folded again there.";
+    public const string RepeatCustom = "Your direct repeat as RNA or DNA (A, C, G, U/T; spaces are ignored), 5' to 3' as it sits before the spacer. Diana cannot check that it matches your Cas13 protein.";
+    public const string Scaffold = "The constant 36-letter handle (direct repeat) that precedes the spacer; Cas13 recognises its hairpin. Diana's default is the 36-letter repeat below; confirm that it is the one for your Cas13 protein, or choose another under Direct repeat before running.";
     public const string Shortlist = "Guides you picked across variants. Send them to Pooling or download an order-ready oligo file.";
     public const string T7 = "Adds a T7 promoter to the DNA oligos so the guide can be made by in-vitro transcription.";
     public const string Pairs = "Writes the top and bottom DNA strands as separate oligos, ready to anneal.";

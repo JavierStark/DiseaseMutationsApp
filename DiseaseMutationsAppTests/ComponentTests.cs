@@ -70,7 +70,7 @@ public class ComponentTests : BunitContext
 
     private sealed class FakeGrnaAnalysis : IGrnaAnalysis
     {
-        public Task<ResultFromHGVS> GetBestgRNAFromHgvs(string hgvs, int window, int seedStart, int seedEnd, bool complement = false, CancellationToken cancellationToken = default) => throw new NotSupportedException();
+        public Task<ResultFromHGVS> GetBestgRNAFromHgvs(string hgvs, int window, int seedStart, int seedEnd, bool complement = false, CancellationToken cancellationToken = default, string? repeat = null) => throw new NotSupportedException();
         public Task<List<string>> GetHgvsFromSnp(string rsid, CancellationToken cancellationToken = default) => throw new NotSupportedException();
         public string? GetNcbiNuccoreUrl(string hgvs) => null;
     }

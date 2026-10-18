@@ -93,6 +93,74 @@ public class DesignPageTests : E2EBase
         await Expect(DoneStatus).ToContainTextAsync("1 of 1 variants analysed");
     }
 
+    private ILocator RepeatSelect => Page.GetByLabel("Direct repeat", new() { Exact = true });
+
+    [Test]
+    public async Task DirectRepeat_DefaultsToTheStandardRepeat_AndOffersNoneAndCustom()
+    {
+        await GotoAsync("/");
+
+        await Expect(RepeatSelect).ToHaveValueAsync("Default");
+        await Expect(RepeatSelect.Locator("option")).ToHaveCountAsync(3);
+        await Expect(Page.GetByLabel("Direct repeat sequence")).ToHaveCountAsync(0);   // the text box only exists for a custom repeat
+    }
+
+    [Test]
+    public async Task CustomRepeat_NeedsAUsableSequence_BeforeARunCanStart()
+    {
+        await GotoAsync("/");
+        await VariantsBox.FillAsync("NC_000017.11:g.7674220C>T");
+        await RepeatSelect.SelectOptionAsync("Custom");
+
+        var box = Page.GetByLabel("Direct repeat sequence");
+        await Expect(RunButton).ToBeDisabledAsync();                                  // nothing typed yet
+        await box.FillAsync("GAUXUU");
+        await Expect(Page.GetByRole(AriaRole.Alert).Filter(new() { HasText = "only the letters A, C, G and U" })).ToBeVisibleAsync();
+        await Expect(RunButton).ToBeDisabledAsync();
+        await box.FillAsync("gauu uuc");                                              // case and blanks are fine, T would be too
+        await Expect(RunButton).ToBeEnabledAsync();
+    }
+
+    [Test]
+    public async Task CustomRepeat_IsTheOneTheCompleteGrnaIsBuiltWith()
+    {
+        await GotoAsync("/");
+        await RepeatSelect.SelectOptionAsync("Custom");
+        await Page.GetByLabel("Direct repeat sequence").FillAsync("GAUUUC");
+        await RunAsync("NC_000017.11:g.7674220C>T");
+        await Expect(DoneStatus).ToContainTextAsync("1 of 1 variants analysed");
+
+        await Page.GetByRole(AriaRole.Button, new() { Name = "Use" }).First.ClickAsync();
+
+        await Expect(Page.Locator(".scaffold-seq")).ToHaveTextAsync("GAUUUC");
+        await Expect(Page.Locator(".complete-grna-card")).ToContainTextAsync("your custom repeat (6 nt)");
+    }
+
+    [Test]
+    public async Task NoRepeat_StillBuildsTheGuideWithTheStandardRepeat_AndSaysSo()
+    {
+        await GotoAsync("/");
+        await RepeatSelect.SelectOptionAsync("None");
+        await RunAsync("NC_000017.11:g.7674220C>T");
+        await Expect(DoneStatus).ToContainTextAsync("1 of 1 variants analysed");
+
+        await Page.GetByRole(AriaRole.Button, new() { Name = "Use" }).First.ClickAsync();
+
+        await Expect(Page.Locator(".scaffold-seq")).ToHaveTextAsync("GAUUUAGACUACCCCAAAAACGAAGGGGACUAAAAC");
+        await Expect(Page.Locator(".complete-grna-card")).ToContainTextAsync("none was used for screening");
+    }
+
+    [Test]
+    public async Task Permalink_CarriesTheRepeatChoice()
+    {
+        await GotoAsync("/?hgvs=NC_000017.11:g.7674220C%3ET&repeat=none");
+        await Expect(RepeatSelect).ToHaveValueAsync("None");
+
+        await GotoAsync("/?hgvs=NC_000017.11:g.7674221C%3ET&repeat=gauuuc");
+        await Expect(RepeatSelect).ToHaveValueAsync("Custom");
+        await Expect(Page.GetByLabel("Direct repeat sequence")).ToHaveValueAsync("GAUUUC");
+    }
+
     [TestCase("17")]
     [TestCase("61")]
     public async Task SpacerOutsideRange_ShowsAMessage_AndBlocksTheRun(string size)

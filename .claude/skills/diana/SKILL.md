@@ -115,6 +115,7 @@ grna resolve rs334 [rs... ]                                   # stdout: "<rsID>\
 grna design --hgvs 'NC_000017.11:g.7674220C>T'                # CSV report to stdout (default --format csv)
 grna design --hgvs '<HGVS>' --format json|tsv [--out file]    # other formats
 grna design --hgvs '<HGVS>' --spacer 28 --seed 10-17 --complement   # parameters (these values are the defaults, minus --complement)
+grna design --hgvs '<HGVS>' --repeat none                           # fold the spacer alone; --repeat default (36 nt scaffold) or --repeat <RNA/DNA sequence> too
 grna design --input variants.txt --out report.csv [--concurrency 2] # batch; RESUMABLE (re-run skips variants already in report.csv)
 printf 'rs334\n' | grna design --input /dev/stdin --format json     # stdin input (Linux/container; docker needs -i, the wrapper adds it)
 grna fold GAUUUAGACUACCCCAAAAACGAAGGGGACUAAAAC                 # 2 lines: sequence, then dot-bracket<TAB>energy
@@ -141,7 +142,7 @@ session `.json`. Exact formats, output schemas, resume rules and pooling details
 5. **Typos are rejected, not ignored.** An unknown option (`--capasity 2`) or a flag that does not apply to the command
    exits 2 and names it. Only `--complement`, `--network` and `--help` are value-less flags; there is no `--opt=value` form.
 6. **Resume semantics.** With `--input` + `--out <file>.csv` + csv format, an existing report is appended to and variants
-   already in it (keyed by RS ID + HGVS + strand) are skipped. A report made with a different `--spacer` or `--seed` is
+   already in it (keyed by RS ID + HGVS + strand) are skipped. A report made with a different `--spacer`, `--seed` or `--repeat` is
    refused (exit 2): use a new `--out` file when changing those. Running the other strand (`--complement`) into the same
    file is fine and appends its rows.
 7. **`--complement` analyses one strand per run:** the opposite strand (the reverse complement, read 5'->3'). For both

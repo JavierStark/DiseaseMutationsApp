@@ -28,11 +28,14 @@ Usage:
   grna resolve <rsID> [<rsID> ...] [--all-alleles]
   grna disease <name | OMIM number | MONDO id> [--list] [--pick 1] [--subtypes] [--min-significance pathogenic-likely|pathogenic|any]
                                               [--format rs|csv|tsv|json] [--out file]
-  grna design --hgvs <HGVS> [--spacer 28] [--seed 10-17] [--complement] [--format csv|json|tsv] [--out file]
-  grna design --input <list.txt|session.json> --out <report.csv> [--spacer 28] [--seed 10-17] [--complement] [--concurrency 2] [--all-alleles]
+  grna design --hgvs <HGVS> [--spacer 28] [--seed 10-17] [--repeat default|none|<RNA>] [--complement] [--format csv|json|tsv] [--out file]
+  grna design --input <list.txt|session.json> --out <report.csv> [--spacer 28] [--seed 10-17] [--repeat default|none|<RNA>] [--complement] [--concurrency 2] [--all-alleles]
   grna fold <RNA sequence>
   grna pool --guides <report.csv> [--capacity 5] [--plate 96|384] [--model auto|2df|2dm|3d] [--out plan.csv]
   grna pool --count <V>          [--capacity 5] [--plate 96|384] [--model auto|2df|2dm|3d] [--out plan.csv]
+
+--repeat is the 5' context every spacer is folded with while screening: default (the 36 nt Cas13 scaffold), none (the spacer alone)
+or your own direct repeat as an RNA/DNA sequence. It changes the energy, hairpin and unpaired-share columns, not the alignments.
 
 Environment: GRNA_BOWTIE_BINARY, GRNA_BOWTIE_INDEX, GRNA_PYTHON, GRNA_NCBI_API_KEY, GRNA_NCBI_CONTACT
 Exit codes: 0 ok, 1 failure, 2 bad input, 3 missing native dependency, 4 upstream failure
@@ -71,7 +74,7 @@ let private allowed =
         [ "doctor", (Set.empty, set [ "network"; "help" ])
           "resolve", (Set.empty, set [ "all-alleles"; "help" ])
           "disease", (set [ "pick"; "min-significance"; "format"; "out" ], set [ "list"; "subtypes"; "help" ])
-          "design", (set [ "hgvs"; "input"; "spacer"; "seed"; "format"; "out"; "concurrency" ], set [ "complement"; "all-alleles"; "help" ])
+          "design", (set [ "hgvs"; "input"; "spacer"; "seed"; "repeat"; "format"; "out"; "concurrency" ], set [ "complement"; "all-alleles"; "help" ])
           "fold", (Set.empty, set [ "help" ])
           "pool", (set [ "guides"; "count"; "capacity"; "plate"; "model"; "out" ], set [ "help" ]) ]
 
@@ -257,10 +260,10 @@ let private jsonOf (rows: DesignRow list) =
                original = cands r.Result.originalGRNA |})
     JsonSerializer.Serialize(items, opts)
 
-let private csvOf (rows: DesignRow list) (spacer, seedS, seedE) (includeHeader: bool) =
+let private csvOf (rows: DesignRow list) (repeat: string) (spacer, seedS, seedE) (includeHeader: bool) =
     let sb = StringBuilder()
     if includeHeader then
-        sb.AppendLine(ReportSchema.provenance spacer seedS seedE) |> ignore
+        sb.AppendLine(ReportSchema.provenanceWithRepeat repeat spacer seedS seedE) |> ignore
         sb.AppendLine ReportSchema.header |> ignore
     for r in rows do
         for g in r.Result.gRNA do
@@ -271,7 +274,7 @@ let private csvOf (rows: DesignRow list) (spacer, seedS, seedE) (includeHeader: 
 
 let private tsvOf (rows: DesignRow list) =
     // Split each CSV row into fields first: a plain Replace(',', '\t') would also break quoted fields that contain commas.
-    (csvOf rows (0, 0, 0) false).Split([| '\n' |], StringSplitOptions.RemoveEmptyEntries)
+    (csvOf rows "" (0, 0, 0) false).Split([| '\n' |], StringSplitOptions.RemoveEmptyEntries)
     |> Array.map (fun l -> l.TrimEnd('\r') |> ReportSchema.splitCsvLine |> String.concat "\t")
     |> String.concat "\n"
     |> fun s -> ReportSchema.header.Replace(',', '\t') + "\n" + s + "\n"
@@ -286,7 +289,7 @@ let private readSession (file: string) =
             let root = doc.RootElement
             let str (n: string) = match root.TryGetProperty n with | true, v when v.ValueKind = JsonValueKind.String -> Some(v.GetString()) | _ -> None
             let num (n: string) = match root.TryGetProperty n with | true, v when v.ValueKind = JsonValueKind.Number -> Some(v.GetInt32()) | _ -> None
-            Some(defaultArg (str "input") "", num "spacer", str "seed")
+            Some(defaultArg (str "input") "", num "spacer", str "seed", str "repeat")
         with :? JsonException -> raise (BadArgs(sprintf "'%s' is not a valid session file." file))
     else
         None
@@ -294,12 +297,19 @@ let private readSession (file: string) =
 let design (args: Args) (ct: CancellationToken) : Task<int> =
     task {
         let session = opt args "input" |> Option.bind (fun f -> if f.EndsWith(".json", StringComparison.OrdinalIgnoreCase) then readSession f else None)
-        let sessionSpacer = session |> Option.bind (fun (_, sp, _) -> sp)
-        let sessionSeed = session |> Option.bind (fun (_, _, sd) -> sd)
+        let sessionSpacer = session |> Option.bind (fun (_, sp, _, _) -> sp)
+        let sessionSeed = session |> Option.bind (fun (_, _, sd, _) -> sd)
+        let sessionRepeat = session |> Option.bind (fun (_, _, _, rp) -> rp)
         let spacer = intOpt args "spacer" (defaultArg sessionSpacer 28)
         let seedS, seedE = parseSeed (defaultArg (opt args "seed") (defaultArg sessionSeed "10-17"))
         // Same bounds as the library and the web app (spacer 18-60, seed inside the spacer); a GrnaInputException ends as exit 2.
         Main.validateSpacerParameters spacer seedS seedE
+        // default = the Cas13 scaffold, none = the spacer alone, anything else a direct repeat (validated like in the web app).
+        let repeat =
+            match (defaultArg (opt args "repeat") (defaultArg sessionRepeat "default")).Trim() with
+            | r when r.Equals("default", StringComparison.OrdinalIgnoreCase) -> SpacerFinder.scaffold
+            | r when r.Equals("none", StringComparison.OrdinalIgnoreCase) -> ""
+            | r -> SpacerFinder.normaliseRepeat r
         let complement = args.Flags.Contains "complement"
         let concurrency = max 1 (min 4 (intOpt args "concurrency" 2))
         let out = opt args "out"
@@ -310,7 +320,7 @@ let design (args: Args) (ct: CancellationToken) : Task<int> =
             match opt args "hgvs", opt args "input" with
             | Some h, None -> [ h ]
             | None, Some file when session.IsSome ->
-                let (input, _, _) = session.Value
+                let (input, _, _, _) = session.Value
                 input.Split([| ','; ';'; '\n'; '\r' |], StringSplitOptions.RemoveEmptyEntries)
                 |> Array.map _.Trim()
                 |> Array.filter (fun l -> l <> "")
@@ -339,6 +349,10 @@ let design (args: Args) (ct: CancellationToken) : Task<int> =
         match existingLines |> Array.tryHead |> Option.bind ReportSchema.tryParseProvenance with
         | Some (sp, ss, se) when (sp, ss, se) <> (spacer, seedS, seedE) ->
             raise (BadArgs(sprintf "'%s' was made with spacer=%d seed=%d-%d, not spacer=%d seed=%d-%d. Use a new --out file or the same parameters." out.Value sp ss se spacer seedS seedE))
+        | _ -> ()
+        match existingLines |> Array.tryHead |> Option.bind ReportSchema.tryParseRepeat with
+        | Some earlier when earlier <> repeat ->
+            raise (BadArgs(sprintf "'%s' was made with another direct repeat (%s), not %s. Use a new --out file or the same --repeat." out.Value (ReportSchema.repeatToken earlier) (ReportSchema.repeatToken repeat)))
         | _ -> ()
         let alreadyDone =
             existingLines
@@ -382,7 +396,7 @@ let design (args: Args) (ct: CancellationToken) : Task<int> =
                     do! sem.WaitAsync ct
                     try
                         try
-                            let! r = Main.getBestgRNAFromHGVS h spacer seedS seedE bowtie ct complement
+                            let! r = Main.getBestgRNAFromHGVSWith repeat h spacer seedS seedE bowtie ct complement
                             results.Add((i, { Hgvs = h; RsId = rs; Complement = complement; Result = r }))
                             eprintfn "ok   %s" h
                             for notice in r.notices do eprintfn "note %s: %s" h notice
@@ -402,7 +416,7 @@ let design (args: Args) (ct: CancellationToken) : Task<int> =
             match format with
             | "json" -> jsonOf rows
             | "tsv" -> tsvOf rows
-            | _ -> csvOf rows (spacer, seedS, seedE) (not isBatchCsv || not (File.Exists out.Value) || alreadyDone.IsEmpty)
+            | _ -> csvOf rows repeat (spacer, seedS, seedE) (not isBatchCsv || not (File.Exists out.Value) || alreadyDone.IsEmpty)
 
         if isBatchCsv && File.Exists out.Value && not alreadyDone.IsEmpty then
             File.AppendAllText(out.Value, body, UTF8Encoding(false))

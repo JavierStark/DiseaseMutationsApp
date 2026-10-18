@@ -43,6 +43,7 @@ Record every run in section 9. A step that was not run is written as "not run", 
 | 2.5 | Enter `NM_000518.5:c.20A>T` (needs internet) | Converted to `NM_000518.5:n.70A>T` (a notice says so; HBB CDS starts at 51); the sickle-cell guides appear, designed on the mRNA, and the tab says the spacers bind the mRNA |
 | 2.5b | Enter `NG_000007.3:c.20A>T` and `NM_000518.5:c.92+2T>C` | Both fail with a clear message (genomic record: use the NM_ accession or g.; intronic offset: not in an mRNA) |
 | 2.5c | In any result table, find a guide whose complete-gRNA fold breaks the scaffold hairpin | The Energy cell shows a "hairpin broken" chip; *Spacer unpaired* shows a percentage; hover both for the explanation. A variant with one ordinary candidate shows "only candidate" instead of 100 % |
+| 2.5d | Run `NG_000007.3:g.70614A>T` three times with **Direct repeat for screening** set to the standard repeat, *None* and *My own* (paste `GGGAUUUAGACUACCCCAAAAACGAAGGGGACUAAAAC`), pressing **Use** on the same spacer each time, then **Get structure** | Energy values differ between the three runs (about -9.4, -2.7 and -12.6 kcal/mol for the top spacer) while Alignments are identical; with *None* the Energy is of the spacer alone and "hairpin broken" never appears; the Complete gRNA card shows the chosen repeat (the standard one for *None*, with a note), and "Get structure" shows the hairpin check and a warning when its fold disagrees with the table row; the downloaded CSV's first line ends its parameters with `repeat=` the sequence or `none` |
 | 2.6 | Enter `NC_000017.11:g.7674220_7674300del` (81 bp, longer than the spacer) | Fails with "mutated region is 0 nt, shorter than the spacer size" |
 | 2.7 | Enter `NC_000017.11:g.7674220_7679220dup` (5 kb) | Completes (several minutes), no "Argument list too long" |
 | 2.8 | Enter `rs334` | 24 or so variants resolve; each has a normal and a `C` tab; the run can be cancelled from the progress bar |
@@ -87,6 +88,7 @@ Run through `.claude/skills/diana/scripts/grna.sh` or `grna.ps1` as well as `doc
 | 3.2 | Same with `--format json` and `--format tsv` | JSON parses (`rsId` is a string or null); TSV has one tab-separated record per row |
 | 3.3 | `grna design --input list.txt --out report.csv`, interrupt with Ctrl-C, run again | Second run skips finished variants and appends; no duplicate rows |
 | 3.4 | Repeat 3.3 with `--spacer 30` against the same `report.csv` | Refused, exit 2, message names both parameter sets |
+| 3.4b | Repeat 3.3 with `--repeat none` against the same `report.csv` | Refused, exit 2, message names both repeats; `--repeat GAUX` alone exits 2 with the letters message |
 | 3.5 | Repeat 3.3 with `--complement` and the same parameters | Appends the other strand's rows |
 | 3.6 | `grna design --bogus 1 ...`, `grna design --help`, `grna pool --capacity 0 --count 10` | Exit 2 naming the option; usage and exit 0; exit 2 with a message (never a stack trace) |
 | 3.7 | `grna pool --guides report.csv --capacity 5 --plate 96` | Plan CSV; a guide appearing on both strands counts once |

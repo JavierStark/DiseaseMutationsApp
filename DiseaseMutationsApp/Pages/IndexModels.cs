@@ -77,6 +77,8 @@ namespace DiseaseMutationsApp.Pages
         public bool CopiedToClipboard { get; set; }
         public bool IsLoadingRnaFold { get; set; }
         public RNAFoldResult? RnaFoldResult { get; set; }
+        /// <summary>The built guide's fold with the repeat it was built with and the checks derived from it; null until "Get structure".</summary>
+        public ConstructFoldResult? Construct { get; set; }
         public string? RnaFoldError { get; set; }
         public string? FornaUrl { get; set; }
         public bool ShowStructure { get; set; }

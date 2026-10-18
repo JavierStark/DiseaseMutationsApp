@@ -7,7 +7,7 @@ namespace DiseaseMutationsApp.Services;
 /// The small, versioned snapshot persisted across a page refresh: inputs and parameters only.
 /// Results are never persisted (they are megabytes); the exported CSV is the durable artifact.
 /// </summary>
-public record SessionSnapshot(int Version, string? Input, int SpacerSize, int SeedStart, int SeedEnd, string? ActiveTab, DateTimeOffset SavedAt)
+public record SessionSnapshot(int Version, string? Input, int SpacerSize, int SeedStart, int SeedEnd, string? ActiveTab, DateTimeOffset SavedAt, string? Repeat = null)
 {
     public const int CurrentVersion = 1;
 }

@@ -3,8 +3,28 @@
 open System.Threading.Tasks
 open gRNA.RNAFoldWrapper
 
-/// Constant Cas13 scaffold (36 nt) that precedes the spacer in the complete gRNA.
+/// Constant Cas13 scaffold (36 nt) that precedes the spacer in the complete gRNA. It is the default direct repeat.
 let scaffold = "GAUUUAGACUACCCCAAAAACGAAGGGGACUAAAAC"
+
+/// Longest custom direct repeat accepted; real repeats are 30-40 nt, so this only stops pasted sequences that are not one.
+[<Literal>]
+let MaxRepeatLength = 200
+
+/// The 5' context a spacer is folded with is a "direct repeat" string: "" means the spacer alone, anything else is
+/// prepended to every spacer. This turns what a user typed into that string (RNA, no blanks); "" stays "".
+/// Throws GrnaInputException for letters that are not A, C, G, U/T or for a sequence that is too long.
+let normaliseRepeat (raw: string) : string =
+    let cleaned =
+        (if isNull raw then "" else raw)
+        |> Seq.filter (fun c -> not (System.Char.IsWhiteSpace c))
+        |> Seq.map (fun c -> match System.Char.ToUpperInvariant c with 'T' -> 'U' | u -> u)
+        |> Seq.toArray
+        |> System.String
+    if cleaned |> Seq.exists (fun c -> not ("ACGU".Contains c)) then
+        raise (GrnaInputException "A direct repeat may contain only the letters A, C, G and U (or T).")
+    if cleaned.Length > MaxRepeatLength then
+        raise (GrnaInputException(sprintf "A direct repeat is at most %d letters long, got %d." MaxRepeatLength cleaned.Length))
+    cleaned
 
 let slidingWindow (input: string) (windowSize: int) =
     if windowSize <= 0 then
@@ -221,12 +241,42 @@ let spacerUnpaired (scaffoldLength: int) (full: string) : float =
         let spacerPart = full.Substring scaffoldLength
         float (spacerPart |> Seq.filter (fun c -> c = '.') |> Seq.length) / float spacerPart.Length
 
-/// The fold of the scaffold alone, computed once per process.
-let private scaffoldReference : Lazy<Task<string>> =
-    lazy (task {
-        let! fold = RNAFoldWrapper.fold scaffold System.Threading.CancellationToken.None
-        return fold.Structure
-    })
+/// Folds of direct repeats alone, each computed once per process. Custom repeats are user input, so the table is bounded.
+let private repeatReferences = System.Collections.Concurrent.ConcurrentDictionary<string, Lazy<Task<string>>>()
+let private MaxCachedRepeats = 64
+
+/// The fold of the repeat alone (what Cas13 needs intact); "" for no repeat.
+let private repeatReference (repeat: string) : Task<string> =
+    if repeat = "" then Task.FromResult ""
+    else
+        if repeatReferences.Count >= MaxCachedRepeats then repeatReferences.Clear()
+        repeatReferences.GetOrAdd(repeat, fun r ->
+            lazy (task {
+                let! fold = RNAFoldWrapper.fold r System.Threading.CancellationToken.None
+                return fold.Structure
+            })).Value
+
+/// One construct (direct repeat + spacer) folded, with the two checks derived from that fold.
+type ConstructFold =
+    { Fold: RNAFoldResult
+      /// False when the spacer pulls the repeat's own hairpin apart; always true without a repeat.
+      Intact: bool
+      /// Share (0-1) of the spacer left unpaired; -1 = not computed.
+      Unpaired: float }
+
+/// Folds `repeat + spacer` for every spacer. The screening and the Builder's complete-gRNA fold both go through here,
+/// so the numbers mean the same thing wherever the context is chosen. `repeat` = "" folds each spacer alone.
+let foldConstructs (repeat: string) (spacers: string list) (cancellationToken: System.Threading.CancellationToken) : Task<ConstructFold list> =
+    task {
+        let! folds = foldMany (spacers |> List.map (fun s -> repeat + s)) cancellationToken
+        let! reference = repeatReference repeat
+        return
+            folds
+            |> List.map (fun fold ->
+                { Fold = fold
+                  Intact = scaffoldIntact reference fold.Structure
+                  Unpaired = spacerUnpaired repeat.Length fold.Structure })
+    }
 
 let sortByResult (result: gRNAResult) =
     (result.Allignments, -result.RnaFoldResult.Energy, -result.GCScore, result.HomopolymerCount)
@@ -237,7 +287,9 @@ let reverse (sequence: string) =
     |> Seq.toArray
     |> System.String
 
-let getOrderedgRna (seedStart: int) (seedEnd: int) (window: int) (sequence: string) (mutationStart: int) (mutationLength: int) (bowtieService: gRNA.Services.BowtieService) (cancellationToken: System.Threading.CancellationToken) : Task<gRNAResult list> =
+/// Ranks every window of `sequence` as a spacer. `repeat` is the 5' context each spacer is folded with while screening
+/// ("" = the spacer alone); it must already be normalised (see `normaliseRepeat`).
+let getOrderedgRnaWith (repeat: string) (seedStart: int) (seedEnd: int) (window: int) (sequence: string) (mutationStart: int) (mutationLength: int) (bowtieService: gRNA.Services.BowtieService) (cancellationToken: System.Threading.CancellationToken) : Task<gRNAResult list> =
     task {
         let subsequences = slidingWindow sequence window
         // A sequence shorter than the spacer has no window: nothing to align or fold (Bowtie rejects an empty read list).
@@ -260,20 +312,17 @@ let getOrderedgRna (seedStart: int) (seedEnd: int) (window: int) (sequence: stri
                 { sequenceResult with
                     MutationHighlightStart = highlightStart
                     MutationHighlightLength = highlightLength })
-        // Fold the actual RNA gRNA (scaffold + spacer), not the raw DNA window.
-        let gRNASequences = results |> List.map (fun r -> scaffold + r.Sequence)
-
         let! allignments = bowtieService.ProcessMultipleSequencesAsync(subsequences, 2, 2, cancellationToken)
-        let! folds = foldMany gRNASequences cancellationToken
-        let! scaffoldStructure = scaffoldReference.Value
-        
+        // Fold the actual RNA (direct repeat + spacer), not the raw DNA window.
+        let! constructs = foldConstructs repeat (results |> List.map (fun r -> r.Sequence)) cancellationToken
+
         let results =
-            List.zip3 results folds allignments
-            |> List.map (fun (res, fold, align) ->
+            List.zip3 results constructs allignments
+            |> List.map (fun (res, construct, align) ->
                 { res with
-                    RnaFoldResult = fold
-                    ScaffoldIntact = scaffoldIntact scaffoldStructure fold.Structure
-                    SpacerUnpaired = spacerUnpaired scaffold.Length fold.Structure
+                    RnaFoldResult = construct.Fold
+                    ScaffoldIntact = construct.Intact
+                    SpacerUnpaired = construct.Unpaired
                     Allignments = align})
 
         let filteredResults = results |> List.sortBy sortByResult
@@ -305,3 +354,7 @@ let getOrderedgRna (seedStart: int) (seedEnd: int) (window: int) (sequence: stri
 
         return finalResults
     }
+
+/// `getOrderedgRnaWith` with the default direct repeat (the 36 nt Cas13 scaffold).
+let getOrderedgRna (seedStart: int) (seedEnd: int) (window: int) (sequence: string) (mutationStart: int) (mutationLength: int) (bowtieService: gRNA.Services.BowtieService) (cancellationToken: System.Threading.CancellationToken) : Task<gRNAResult list> =
+    getOrderedgRnaWith scaffold seedStart seedEnd window sequence mutationStart mutationLength bowtieService cancellationToken

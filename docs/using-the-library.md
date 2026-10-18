@@ -53,6 +53,8 @@ Main.getBestgRNAFromHGVS : hgvs:string -> grnaSize:int -> seedStart:int -> seedE
 
 Before any NCBI or Bowtie work it validates (all failures are `GrnaInputException`): `validateSpacerParameters` (spacer 18-60, seed inside it, constants `MinSpacerSize`/`MaxSpacerSize`), the parsed HGVS, and, once the sequence is fetched, `validateAgainstSequence` (supported coordinates `g.`/`m.`/`n.` - an unconverted `c.` is refused; `getBestgRNAFromHGVS` first converts `c.` on a transcript record with `HGVS.convertCodingToTranscript` and the CDS range from `SequenceRepository.GetCodingRange`, supported mutation type, position inside the sequence, adjacent positions for an insertion, stated reference equal to the real one). `complement = true` designs against the opposite strand: `orientForStrand` replaces both sequences by their reverse complement and mirrors the mutation span (`mirrorSpan`).
 
+`Main.getBestgRNAFromHGVSWith : repeat:string -> ...same arguments...` does the same with a chosen 5' context for the fold: `""` folds the spacer alone, anything else is a direct repeat that is normalised first (`SpacerFinder.normaliseRepeat`: A/C/G/U or T, blanks dropped, at most `SpacerFinder.MaxRepeatLength` letters, otherwise `GrnaInputException`). `getBestgRNAFromHGVS` is `getBestgRNAFromHGVSWith SpacerFinder.scaffold`.
+
 The function is **curried**; from C# the compiler exposes it as a normal method taking all arguments in order, as
 `GrnaService.GetBestgRNAFromHgvs` shows: `Main.getBestgRNAFromHGVS(hgvs, window, seedStart, seedEnd, bowtie, ct, complement)`.
 `ResultFromHGVS` (note: a different type from the C# record of the same name in `DiseaseMutationsApp.Services`) carries
@@ -102,8 +104,9 @@ printf "%s" (gRNA.DiseaseVariants.formatRsList result.Variants)   // one rsID pe
 
 ### `SpacerFinder`
 `scaffold`, `slidingWindow`, `calculateGCContent`, `calculateGCScore gc (lower, upper)` (inclusive bounds),
-`countHomopolymers`, `getgRNAResult`, `getOrderedgRna` (the whole ranking, async), `applySubstitutionSpecialRule`,
-`sortByResult`. Ranking key: `(Alignments, -Energy, -GCScore, Homopolymers)`.
+`countHomopolymers`, `getgRNAResult`, `getOrderedgRna` / `getOrderedgRnaWith repeat` (the whole ranking, async, folded with the default or a given repeat),
+`foldConstructs repeat spacers ct` (repeat + spacer fold with the hairpin and unpaired checks; the one place both the screening and the Builder fold through),
+`normaliseRepeat`, `applySubstitutionSpecialRule`, `sortByResult`. Ranking key: `(Alignments, -Energy, -GCScore, Homopolymers)`.
 
 ### `RNAFoldWrapper`
 `fold seq ct`, `foldMany seqs ct`, `foldManyWith env seqs ct` (result: `{ Structure; Energy }`). Bounded to 2 concurrent

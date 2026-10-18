@@ -38,8 +38,8 @@ public static class RestrictionSites
     };
 
     /// <summary>Compatibility of the DNA ordered for this spacer (scaffold + spacer) with each assembly standard.</summary>
-    public static IReadOnlyList<AssemblyCompatibility> CompatibilityForGuide(string spacerRna, bool includeT7 = false) =>
-        Compatibility(ForGuide(spacerRna, includeT7));
+    public static IReadOnlyList<AssemblyCompatibility> CompatibilityForGuide(string spacerRna, bool includeT7 = false, string? repeat = null) =>
+        Compatibility(ForGuide(spacerRna, includeT7, repeat));
 
     /// <summary>Given the enzymes found in a sequence, which standards it is compatible with.</summary>
     public static IReadOnlyList<AssemblyCompatibility> Compatibility(IReadOnlyList<string> foundEnzymes) =>
@@ -58,8 +58,8 @@ public static class RestrictionSites
     }
 
     /// <summary>Sites in the DNA that would be ordered for this spacer: scaffold + spacer, behind the T7 promoter if requested.</summary>
-    public static IReadOnlyList<string> ForGuide(string spacerRna, bool includeT7) =>
-        Find(OligoExport.Template(spacerRna, includeT7, OligoStrand.Sense));
+    public static IReadOnlyList<string> ForGuide(string spacerRna, bool includeT7, string? repeat = null) =>
+        Find(OligoExport.Template(spacerRna, includeT7, OligoStrand.Sense, repeat));
 
     public static string Warning(string enzyme) =>
         $"Warning: This DNA sequence includes a restriction site for the enzyme: '{enzyme}'";

@@ -116,7 +116,7 @@ The same preflight as `grna doctor`: Bowtie binary and index, Python and ViennaR
 grna doctor [--network]
 grna resolve rs334 [--all-alleles]
 grna disease "sickle cell disease" --format rs --out sickle.txt   # rsIDs of a disease's pathogenic ClinVar variants
-grna design --hgvs NC_000017.11:g.7674220C>T --spacer 28 --seed 10-17 [--complement] [--format csv|json|tsv]
+grna design --hgvs NC_000017.11:g.7674220C>T --spacer 28 --seed 10-17 [--repeat default|none|<RNA>] [--complement] [--format csv|json|tsv]
 grna design --input variants.txt|session.json --out report.csv   # batch, resumable, bounded concurrency ([--all-alleles] for every dbSNP allele)
 grna fold "GAUUUAGACUACCCC..."
 grna pool --guides report.csv --capacity 5 --plate 96 --model auto --out plan.csv
@@ -219,7 +219,8 @@ If a variant fails it shows the reason and a **Retry this variant** button; othe
   does not separate candidates (see [BIOLOGICAL_REPORT.md](BIOLOGICAL_REPORT.md) section 4.2c).
 - **Spacer unpaired** (`Spacer Unpaired` in the CSV): the share of the spacer's letters left unpaired in the fold of the complete gRNA; a spacer that folds on itself or sticks to the scaffold may bind its target less well.
 - **Hairpin broken** (`Scaffold Intact = No`): the scaffold's own hairpin (the fold of the scaffold alone) is no longer fully formed in the complete gRNA, so the guide may not load into Cas13. Both checks come from the fold already computed; they inform the choice and do not change the ranking.
-- **Energy**: minimum free energy (kcal/mol, Turner 2004 parameters [11]) of the *complete* gRNA (scaffold + spacer); closer to zero is preferred.
+- **Energy**: minimum free energy (kcal/mol, Turner 2004 parameters [11]) of the gRNA folded with the **direct repeat chosen for screening** (the 36 nt scaffold by default); closer to zero is preferred.
+- **Direct repeat for screening** (web form, `--repeat` in the CLI, `repeat=` in the permalink and session file): the 5' context each spacer is folded with while screening: the standard Cas13 repeat, *none* (the spacer alone, which also makes *Hairpin broken* always "No") or *your own* repeat as RNA/DNA. It changes only the Energy, Hairpin broken and Spacer unpaired columns (and the ranking through the energy), never the alignments. It is recorded in the report's first line (`repeat=...`), and a batch report cannot be resumed with another repeat. The Builder card builds the guide with this repeat (the standard one when you chose none) and folds it again there with the same checks, saying so when that fold disagrees with the table row.
 - **Score**: 0-1, from the rank after sorting by (Alignments, Energy, GC score, Homopolymers); ties share a rank. It is a *relative* number for comparing candidates of one variant, not a prediction of guide activity; when a variant has a single ordinary candidate the table says "only candidate" instead of 100 %.
 
 - **Mismatches vs other allele** (`WT Mismatches` in the CSV): see above; 2 or more can tell the alleles apart, more is better.
@@ -232,8 +233,9 @@ window to exist (at the start or in the last 24 bases for a 28 nt spacer, the si
 cannot apply: the ordinary ranking is shown instead, with a visible warning (a `note` line on stderr and a `notices` field in
 `--format json` for the CLI).
 
-The complete gRNA is the 36 nt scaffold `GAUUUAGACUACCCCAAAAACGAAGGGGACUAAAAC` followed by the spacer (the reverse complement of the
-target window, as RNA).
+The complete gRNA is a direct repeat followed by the spacer (the reverse complement of the target window, as RNA). The default repeat
+is the 36 nt scaffold `GAUUUAGACUACCCCAAAAACGAAGGGGACUAAAAC`; choose your own under "Direct repeat for screening". Diana only ships this one
+verified repeat and cannot check that a custom one matches your Cas13 protein.
 
 ### HGVS examples
 
@@ -374,8 +376,8 @@ are stated in [THIRD-PARTY-NOTICES.md](THIRD-PARTY-NOTICES.md).
   more than 3,000 records, and include somatic and oncogenicity classifications (only germline classifications are used today).
 - Coding-sequence (`c.`) positions on genomic records (`NG_`, `NC_`): they need the exon map, because introns lie between the exons. Today only transcript records (`NM_`, `XM_`) are converted; others are refused with the advice to use the `NM_` accession.
 - Run history and design comparison (reopen or diff earlier runs with different spacer/seed).
-- Enzyme presets with a configurable scaffold: today the 36 nt Cas13 scaffold and the 28 / 10-17 defaults are fixed, and
-  presets for other Cas variants need their scaffolds and seed windows verified against the literature first.
+- Enzyme presets: the direct repeat can now be chosen (standard, none or your own), but only the 36 nt scaffold is built in and the
+  28 / 10-17 defaults are fixed; presets for other Cas variants need their repeats and seed windows verified against the literature first.
 
 Not planned: additional genome assemblies (each adds ~4 GB to the image), authentication.
 

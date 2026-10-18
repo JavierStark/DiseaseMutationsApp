@@ -30,8 +30,9 @@ public static class GrnaCsvSchema
     public const string ComplementStrand = "Complement";
 
     /// <summary>A leading comment line recording the parameters, so an exported report can be reproduced.</summary>
-    public static string ProvenanceLine(int spacerSize, int seedStart, int seedEnd) =>
-        gRNA.ReportSchema.provenance(spacerSize, seedStart, seedEnd);
+    /// <param name="repeat">The screening's direct repeat as <see cref="RunParameters.Repeat"/> holds it: null = default, "" = none.</param>
+    public static string ProvenanceLine(int spacerSize, int seedStart, int seedEnd, string? repeat = null) =>
+        gRNA.ReportSchema.provenanceWithRepeat(repeat ?? gRNA.SpacerFinder.scaffold, spacerSize, seedStart, seedEnd);
 
     public static string Header => string.Join(",", Columns);
 

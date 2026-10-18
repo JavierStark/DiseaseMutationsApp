@@ -96,8 +96,11 @@ let calculateMutationSpanInMutated (extraNucleotids: int) (sequenceLength: int) 
     let mutationLengthInMutated = max 0 (mutatedLength - leftContext - rightContext)
     (leftContext, mutationLengthInMutated)
 
-let getBestgRNAFromHGVS (hgvsString: string) (grnaSize: int) (seedStart: int) (seedEnd: int) (bowtieService: gRNA.Services.BowtieService) (cancellationToken: System.Threading.CancellationToken) (complement: bool) = task {
+/// The whole design for one variant. `repeat` is the 5' context the spacers are folded with while screening: "" for the
+/// spacer alone, otherwise a direct repeat (see `SpacerFinder.normaliseRepeat`, applied here, so callers may pass raw text).
+let getBestgRNAFromHGVSWith (repeat: string) (hgvsString: string) (grnaSize: int) (seedStart: int) (seedEnd: int) (bowtieService: gRNA.Services.BowtieService) (cancellationToken: System.Threading.CancellationToken) (complement: bool) = task {
     validateSpacerParameters grnaSize seedStart seedEnd
+    let repeat = SpacerFinder.normaliseRepeat repeat
     // c. positions on a transcript record (NM_...:c.20A>T) are converted to positions of the mRNA (n.70A>T) first.
     let! hgvsString, conversionNotice =
         task {
@@ -130,7 +133,8 @@ let getBestgRNAFromHGVS (hgvsString: string) (grnaSize: int) (seedStart: int) (s
                 finalMutated.Length grnaSize))
 
     let gRNAsTask =
-        SpacerFinder.getOrderedgRna
+        SpacerFinder.getOrderedgRnaWith
+            repeat
             seedStart
             seedEnd
             grnaSize
@@ -141,7 +145,8 @@ let getBestgRNAFromHGVS (hgvsString: string) (grnaSize: int) (seedStart: int) (s
             cancellationToken
 
     let originalGRNAsTask =
-        SpacerFinder.getOrderedgRna
+        SpacerFinder.getOrderedgRnaWith
+            repeat
             seedStart
             seedEnd
             grnaSize
@@ -189,3 +194,7 @@ let getBestgRNAFromHGVS (hgvsString: string) (grnaSize: int) (seedStart: int) (s
         notices = notices
     }
 }
+
+/// `getBestgRNAFromHGVSWith` using the default direct repeat (the 36 nt Cas13 scaffold).
+let getBestgRNAFromHGVS (hgvsString: string) (grnaSize: int) (seedStart: int) (seedEnd: int) (bowtieService: gRNA.Services.BowtieService) (cancellationToken: System.Threading.CancellationToken) (complement: bool) =
+    getBestgRNAFromHGVSWith SpacerFinder.scaffold hgvsString grnaSize seedStart seedEnd bowtieService cancellationToken complement

@@ -26,17 +26,20 @@ public static class OligoExport
     public static string ReverseComplement(string dna) =>
         new(Sequence.complementary(dna).Reverse().ToArray());
 
-    /// <summary>The DNA read 5' to 3' for the chosen strand: sense equals the transcript, antisense is its reverse complement.</summary>
-    public static string Template(string spacerRna, bool includeT7, OligoStrand strand)
+    /// <summary>
+    /// The DNA read 5' to 3' for the chosen strand: sense equals the transcript, antisense is its reverse complement.
+    /// <paramref name="repeat"/> is the direct repeat before the spacer; null or empty means the default Cas13 repeat.
+    /// </summary>
+    public static string Template(string spacerRna, bool includeT7, OligoStrand strand, string? repeat = null)
     {
-        var sense = (includeT7 ? T7Promoter : "") + ToDna(GrnaService.Scaffold + spacerRna);
+        var sense = (includeT7 ? T7Promoter : "") + ToDna(RepeatChoice.Effective(repeat) + spacerRna);
         return strand == OligoStrand.Sense ? sense : ReverseComplement(sense);
     }
 
     /// <summary>Top and bottom oligo of the annealed pair for one guide; top is always the sense strand.</summary>
-    public static OligoPair Pair(string name, string spacerRna, bool includeT7)
+    public static OligoPair Pair(string name, string spacerRna, bool includeT7, string? repeat = null)
     {
-        var top = Template(spacerRna, includeT7, OligoStrand.Sense);
+        var top = Template(spacerRna, includeT7, OligoStrand.Sense, repeat);
         return new OligoPair(name, top, ReverseComplement(top));
     }
 
@@ -44,7 +47,7 @@ public static class OligoExport
     /// Plate-format order CSV: one row per oligo, wells filled row-major from A1 across plates, using the same
     /// well addressing as the pooling plan. With <paramref name="bothOligos"/> each guide gets a top and a bottom row.
     /// </summary>
-    public static string ShortlistCsv(IEnumerable<ShortlistItem> items, bool includeT7, bool bothOligos, PlateKind plate)
+    public static string ShortlistCsv(IEnumerable<ShortlistItem> items, bool includeT7, bool bothOligos, PlateKind plate, string? repeat = null)
     {
         var format = plate == PlateKind.Plate384 ? Pooling.plate384 : Pooling.plate96;
         var sb = new StringBuilder();
@@ -53,7 +56,7 @@ public static class OligoExport
         foreach (var item in items)
         {
             var baseName = $"{item.Hgvs}{(item.IsComplement ? "_C" : "")}".Replace(' ', '_');
-            var pair = Pair(baseName, item.Spacer, includeT7);
+            var pair = Pair(baseName, item.Spacer, includeT7, repeat);
             var sites = string.Join(";", RestrictionSites.Find(pair.Top));
             var rows = bothOligos
                 ? new[] { ("top", pair.Top), ("bottom", pair.Bottom) }
