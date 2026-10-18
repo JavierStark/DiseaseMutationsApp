@@ -326,7 +326,7 @@ The full account, with what each claim rests on, is in [docs/validation.md](docs
   themselves because they need the live services or ViennaRNA) and 70 browser tests (Playwright, with axe-core accessibility
   scans), none failing. See [Testing](#testing).
 - **Hand checks against the real sequences**: the sickle-cell (rs334) and cystic fibrosis F508del designs were rebuilt by hand from
-  the NCBI sequences ([SCIENTIST_REVIEW.md](SCIENTIST_REVIEW.md)); the real Bowtie index, ViennaRNA and the Docker routes are
+  the NCBI sequences ([docs/validation.md](docs/validation.md) section 4); the real Bowtie index, ViennaRNA and the Docker routes are
   covered by `grna doctor` and a written [manual test plan](docs/manual-test-plan.md).
 - **Wet lab**: guides designed with Diana for a cystic fibrosis SNP panel were functional in a SHERLOCK assay (signal significantly
   above the negative controls), and a five-guide tandem transcript was processed by Cas13a. **Allele discrimination was not
@@ -369,7 +369,6 @@ scripts/check-pins.sh      dependency pinning gate
 showcase/                  source of the feature-tour video (Playwright + Remotion; generated footage is not committed)
 logos/                     the Diana logotype and icon (positive and negative, 1x and 2x)
 BIOLOGICAL_REPORT.md       each biological step mapped to the code, with the open scientific questions
-SCIENTIST_REVIEW.md        an external-style review and the status of each finding
 THIRD-PARTY-NOTICES.md     licenses of the bundled components
 Dockerfile, Dockerfile.bowtie-base, docker-compose.yml, start.sh, start.ps1, start.bat
 .claude/skills/diana/      AI-agent skill: install, run and drive the grna CLI (with grna.sh / grna.ps1 Docker wrappers)

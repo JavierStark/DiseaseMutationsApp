@@ -12,7 +12,7 @@ Status words: **automated** (a test fails if it breaks), **by hand** (a person r
 |---|---|---|
 | HGVS parsing and validation (every mutation type, strict rejection of wrong input) | `HGVSTests`, `HGVSValidationTests`, `DesignValidationTests`, `CodingConversionTests`, `MainTests` | automated |
 | The mutated and original sequences are built correctly (including inversion as reverse complement, strand mirroring) | `SequenceTests`, `MainTests`, `KnownDefectTests` | automated; sickle-cell (rs334) and F508del rebuilt by hand from the NCBI sequences |
-| The spacer is the reverse complement of the target window, ranked as documented | `SpacerFinderTests`, `SpacerFinderHighlightTests`, `SpecialRulePositionTests` | automated, and by hand for rs334 and F508del ([SCIENTIST_REVIEW.md](../SCIENTIST_REVIEW.md) section 1) |
+| The spacer is the reverse complement of the target window, ranked as documented | `SpacerFinderTests`, `SpacerFinderHighlightTests`, `SpecialRulePositionTests` | automated, and by hand for rs334 and F508del (section 4) |
 | Bowtie and ViennaRNA output are read correctly | `ParsingTests` (captured real output), `BowtieWrapperTests`, `RnaFoldIntegrationTests` (real ViennaRNA when present) | automated; the real index is checked by `grna doctor` and the [manual test plan](manual-test-plan.md) |
 | Disease search returns what ClinVar and Monarch return | `DiseaseVariantsTests`, `CliDiseaseTests`, `DiseaseSearchPageTests` over trimmed real responses; opt-in `Category=Live` contract tests | automated offline; live contract tests are not in CI |
 | Pooling layouts, well counts and decoding are correct | `PoolingMathTests`, `PoolingInvariantTests`, `PoolingLayoutTests`, `PoolingDecodeTests`, `WellAddressTests` (each guide in exactly R wells, no pool above K, unique well sets, 96 and 384-well addressing) | automated; formulas also checked against the team's design workbook, which is not in the repository |
@@ -81,8 +81,8 @@ discrimination score is the first item of the future work.
 
 ## 4. Hand checks against the real sequences
 
-From [SCIENTIST_REVIEW.md](../SCIENTIST_REVIEW.md) (2026-10-16, a review written from a CRISPR-diagnostics scientist's seat) and
-[BIOLOGICAL_REPORT.md](../BIOLOGICAL_REPORT.md): the sickle-cell (rs334, Glu6Val) design was rebuilt from the NCBI sequence and
+From a one-off review written from a CRISPR-diagnostics scientist's seat on 2026-10-16 (its notes are in the git history, in
+`SCIENTIST_REVIEW.md` at commit `23aeb41`) and from [BIOLOGICAL_REPORT.md](../BIOLOGICAL_REPORT.md): the sickle-cell (rs334, Glu6Val) design was rebuilt from the NCBI sequence and
 the rank-1 spacer is the reverse complement of the mutated window with the documented engineered mismatch; for F508del the
 wild-type and deleted sequences were rebuilt, the top mutated spacers occur in the deleted sequence and not in the reference and
 sit 6 to 8 mismatches from any wild-type window, while the original-sequence spacers occur in the reference only; the pooling
