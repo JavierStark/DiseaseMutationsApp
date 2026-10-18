@@ -40,8 +40,14 @@
 
                     <div class="mb-4">
                         <label for="hgvs" class="form-label" title="@HelpText.Variants">HGVS or rs codes (comma-separated for several)</label>
-                        <textarea id="hgvs" class="form-control" @bind="_hgvs" @bind:event="oninput" @bind:after="OnInputChanged" rows="4" maxlength="8000"
-                                  placeholder="NG_008690.2:g.123012G>T, rs12345"></textarea>
+                        <div class="input-with-clear">
+                            <textarea id="hgvs" class="form-control" @bind="_hgvs" @bind:event="oninput" @bind:after="OnInputChanged" rows="4" maxlength="8000"
+                                      placeholder="NG_008690.2:g.123012G>T, rs12345"></textarea>
+                            <button type="button" class="btn btn-outline-secondary btn-icon-only" @onclick="ClearInput" disabled="@string.IsNullOrWhiteSpace(_hgvs)"
+                                    aria-label="Clear inputs" title="Clear the input box and the saved browser copy">
+                                <Icon Name="close" />
+                            </button>
+                        </div>
                         <small class="helper-note mt-2 d-block">One or more variants. An rsID is resolved to its HGVS notations (by default only the disease-relevant allele on the main gene record) and analysed on both strands; the tab that targets the gene's mRNA comes first.</small>
                         <div class="form-check mt-2">
                             <input id="all-alleles" class="form-check-input" type="checkbox" checked="@_showAllAlleles" @onchange="OnShowAllAllelesChanged" />

@@ -285,6 +285,16 @@ namespace DiseaseMutationsApp.Pages
 
         private void OnShowAllAllelesChanged(ChangeEventArgs e) => _showAllAlleles = e.Value is true;
 
+        /// <summary>Empties the input box and the copy kept in browser storage, so a refresh does not bring the inputs back.</summary>
+        private async Task ClearInput()
+        {
+            _hgvs = null;
+            _restoredBanner = false;
+            _linkBanner = false;
+            _incoming = null;
+            await Session.ClearAsync();
+        }
+
         private void CancelRun() => Runner.Cancel();
 
         private async Task CopyPermalink()
