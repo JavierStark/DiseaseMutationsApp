@@ -155,7 +155,7 @@ public class DesignPageTests : E2EBase
 
         await Page.GetByRole(AriaRole.Button, new() { Name = "Use" }).First.ClickAsync();
 
-        await Expect(Page.Locator(".complete-grna-card")).ToContainTextAsync("folded the spacers with the spacer alone (no repeat)");
+        await Expect(Page.Locator(".complete-grna-card")).ToContainTextAsync("folded the spacers with no direct repeat (the spacer alone)");
     }
 
     [Test]

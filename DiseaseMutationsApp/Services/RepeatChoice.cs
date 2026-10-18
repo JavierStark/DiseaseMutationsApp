@@ -65,8 +65,8 @@ public static class RepeatChoice
     /// <summary>Short words for the UI: what the screening fold was made with.</summary>
     public static string Describe(string? repeat) => repeat switch
     {
-        null => $"the standard Cas13 repeat ({SpacerFinder.scaffold.Length} nt)",
-        "" => "the spacer alone (no repeat)",
+        null => $"the LwaCas13a DR ({SpacerFinder.scaffold.Length} nt)",
+        "" => "no direct repeat (the spacer alone)",
         _ => $"your custom repeat ({repeat.Length} nt)"
     };
 }

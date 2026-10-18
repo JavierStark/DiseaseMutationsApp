@@ -102,8 +102,8 @@
                             <div class="col-sm-8">
                                 <label for="repeat-mode" class="form-label visually-hidden">Direct repeat</label>
                                 <select id="repeat-mode" class="form-select" value="@_repeatMode.ToString()" @onchange="OnRepeatModeChanged">
-                                    <option value="@nameof(RepeatMode.Default)">Standard Cas13 repeat (@gRNA.SpacerFinder.scaffold.Length nt)</option>
-                                    <option value="@nameof(RepeatMode.None)">None: fold the spacer alone</option>
+                                    <option value="@nameof(RepeatMode.Default)">LwaCas13a DR (@gRNA.SpacerFinder.scaffold.Length nt)</option>
+                                    <option value="@nameof(RepeatMode.None)">None (no direct repeat)</option>
                                     <option value="@nameof(RepeatMode.Custom)">My own direct repeat</option>
                                 </select>
                             </div>
