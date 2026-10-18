@@ -228,30 +228,19 @@
                         @if (!string.IsNullOrEmpty(Data.FornaUrl))
                         {
                             <div class="d-flex flex-wrap gap-2 mb-3">
-                                <button type="button" class="btn btn-sm btn-outline-secondary" aria-expanded="@(Data.ShowStructure ? "true" : "false")"
-                                        @onclick="() => Data.ShowStructure = !Data.ShowStructure">
-                                    @(Data.ShowStructure ? "Hide diagram" : "Show diagram")
+                                <button type="button" class="btn btn-sm btn-outline-secondary" aria-expanded="@(Data.ShowForna ? "true" : "false")"
+                                        @onclick="() => Data.ShowForna = !Data.ShowForna">
+                                    @(Data.ShowForna ? "Hide diagram" : "Show diagram")
                                 </button>
                                 <a class="btn btn-sm btn-outline-secondary" href="@Data.FornaUrl" target="_blank" rel="noopener noreferrer">
                                     <Icon Name="external" />Open in FORNA
                                 </a>
                             </div>
-                            <p class="helper-note mb-3">The diagram is drawn here from the dot-bracket notation. "Open in FORNA" sends this gRNA sequence and its structure to the FORNA server at the University of Vienna, which only serves plain http, so it opens in a new tab only when you choose it.</p>
-                            @if (Data.ShowStructure)
+                            <p class="helper-note mb-3">The diagram is FORNA's own viewer, drawn in your browser by a bundled copy of the library, so it also works on https. "Open in FORNA" instead sends this gRNA sequence and its structure to the FORNA server at the University of Vienna, which only serves plain http, and opens in a new tab only when you choose it.</p>
+                            @if (Data.ShowForna)
                             {
-                                var seq = GuideConstruct.Build(Data.SelectedSpacer ?? "", Construct);
-                                var length = Data.RnaFoldResult.Structure.Length;
-                                <div class="structure-diagram-wrap">
-                                    <svg class="structure-diagram" viewBox="0 0 @StructureDiagram.Width(length).ToString("0.##", CultureInfo.InvariantCulture) @StructureDiagram.Height(length).ToString("0.##", CultureInfo.InvariantCulture)"
-                                         role="img" aria-label="RNA secondary structure of @length nucleotides, drawn from dot-bracket notation">
-                                        @foreach (var pair in StructureDiagram.BasePairs(Data.RnaFoldResult.Structure))
-                                        {
-                                            <path d="@StructureDiagram.ArcPath(pair, length)" />
-                                        }
-                                        @((MarkupString)NucleotideLabelsMarkup(seq, length))
-                                    </svg>
-                                </div>
-                                <p class="helper-note mt-2 mb-0">Arcs join paired bases. The 5' end is on the left.</p>
+                                <div id="@FornaElementId" class="forna-frame mt-3" role="img" aria-label="Force-directed RNA secondary structure drawn with FORNA"></div>
+                                <p class="helper-note mt-2 mb-0">Drag nodes, scroll to zoom.</p>
                             }
                         }
                     </div>
@@ -274,19 +263,6 @@
     [Parameter] public string? RsId { get; set; }
     [Parameter] public int SeedStart { get; set; }
     [Parameter] public int SeedEnd { get; set; }
-
-    /// <summary>SVG text labels for each nucleotide, placed under the arc diagram's baseline.</summary>
-    private static string NucleotideLabelsMarkup(string sequence, int length)
-    {
-        var y = (StructureDiagram.Baseline(length) + 14).ToString("0.##", CultureInfo.InvariantCulture);
-        var sb = new System.Text.StringBuilder();
-        for (var i = 0; i < length && i < sequence.Length; i++)
-        {
-            var x = StructureDiagram.X(i).ToString("0.##", CultureInfo.InvariantCulture);
-            sb.Append($"<text x=\"{x}\" y=\"{y}\" text-anchor=\"middle\">{System.Net.WebUtility.HtmlEncode(sequence[i].ToString())}</text>");
-        }
-        return sb.ToString();
-    }
 
     /// <summary>Locus window plus strand and reading direction under a sequence card title.</summary>
     private RenderFragment StrandLine => __builder =>
@@ -354,6 +330,29 @@
 
     private ConstructOptions Construct => State.Construct;
 
+    private string FornaElementId => $"forna-{Data.Id}";
+    private string? _fornaDrawnFor;
+
+    protected override async Task OnAfterRenderAsync(bool firstRender)
+    {
+        if (!Data.ShowForna || Data.RnaFoldResult == null || Data.SelectedSpacer == null)
+        {
+            _fornaDrawnFor = null;
+            return;
+        }
+
+        var sequence = GuideConstruct.Build(Data.SelectedSpacer, Construct);
+        var key = sequence + "|" + Data.RnaFoldResult.Structure;
+        if (_fornaDrawnFor == key) return;
+        _fornaDrawnFor = key;
+        try
+        {
+            await JS.InvokeVoidAsync("renderForna", FornaElementId, Data.RnaFoldResult.Structure, sequence);
+        }
+        catch (JSException ex) { Data.RnaFoldError = "Could not draw the FORNA view: " + ex.Message; StateHasChanged(); }
+        catch (JSDisconnectedException) { }
+    }
+
     private string Id(string name) => $"construct-{name}-{Data.GetHashCode()}";
 
     private static string PartClass(ConstructPartKind kind) => kind switch
@@ -371,7 +370,7 @@
         Data.RnaFoldResult = null;
         Data.RnaFoldError = null;
         Data.FornaUrl = null;
-        Data.ShowStructure = false;
+        Data.ShowForna = false;
         State.NotifyStateChanged();
     }
 
@@ -395,7 +394,7 @@
         Data.RnaFoldResult = null;
         Data.RnaFoldError = null;
         Data.FornaUrl = null;
-        Data.ShowStructure = false;
+        Data.ShowForna = false;
     }
 
     private async Task CopyComplete()

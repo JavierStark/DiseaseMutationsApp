@@ -186,7 +186,7 @@ public class GrnaService : IGrnaAnalysis
     /// the query string itself WITHOUT percent-decoding, so encoded values (e.g. %28 for a bracket) reach its API verbatim
     /// and are rejected with HTTP 400. Sequence and dot-bracket characters are all URL-safe, so they go in raw; anything
     /// else is refused rather than allowed to inject extra query parameters. Browsers block the http frame inside an https
-    /// page, so the UI draws the structure itself (see StructureDiagram) and offers this URL only as an opt-in new-tab link.
+    /// page, so the UI draws the structure itself with the bundled fornac library and offers this URL only as an opt-in new-tab link.
     /// </summary>
     public string GetFornaUrl(string sequence, string structure)
     {

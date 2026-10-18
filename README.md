@@ -39,7 +39,7 @@ keyboard-operable tabs. Numbers in square brackets point to the [References](#re
   are then designed on the mRNA itself, which is what Cas13 binds, and a notice says what was converted. Limits: spacer size 18-60, at most 50 inputs per run.
 - **Results** per variant: original and mutated sequences (mutation highlighted, copy as FASTA), two ranked spacer tables
   (sortable, filterable, paged, with an offtarget-risk chip), the complete gRNA (scaffold + chosen spacer), ViennaRNA
-  structure and a FORNA [4] diagram link.
+  structure, a FORNA [4] force-directed diagram drawn in the browser, and a link to the FORNA site.
 - **Can this guide tell the alleles apart?** Each guide has a *Mismatches vs other allele* column: the fewest letters in which its
   DNA target differs from the closest stretch of the other allele (a mutated-sequence guide against the normal sequence). 0 or 1 is
   flagged "not discriminating" (red chip), a filter hides those, and a warning appears when no guide of a variant reaches 2. It
@@ -359,8 +359,8 @@ Start with `/app-status` or `grna doctor`: each failing check names its remedy.
 Single-tenant local tool: no authentication, bound to loopback by default, `Production` mode in the container (no stack traces),
 non-root user. If you publish it, put an authenticating reverse proxy in front. `/healthz` returns each check's detail (which
 contains file-system paths) only to loopback callers; from the host through Docker a request arrives from the bridge, so use
-`/app-status` or `grna doctor` there. The optional FORNA diagram is loaded only when you ask for it and receives the gRNA
-sequence over plain http (its server does not offer https); the interface says so. Variants you enter are logged only at Debug level. The Disease variants page sends what you type (a disease name or
+`/app-status` or `grna doctor` there. The FORNA preview is drawn in your browser by the bundled fornac library and sends nothing anywhere. Only the optional "Open in FORNA" link,
+which you must click, sends the gRNA sequence to the FORNA server over plain http (it does not offer https); the interface says so. Variants you enter are logged only at Debug level. The Disease variants page sends what you type (a disease name or
 number) to the Monarch API and to NCBI (with `tool=gRNA` and `email=$GRNA_NCBI_CONTACT`); no sequence or guide leaves the machine.
 
 ## Contributing

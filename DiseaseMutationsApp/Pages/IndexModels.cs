@@ -79,7 +79,7 @@ namespace DiseaseMutationsApp.Pages
         public RNAFoldResult? RnaFoldResult { get; set; }
         public string? RnaFoldError { get; set; }
         public string? FornaUrl { get; set; }
-        public bool ShowStructure { get; set; }
+        public bool ShowForna { get; set; }
         public GrnaSortColumn SortColumn { get; set; } = GrnaSortColumn.Score;
         public bool SortAscending { get; set; }
         public GrnaSortColumn OriginalSortColumn { get; set; } = GrnaSortColumn.Score;
