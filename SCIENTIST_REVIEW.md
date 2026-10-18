@@ -4,6 +4,28 @@ Date: 2026-10-16. Reviewer persona: a Cas13 diagnostics lab choosing guides that
 Tested: the already-running `disease-mutations-app:latest` container (healthy; `grna doctor --network` all PASS, Bowtie 1.3.1,
 ViennaRNA 2.7.2). I did not check that this image matches the commit of this worktree.
 
+## Status of the findings (updated 2026-10-18, commit `b9397a4`)
+
+The review below is kept as it was written on 2026-10-16. This table says what the software does about each finding today. It
+was filled in from the code, the README and the documents in this repository; it is not a second review.
+
+| Finding | Status | What exists now |
+|---|---|---|
+| 2.1 Off-target check is against the genome, Cas13 targets RNA | **Open** | Still Bowtie against GRCh38. The interface and the tooltips now say it is a genome check, not a transcriptome check. Listed first under future work. |
+| 2.2 No wild-type discrimination metric | **Fixed, with a limit** | *Mismatches vs other allele* column, "not discriminating" chip below 2, a filter and a warning. It counts differing letters only: it ignores their position and whether they are G-U wobble pairs, which the team's own lab data suggest matters ([validation.md](docs/validation.md) section 3). |
+| 2.3 rsID expansion creates noise | **Fixed** | By default an rsID gives only the disease-relevant allele on the main gene record (rs334: one notation); a checkbox and `--all-alleles` give everything. Gene symbol shown on each tab. |
+| 2.4 Which strand is the transcript? | **Fixed for rsIDs, open for typed HGVS** | Tabs carry an "mRNA" or "antisense" badge and the gene symbol, the mRNA tab comes first. For a typed HGVS the orientation is not looked up and the page says so. |
+| 2.5 Placement of the substitution rule | **Partly addressed** | Both positions are parameters, the engineered spacer is listed first and the whole ranked list stays visible, and the rule falls back with a warning near sequence ends. The literature numbering is still unconfirmed, and in the lab the placements tried did not discriminate alleles (validation.md section 3). |
+| 2.6 "0 alignments ranks best" | **Open by decision** | Documented in the README, the report and the tooltip; the junction-spanning requirement was not added. |
+| 2.7 Equivalent notations give different guide lists | **Open** | |
+| 2.8 Borrowed or unsourced parameters | **Partly addressed** | Scaffold-hairpin check and spacer-unpaired share added; the enzyme is named (LwaCas13a) and the direct repeat for screening is a choice. The GC range, the homopolymer rule and the five-guide limit are still unsourced; PFS and target-site accessibility are not modelled. |
+| 2.9 Biological relevance of the variant list | **Open** | Classification and review stars are shown; consequence type, exon/intron flag and population frequency are not. Compound records are noted (distinct rsIDs counted). |
+| 2.10 `c.` coordinates are refused | **Fixed for transcripts** | `c.` on `NM_`/`XM_` records is converted to the mRNA position; on genomic records and for intronic offsets it is still refused with advice. |
+| 3.1 to 3.4, 3.6 (specificity panel, population variants, assay context, lab-ready record, import of lab results) | **Open** | The oligo CSV (T7, pairs, plate wells) and FASTA of the built guide exist; nothing else in this group does. |
+| 3.5 Run history and project persistence | **Open** | Sessions, permalinks and CSV reports keep a design; results are not kept after a refresh, by design. |
+| 3.7 Compute transparency | **Open** | Measured times are in [validation.md](docs/validation.md) section 5. |
+| 4 Usability observations | **Not re-checked** | The sidebar, status page and messages were kept; the Disease page still takes the first Monarch match by default and does not filter to human diseases. |
+
 ## What I actually did
 
 | Workflow | Where | Result |

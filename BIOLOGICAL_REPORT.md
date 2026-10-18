@@ -200,7 +200,7 @@ let calculateGCScore (gcContent: float) (lowerThreshold: float, upperThreshold: 
 **e) Discrimination between the two alleles (added 2026-10-16):**
 * **Concept:** for a diagnostic the guide must react to the mutated sequence and stay silent on the normal one. A guide whose DNA target differs from the normal sequence by 0 or 1 letter cannot be expected to do so. Earlier versions showed the two candidate lists separately and never said how a guide behaves on the *other* allele.
 * **Implementation:** `SpacerFinder.annotateDiscrimination` gives every candidate `WtMismatches`: the fewest differing letters between the guide's DNA window (`windowOfSpacer`, the reverse complement of the spacer) and any same-length window of the **other** allele's sequence in the same orientation (a mutated-list guide against the original sequence, an original-list guide against the mutated one). Sliding over all windows makes this work for insertions and deletions, where the windows do not line up one-to-one. When the other sequence is shorter than the window, nothing can be compared and the whole window length is reported. It is computed after the substitution rule, so the engineered spacer is measured as it will be ordered. Checked by hand on cystic fibrosis F508del (junction guides: 6 to 8 mismatches; a guide lying in unchanged sequence: 1).
-* **How it is used:** it is a column ("Mismatches vs other allele", sortable, with a filter), a red "not discriminating" chip when it is below 2, and a warning when no guide of a sequence reaches 2. **It does not change the ranking** (section 4.3). The threshold 2 is a working choice, not a literature value, and the metric ignores where in the spacer the mismatches fall. The CSV has `WT Mismatches` (empty when not computed).
+* **How it is used:** it is a column ("Mismatches vs other allele", sortable, with a filter), a red "not discriminating" chip when it is below 2, and a warning when no guide of a sequence reaches 2. **It does not change the ranking** (section 4.3). The threshold 2 is a working choice, not a literature value, and the metric ignores where in the spacer the mismatches fall **and what kind of mismatch they are**. That second limit is not hypothetical: in the team's lab panel (guides with a synthetic mismatch plus the variant, positions 3 to 11), several of the mismatches turned out to be G-U wobble pairs, which Cas13a tolerates, and the panel did not discriminate the alleles reliably ([docs/validation.md](docs/validation.md) section 3). A letter count of 2 does not guarantee discrimination. The CSV has `WT Mismatches` (empty when not computed).
 
 **f0) Direct repeat used for screening (added 2026-10-18):** the fold above is of `repeat + spacer`, and the repeat is now a choice instead of a constant: LwaCas13a (the 36 nt DR, default, so existing results are unchanged), none (the spacer alone), or a user-supplied repeat (`SpacerFinder.normaliseRepeat` accepts A/C/G/U/T only, at most 200 letters). Only the energy, `ScaffoldIntact` and `SpacerUnpaired` depend on it, and through the energy the rank; the reference fold for `ScaffoldIntact` is that of the chosen repeat alone (cached per repeat), and with no repeat the check is vacuously true. The screening fold is a context-free filter; the Builder's **Get structure** folds the guide as built (DR, adapters, flanks chosen in the Complete gRNA card) and runs the same two checks on that fold (`SpacerFinder.checkWithin`, which shifts the repeat's own pairs to where it sits in the construct), warning when the hairpin differs from the table row. That also covers the engineered spacer, whose table row carries the fold of the spacer before its extra mismatch. Only the LwaCas13a-style 36 nt repeat is built in: no other repeat has been verified against the literature, so a custom one is the user's responsibility.
 
@@ -250,6 +250,8 @@ The system implements a special rule to capitalize on this strategy — **and it
 
 *Open scientific question.* The position choice is still unsourced. Gootenberg et al. (Science 2017, SHERLOCK) report the best discrimination with the variant at **position 3** of the spacer and the synthetic mismatch at **position 5**, i.e. two bases apart, which is not what the code does (variant at index N-3 from the 3' end, mismatch at N-4, adjacent). Which end the numbering starts from could not be checked in the supplement. The parameters exist so the team can try the literature's placement, if its numbering counts from the spacer's 5' end (for a 28-letter spacer, the variant at position 3 counted from the 5' end is `--snp-pos 26`, and the mismatch at position 5 is `--mismatch-pos 24`) and compare the options with the discrimination column, without a code change. Until the team confirms the convention, treat the engineered spacer as one option among the ranked ones and compare it with the ordinary candidates using the discrimination column.
 
+*What the lab has shown so far (2026-10-18).* The team's SHERLOCK assays on a cystic fibrosis SNP tested the variant at spacer position 3 with a synthetic mismatch at 4, and then a seven-guide panel with a fixed mismatch at 3 and the variant moved across positions 5 to 11. The guides were functional (signal clearly above the negative controls) but **none of these placements discriminated the alleles reliably**: the signal was present on both templates, and the two guides with a significant difference gave the higher signal on the *healthy* template. A guide set built with the software's earlier version of this rule was also reported as not specific enough, and the assay for the revised positions has no result yet (team wiki, Results and Engineering pages; summary in [docs/validation.md](docs/validation.md)). So the substitution rule is an untested heuristic, not a lab-validated one, and the positions are parameters for that reason.
+
 ```fsharp
 // In gRNA/SpacerFinder.fs
 
@@ -271,6 +273,33 @@ let applySubstitutionSpecialRule (seedStart: int) (seedEnd: int) (windowSize: in
 ```
 
 This automatic rule offers the researcher a potentially more effective gRNA for editing substitution SNPs, using the mutation itself to improve the specificity of the process, while still showing the full ranked alternatives.
+
+#### 4.5. From a spacer to an order: restriction sites, assembly standards, oligos and FASTA (added 2026-10-18)
+
+**Scientific concept.** A guide that ranks well can still be impossible to clone. The team assembles guide constructs by Golden Gate
+with Type IIS enzymes, and a recognition site inside the insert, away from the designed junction, lets the enzyme cut the construct
+apart. The same logic is behind the iGEM assembly standards: BioBrick RFC[10] excludes EcoRI, NotI, XbaI, SpeI and PstI sites from a
+part, and iGEM Type IIS Assembly RFC[1000] excludes BsaI and SapI.
+
+**Implementation (`DiseaseMutationsApp/Services/RestrictionSites.cs`, `OligoExport.cs`, `GuideConstruct.cs`).**
+
+* `RestrictionSites.Find` scans the DNA that would be ordered for the recognition sites of ten enzymes (BsaI `GGTCTC`, BsmBI `CGTCTC`,
+  SapI `GCTCTTC`, BbsI `GAAGAC`, EcoRI `GAATTC`, PstI `CTGCAG`, XbaI `TCTAGA`, SpeI `ACTAGT`, EcoRV `GATATC`, NotI `GCGGCCGC`), on **both
+  strands** because the Type IIS sites are not palindromic. The DNA is the complete guide as built (direct repeat, adapters and flanks
+  chosen in the Complete gRNA card), behind the T7 promoter if that option is on. Sites that the chosen adapters bring on purpose are
+  not reported; any extra site is.
+* `CompatibilityForGuide` turns the found enzymes into one badge per standard: compatible when none of the standard's enzymes is
+  present. The check covers internal sites only; it does not add or verify the standards' prefix and suffix. An enzyme outside both
+  lists (BsmBI, BbsI, EcoRV) still produces a warning chip but leaves both badges green.
+* `OligoExport` writes DNA, not RNA: the complete guide with `U` read as `T`, optionally behind the T7 class III promoter
+  `TAATACGACTCACTATA` (the direct repeat begins with `G`, which becomes the +1 base), as a top and bottom pair ready to anneal, with
+  plate wells addressed like the pooling plan. It adds no transcription terminator. The same built guide is available as FASTA, in DNA
+  or RNA letters, with the bare spacer and the construct recipe in the header.
+
+*What is and is not validated.* The enzymes and their sites are standard sequences, and the scan is covered by unit tests. That the
+Frida and BioBricks adapters keep Cas13's processing of the direct repeat and spacer intact has not been tested here. The lab used the
+same kind of DNA template (T7 promoter, direct repeat, spacer, terminator) for its in situ transcription assays, which worked
+([docs/validation.md](docs/validation.md) section 3); we do not claim those orders came from this export.
 
 ### 5. Offtarget analysis with Bowtie
 
@@ -322,7 +351,7 @@ The same need is now met from different sources (`gRNA/DiseaseVariants.fs`, the 
 - Where ClinVar has no rsID, a genomic HGVS on GRCh38 is derived from its canonical SPDI (substitutions, deletions, insertions, duplications and deletion-insertions of A/C/G/T only). It is left-aligned rather than 3'-shifted, which yields the same sequence; Diana still checks the stated reference base against the real sequence.
 - Whether the guides designed for these variants are good is the job of the rest of the pipeline described in this report; the disease search only proposes inputs.
 
-### Main Workflow
+### 8. Main workflow
 
 `gRNA/Main.fs` orchestrates the whole process, connecting the modules above into a cohesive workflow. Its public entry point, `getBestgRNAFromHGVS`, takes an HGVS string, the spacer size, the seed region bounds (`seedStart`/`seedEnd`), a `BowtieService`, a cancellation token, and a `complement` flag, and returns a `ResultFromHGVS` record:
 
@@ -353,7 +382,7 @@ This modular, science-grounded approach lets the application design efficient, s
 
 ---
 
-## 9. Guide pooling (combinatorial screening)
+### 9. Guide pooling (combinatorial screening)
 
 *Code: `gRNA/Pooling.fs`; UI: the `/pooling` page.*
 
@@ -378,15 +407,17 @@ reports those as *ambiguous* (a guide is *definite* only if some positive well i
 supported* guides (some but not all wells positive: dropout or noise) and *unexplained* positive wells. Ambiguous guides need an
 individual confirmation round.
 
+*Evidence for the limit of K = 5.* A single transcript with five guides in tandem, one of them complementary to the target, activated Cas13a clearly above the no-Cas control, so Cas13a does process such an array to some degree. Whether all five positions are released, and so whether five distinct guides per tube each work, is not resolved (technical duplicate; the single-position constructs have no result yet). The pooling layouts and the decoder themselves are verified by unit tests and invariants, **not** by a real pooled screen ([docs/validation.md](docs/validation.md)).
+
 **Specification source.** The well-count formulas were originally taken from a spreadsheet, `Combinatoria.xlsx`
 (sheets "Esquema_softwareCompuestos_(V)" and "Pruebas_manuales"), which is **not in this repository**; the table above is the
 written specification and `PoolingMathTests`/`PoolingInvariantTests` encode it. If the workbook is recovered it should be committed
 next to this report.
 
-## 10. Notes on the code excerpts in this report
+### 10. Notes on the code excerpts in this report
 
-- Section 3's `SNP` excerpt is simplified: the real module is `module gRNA.SNP`, uses `task { }` (not `async { }`), and
+- Section 2's `SNP` excerpt is simplified: the real module is `module gRNA.SNP`, uses `task { }` (not `async { }`), and
   `getHgvsNotationsAsync` now takes a `CancellationToken`, raises `GrnaUpstreamException` on HTTP failure and returns `[]` only for
   "no `NG_` mapping".
-- The FORNA diagram link uses plain `http` (the FORNA server refuses https connections, checked 2026-10-13), with the sequence and structure in the query string unencoded because the server does not decode them; it is shown only when the user asks, inside a sandboxed frame, and the interface says that the sequence is sent unencrypted to the FORNA server.
-- Section 3's `SNP` excerpt also omits the new check that the rsID number is digits only (it goes into a URL path).
+- The FORNA diagram is drawn in the browser by a bundled copy of the fornac viewer, which sends nothing anywhere and works on https. Only the optional "Open in FORNA" link, which the user must click, sends the sequence and structure to the FORNA server, over plain `http` (the FORNA server refuses https, checked 2026-10-13), with the sequence and structure in the query string unencoded because the server does not decode them; the interface says that they are sent unencrypted.
+- Section 2's `SNP` excerpt also omits the new check that the rsID number is digits only (it goes into a URL path).

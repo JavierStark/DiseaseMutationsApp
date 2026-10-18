@@ -2,7 +2,7 @@
 
 What the automated suites cannot check: the real Bowtie index, ViennaRNA and NCBI, the Docker install routes on each
 operating system, assistive technology, and behaviour over a real network. Run this before a release or after changing the
-algorithm, the Dockerfile or the scripts. The automated checks (`dotnet test`, which includes the 63 browser tests in
+algorithm, the Dockerfile or the scripts. The automated checks (`dotnet test`, which includes the 70 browser tests in
 `DiseaseMutationsApp.E2E`) must be green first.
 
 Record every run in section 9. A step that was not run is written as "not run", never left blank.
@@ -52,6 +52,11 @@ Record every run in section 9. A step that was not run is written as "not run", 
 | 2.10 | Open `http://localhost:5000/?hgvs=NC_000017.11:g.7674220C%3ET&spacer=30&seed=10-17` | Form filled, banner "opened from a link", **no run started**; the run starts only on the button |
 | 2.11 | Download the report with **Download report** (tab) and **Download all reports**, for an HGVS input and for an rsID | CSV opens in Excel with correct accents (UTF-8 BOM); same columns as `grna design --format csv` |
 | 2.12 | Edit a downloaded CSV so an `HGVS` cell starts with `=1+1`, load it again | Nothing is evaluated by the spreadsheet; the cell shows `'=1+1` |
+| 2.13 | In a result tab press **Use** on a spacer | The **Complete gRNA** card shows the direct repeat and the spacer in different colours; **Copy** puts the RNA on the clipboard |
+| 2.14 | On that card tick **Frida adapter** and **BioBricks assembly adapter**, type `GG` in *Custom 5'*, then untick them | The sequence follows `[BioBricks 5'] [Frida 5'] [custom 5'] [DR] spacer [Frida 3'] [BioBricks 3']` (adapter letters shown as U); the assembly badges and restriction chips are recomputed; the adapters' own sites (BsmBI, EcoRI, NotI, PstI) are not flagged, an extra site brought by the spacer still is; letters other than A, C, G, T, U in a flank are flagged and ignored |
+| 2.15 | Press **Get structure**, then **Show diagram** (do not press *Open in FORNA*) | Dot-bracket, minimum free energy, *Repeat hairpin* and *Spacer unpaired*; a warning if the repeat hairpin differs from the table row; the diagram is drawn in the page and the browser's network panel shows no request to the FORNA server |
+| 2.16 | Press **FASTA** on the card, then add several guides to the shortlist and use **Complete gRNAs (FASTA)** with and without **FASTA as RNA** | One record per guide, header `>variant[_C]\|spacer=...\|construct=...\|DNA\|<n>nt`, one-line sequence, U instead of T only when asked |
+| 2.17 | In the shortlist tick **T7 promoter** and **Top and bottom oligos**, press **Order CSV (DNA)**, then **Send to Pooling** | CSV with DNA oligo pairs behind `TAATACGACTCACTATA` and plate wells; the Pooling page opens with the shortlist as the guide list |
 
 ## 2a. Disease variants (real Monarch and NCBI)
 
@@ -180,3 +185,23 @@ Run by Claude Code while building the feature; **not** a replacement for a human
 | 2a.5, 2a.6, 2a.7 (UI), 2a.12 (real network cut), 2a.13, 2a.14, 2a.15, 2a.17 | not run by hand; 2a.5 to 2a.7, 2a.13 to 2a.15 are covered by the browser tests against a fake source, 2a.7 by the CLI (923 records, 833 with an rsID) |
 | Live contract tests | `GRNA_LIVE_TESTS=1 dotnet test --filter Category=Live`: 9 passed. They found the dropped compound classifications (cystic fibrosis) |
 
+### 2026-10-18, commit `b9397a4`, image `disease-mutations-app:latest` (built from that commit), real Bowtie index, ViennaRNA, NCBI, Monarch
+
+Run by Claude Code with a Playwright script driving the real web app in Chromium, for the documentation screenshots, and with the
+`grna` CLI inside the container for the timings in [validation.md](validation.md); **not** a replacement for a human pass. The
+screenshots were looked at one by one; no download was opened in another program.
+
+| Step | Result |
+|---|---|
+| 1.4 | Run: `/healthz` healthy before the run |
+| 2a.1, 2a.2, 2a.3, 2a.4 | Run in the browser: `cystic fibrosis`, first match, 1,517 ClinVar records for OMIM 219700, 1,186 with an rsID (1,035 distinct), 106 with a genomic HGVS, 225 with neither; three rsIDs ticked and sent with *replace* |
+| 2.4 | Run: `NC_000017.11:g.7674220A>T` failed with its own message while the other four inputs finished |
+| 2.5 | Run: `NM_000492.4:c.1624G>T` and `NM_000492.4:c.1521_1523del` converted and designed; a notice said what was converted |
+| 2.1c, 2.8 | Run for `rs113993960` (CFTR F508del): one resolved variant, mRNA tab first with the gene symbol, antisense tab marked |
+| 2.1 | Run for `NC_000017.11:g.7674220C>T`: engineered spacer first, offtargets 1; a typed HGVS shows the "orientation unknown" notice |
+| 2.1d | Not run for `NC_000007.14:g.117559592_117559594del`; the deletion was run as `NM_000492.4:c.1521_1523del` and as the rsID (the engineered row does not apply to a deletion, the list is the ordinary ranking) |
+| 2.13, 2.14, 2.15, 2.16 | Run in the browser: Complete gRNA card, both adapters plus a custom 5' flank and back, Get structure with the two checks, Show diagram (the FORNA diagram drew in the page). The FASTA download itself was not opened; the network panel was not inspected for 2.15 |
+| 2.17 | Partly run: four guides on the shortlist, T7 and pair options ticked, Send to Pooling. **Order CSV (DNA)** was not downloaded |
+| 4.1, 4.3 | Run: 100 guides, K = 5, three models compared, plate map; the wells of one guide decoded to that guide as definite, the others as partially supported |
+| 1.5 | Run: App Status page rendered |
+| 5.x, 6.x, 3.x (other than timings) | not run |
