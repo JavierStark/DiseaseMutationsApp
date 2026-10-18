@@ -151,7 +151,7 @@
                             <th scope="col" title="@HelpText.StrandBoth">Strand</th>
                             <th scope="col">Spacer</th>
                             <th scope="col" class="num" title="@HelpText.Score">Score</th>
-                            <th scope="col" title="@HelpText.Alignments">Alignments</th>
+                            <th scope="col" title="@HelpText.Offtargets">Offtargets</th>
                             <th scope="col" title="@HelpText.Assembly">Assembly compatibility</th>
                             <th scope="col"><span class="visually-hidden">Remove</span></th>
                         </tr>
@@ -159,7 +159,7 @@
                         <tbody>
                         @foreach (var item in StateService.Shortlist)
                         {
-                            var risk = AlignmentRisk.Describe(item.Alignments);
+                            var risk = OfftargetRisk.Describe(item.Offtargets);
                             <tr @key="@($"{item.Hgvs}|{item.IsComplement}")">
                                 <td class="font-monospace">@item.Hgvs</td>
                                 <td>@(item.IsComplement ? "Complement" : "Normal")</td>

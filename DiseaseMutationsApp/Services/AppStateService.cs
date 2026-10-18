@@ -233,6 +233,6 @@ namespace DiseaseMutationsApp.Services
     }
 
     /// <summary>One chosen spacer for one variant strand.</summary>
-    public record ShortlistItem(string Hgvs, bool IsComplement, string Spacer, string? RsId, double Score, int Alignments);
+    public record ShortlistItem(string Hgvs, bool IsComplement, string Spacer, string? RsId, double Score, int Offtargets);
 }
 

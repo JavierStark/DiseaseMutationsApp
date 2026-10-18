@@ -43,7 +43,7 @@ public static class GrnaCsvSchema
         var energy = g.RnaFoldResult?.Energy.ToString(inv) ?? "N/A";
         return string.Join(",",
             Csv(rsId ?? ""), Csv(hgvs), sequenceType, g.Rank.ToString(inv), g.Sequence,
-            g.Score.ToString(inv), g.GCContent.ToString(inv), g.Allignments.ToString(inv),
+            g.Score.ToString(inv), g.GCContent.ToString(inv), g.Offtargets.ToString(inv),
             g.SeedRegion, g.HomopolymerCount.ToString(inv), energy, Strand(isComplement),
             g.WtMismatches < 0 ? "" : g.WtMismatches.ToString(inv), g.Engineered ? "Yes" : "No",
             g.ScaffoldIntact ? "Yes" : "No",

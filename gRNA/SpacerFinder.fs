@@ -43,7 +43,7 @@ type gRNAResult =
       GCContent: float
       HomopolymerCount: int
       SeedRegion: string
-      Allignments: int
+      Offtargets: int
       RnaFoldResult: RNAFoldResult
       Rank: int
       Score: float
@@ -87,7 +87,7 @@ let getgRNAResult (seedStart: int) (seedEnd: int) (sequence: string) : gRNAResul
         GCContent = gcContent
         HomopolymerCount = homopolymerCount
         SeedRegion = seedRegion
-        Allignments = 0
+        Offtargets = 0
         RnaFoldResult = { Structure = ""; Energy = 0.0 }
         Rank = 0
         Score = 0.0
@@ -148,7 +148,7 @@ let applySubstitutionSpecialRuleAt (snpPos: int) (mismatchPos: int) (seedStart: 
         let adjustedBaseResult = getgRNAResult seedStart seedEnd adjustedSequence
 
         { adjustedBaseResult with
-            Allignments = selected.Allignments
+            Offtargets = selected.Offtargets
             RnaFoldResult = selected.RnaFoldResult
             MutationHighlightStart = selected.MutationHighlightStart
             MutationHighlightLength = selected.MutationHighlightLength
@@ -248,7 +248,7 @@ let private scaffoldReference : Lazy<Task<string>> =
     })
 
 let sortByResult (result: gRNAResult) =
-    (result.Allignments, -result.RnaFoldResult.Energy, -result.GCScore, result.HomopolymerCount)
+    (result.Offtargets, -result.RnaFoldResult.Energy, -result.GCScore, result.HomopolymerCount)
 
 let reverse (sequence: string) =
     sequence
@@ -282,18 +282,18 @@ let getOrderedgRna (seedStart: int) (seedEnd: int) (window: int) (sequence: stri
         // Fold the actual RNA gRNA (scaffold + spacer), not the raw DNA window.
         let gRNASequences = results |> List.map (fun r -> scaffold + r.Sequence)
 
-        let! allignments = bowtieService.ProcessMultipleSequencesAsync(subsequences, 2, 2, cancellationToken)
+        let! offtargets = bowtieService.ProcessMultipleSequencesAsync(subsequences, 2, 2, cancellationToken)
         let! folds = foldMany gRNASequences cancellationToken
         let! scaffoldStructure = scaffoldReference.Value
         
         let results =
-            List.zip3 results folds allignments
+            List.zip3 results folds offtargets
             |> List.map (fun (res, fold, align) ->
                 { res with
                     RnaFoldResult = fold
                     ScaffoldIntact = scaffoldIntact scaffoldStructure fold.Structure
                     SpacerUnpaired = spacerUnpaired scaffold.Length fold.Structure
-                    Allignments = align})
+                    Offtargets = align})
 
         let filteredResults = results |> List.sortBy sortByResult
         

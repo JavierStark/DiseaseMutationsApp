@@ -7,7 +7,7 @@ open System.Globalization
 
 let columns =
     [ "RS ID"; "HGVS"; "Sequence Type"; "Rank"; "Sequence"; "Score"; "GC Content"
-      "Alignments"; "Seed Region"; "Homopolymers"; "Fold Energy"; "Strand"
+      "Offtargets"; "Seed Region"; "Homopolymers"; "Fold Energy"; "Strand"
       "WT Mismatches"; "Engineered"; "Scaffold Intact"; "Spacer Unpaired" ]
 
 let header = String.Join(",", columns)
@@ -68,7 +68,7 @@ let row (rsId: string option) (hgvs: string) (sequenceType: string) (isComplemen
           g.Sequence
           inv g.Score
           inv g.GCContent
-          string g.Allignments
+          string g.Offtargets
           g.SeedRegion
           string g.HomopolymerCount
           inv g.RnaFoldResult.Energy

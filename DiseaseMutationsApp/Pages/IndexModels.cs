@@ -9,7 +9,7 @@ namespace DiseaseMutationsApp.Pages
         RS
     }
 
-    public enum GrnaSortColumn { Sequence, GCScore, GCContent, HomopolymerCount, Alignments, Energy, Score, WtMismatches, SpacerUnpaired }
+    public enum GrnaSortColumn { Sequence, GCScore, GCContent, HomopolymerCount, Offtargets, Energy, Score, WtMismatches, SpacerUnpaired }
 
     /// <summary>Lifecycle of one analysed variant (leaf).</summary>
     public enum LeafStatus { Queued, Running, Ready, Failed, Cancelled }
@@ -100,7 +100,7 @@ namespace DiseaseMutationsApp.Pages
     public class GrnaFilter
     {
         public double? MinScore { get; set; }
-        public int? MaxAlignments { get; set; }
+        public int? MaxOfftargets { get; set; }
         /// <summary>Hide guides that differ from the other allele in fewer than this many letters.</summary>
         public int? MinWtMismatches { get; set; }
         public double? MinGc { get; set; }
@@ -110,11 +110,11 @@ namespace DiseaseMutationsApp.Pages
         public int Page { get; set; }
 
         public bool IsActive =>
-            MinScore.HasValue || MaxAlignments.HasValue || MinWtMismatches.HasValue || MinGc.HasValue || MaxGc.HasValue || !string.IsNullOrWhiteSpace(Contains);
+            MinScore.HasValue || MaxOfftargets.HasValue || MinWtMismatches.HasValue || MinGc.HasValue || MaxGc.HasValue || !string.IsNullOrWhiteSpace(Contains);
 
         public bool Matches(GRNAResult g) =>
             (!MinScore.HasValue || g.Score >= MinScore.Value)
-            && (!MaxAlignments.HasValue || g.Allignments <= MaxAlignments.Value)
+            && (!MaxOfftargets.HasValue || g.Offtargets <= MaxOfftargets.Value)
             && (!MinWtMismatches.HasValue || g.Engineered || g.WtMismatches < 0 || g.WtMismatches >= MinWtMismatches.Value)
             && (!MinGc.HasValue || g.GCContent >= MinGc.Value)
             && (!MaxGc.HasValue || g.GCContent <= MaxGc.Value)

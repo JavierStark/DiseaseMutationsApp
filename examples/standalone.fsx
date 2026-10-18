@@ -40,4 +40,4 @@ if System.Environment.GetEnvironmentVariable "GRNA_RUN_PIPELINE" = "1" then
         Main.getBestgRNAFromHGVS "NG_008690.2:g.5000A>T" 28 10 17 bowtie System.Threading.CancellationToken.None false
         |> fun t -> t.GetAwaiter().GetResult()
     for g in List.truncate 3 result.gRNA do
-        printfn "rank %d %s  GC=%.1f  alignments=%d  energy=%.2f" g.Rank g.Sequence g.GCContent g.Allignments g.RnaFoldResult.Energy
+        printfn "rank %d %s  GC=%.1f  offtargets=%d  energy=%.2f" g.Rank g.Sequence g.GCContent g.Offtargets g.RnaFoldResult.Energy

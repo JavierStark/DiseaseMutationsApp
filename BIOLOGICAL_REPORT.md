@@ -157,7 +157,7 @@ type gRNAResult =
       GCContent: float              // Raw GC percentage
       HomopolymerCount: int         // Number of homopolymer runs (e.g. AAAA)
       SeedRegion: string            // Substring of Sequence covering the configured seed range
-      Allignments: int              // Number of genomic alignments (off-targets)
+      Offtargets: int              // Number of genomic alignments (off-targets)
       RnaFoldResult: RNAFoldResult  // RNA folding result (structure and energy)
       Rank: int                     // Group rank after sorting (ties share a rank)
       Score: float                  // Final normalized score (0 to 1)
@@ -189,7 +189,7 @@ let calculateGCScore (gcContent: float) (lowerThreshold: float, upperThreshold: 
 
 **c) Off-target analysis with Bowtie:**
 * **Concept:** For CRISPR therapy to be safe, the gRNA must be highly specific to the target sequence. Off-target analysis searches the whole genome for sequences similar to the candidate spacer that could be cut by mistake. Bowtie is an ultra-fast bioinformatic tool for aligning short sequences against a reference genome.
-* **Implementation:** Bowtie is invoked on the raw DNA window (not the RNA spacer) allowing up to 2 mismatches, with up to 6 reported alignments per sequence (`-v 2 -k 6`). An alignment count (`Allignments`) of 1 is ideal, indicating a unique spacer; a higher count severely penalizes the candidate. The count saturates at 6 (`-k 6`), which the tables show as "6+".
+* **Implementation:** Bowtie is invoked on the raw DNA window (not the RNA spacer) allowing up to 2 mismatches, with up to 6 reported alignments per sequence (`-v 2 -k 6`). An offtarget count (`Offtargets`) of 1 is ideal, indicating a unique spacer; a higher count severely penalizes the candidate. The count saturates at 6 (`-k 6`), which the tables show as "6+".
 
 > **A count of 0 is ranked best, on purpose.** The ranking sorts the count in ascending order, so a window with no Bowtie hit (0) sorts ahead of a window with exactly one (1). This is the team's chosen rule and it is easy to misread: 0 does not mean "unique". It means the sequence of that window was not found in the reference within 2 mismatches. For a substitution the window is almost the reference, so it normally has at least one hit; for edited sequences a 0 is expected, because a window that spans an insertion or duplication junction has no counterpart in the genome. In the runs of 2026-10-13 on `NC_000017.11:g.7674220` (a 3-nt delins, a 1-nt insertion and a 3-nt duplication) the top-ranked candidates all had 0, so the alignment criterion did not separate them and the energy, GC and homopolymer criteria decided the order; a 3-nt inversion at the same place gave 1. Treat a 0 as "no genomic match for this edited sequence", not as proof of specificity.
 
@@ -205,7 +205,7 @@ let calculateGCScore (gcContent: float) (lowerThreshold: float, upperThreshold: 
 **f) Scaffold hairpin and spacer accessibility (added 2026-10-16):** the single minimum free energy mixes two different things: the scaffold's own hairpin, which Cas13 needs, and the spacer's tendency to fold, which hinders binding to the target. Two checks are derived from the fold already computed for each complete gRNA, without changing the ranking:
 * `ScaffoldIntact`: every base pair of the fold of the *scaffold alone* (computed once per process, `scaffoldReference`) is still present in the fold of the complete gRNA (`SpacerFinder.scaffoldIntact`, over `basePairs`). When it is not, the table shows a "hairpin broken" chip: the spacer pulls the hairpin apart and the guide may not load. Extra pairs between the scaffold and the spacer are not penalised by this check.
 * `SpacerUnpaired`: the share of the spacer's letters that are unpaired (`.`) in the fold of the complete gRNA (`SpacerFinder.spacerUnpaired`). It is a proxy for accessibility *of the guide*; accessibility of the *target RNA site*, which also matters for Cas13, is not modelled.
-For the engineered spacer both values are carried over from the candidate it was built from (the fold is not recomputed, as for the energy and the alignments). The MFE (Turner 2004 parameters) is a prediction, not a measurement.
+For the engineered spacer both values are carried over from the candidate it was built from (the fold is not recomputed, as for the energy and the offtargets). The MFE (Turner 2004 parameters) is a prediction, not a measurement.
 
 #### 4.3. Sorting and Final Ranking
 
@@ -217,11 +217,11 @@ Once every candidate has been evaluated, they need to be sorted to present the m
 // In gRNA/SpacerFinder.fs
 
 let sortByResult (result: gRNAResult) =
-    (result.Allignments, -result.RnaFoldResult.Energy, -result.GCScore, result.HomopolymerCount)
+    (result.Offtargets, -result.RnaFoldResult.Energy, -result.GCScore, result.HomopolymerCount)
 ```
 
 This translates into the following priority order:
-1. **Fewest `Allignments` (off-targets):** specificity comes first. A gRNA with 1 alignment is always better than one with 2, regardless of the other factors.
+1. **Fewest `Offtargets` (off-targets):** specificity comes first. A gRNA with 1 offtarget is always better than one with 2, regardless of the other factors.
 2. **Highest `Energy` (least negative):** among gRNAs with the same off-target count, the one with the least stable secondary structure (energy closer to 0) is preferred. The negative of the energy is used so ascending sort places the least-negative values first.
 3. **Highest `GCScore`:** all else equal, the candidate with GC content closest to ideal is preferred.
 4. **Lowest `HomopolymerCount`:** finally, the presence of homopolymers is penalized.
@@ -268,7 +268,7 @@ let applySubstitutionSpecialRule (seedStart: int) (seedEnd: int) (windowSize: in
 
 This automatic rule offers the researcher a potentially more effective gRNA for editing substitution SNPs, using the mutation itself to improve the specificity of the process, while still showing the full ranked alternatives.
 
-### 5. Alignment with Bowtie: Off-Target Analysis
+### 5. Offtarget analysis with Bowtie
 
 **Scientific concept:**
 See section 4.2(c) above for the underlying concept.

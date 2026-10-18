@@ -90,7 +90,7 @@ public class GrnaService : IGrnaAnalysis
                 GCContent = (float)g.GCContent,
                 HomopolymerCount = g.HomopolymerCount,
                 SeedRegion = g.SeedRegion,
-                Allignments = g.Allignments,
+                Offtargets = g.Offtargets,
                 RnaFoldResult = new RNAFoldResult
                 {
                     Structure = g.RnaFoldResult.Structure,
@@ -220,7 +220,7 @@ public record GRNAResult
     public float GCContent { get; init; }
     public int HomopolymerCount { get; init; }
     public required string SeedRegion { get; init; }
-    public int Allignments { get; init; }
+    public int Offtargets { get; init; }
     public required RNAFoldResult RnaFoldResult { get; init; }
     public int Rank { get; init; }
     public double Score { get; init; }

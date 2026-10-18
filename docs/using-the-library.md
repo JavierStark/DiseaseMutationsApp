@@ -57,7 +57,7 @@ The function is **curried**; from C# the compiler exposes it as a normal method 
 `GrnaService.GetBestgRNAFromHgvs` shows: `Main.getBestgRNAFromHGVS(hgvs, window, seedStart, seedEnd, bowtie, ct, complement)`.
 `ResultFromHGVS` (note: a different type from the C# record of the same name in `DiseaseMutationsApp.Services`) carries
 `gRNA`, `originalGRNA` (ranked candidate lists), `mutatedSequence`, `originalSequence`, `extraNucleotids` and `windowStart`/`windowEnd` (the 1-based inclusive accession window the sequences were cut from). For
-substitutions the special rule may replace a list with a single engineered candidate (the alignment and fold values are carried over from the
+substitutions the special rule may replace a list with a single engineered candidate (the offtarget and fold values are carried over from the
 unadjusted candidate). If no candidate carries the mutation at index `N-3` (`SpacerFinder.specialRuleApplies` is false: the mutation is too
 close to an end of the sequence) the ranked list is kept and `notices` holds a warning (`Main.specialRuleNotice`).
 
@@ -106,14 +106,14 @@ printf "%s" (gRNA.DiseaseVariants.formatRsList result.Variants)   // one rsID pe
 ### `SpacerFinder`
 `scaffold`, `slidingWindow`, `calculateGCContent`, `calculateGCScore gc (lower, upper)` (inclusive bounds),
 `countHomopolymers`, `getgRNAResult`, `getOrderedgRna` (the whole ranking, async), `applySubstitutionSpecialRule`,
-`sortByResult`. Ranking key: `(Alignments, -Energy, -GCScore, Homopolymers)`.
+`sortByResult`. Ranking key: `(Offtargets, -Energy, -GCScore, Homopolymers)`.
 
 ### `RNAFoldWrapper`
 `fold seq ct`, `foldMany seqs ct`, `foldManyWith env seqs ct` (result: `{ Structure; Energy }`). Bounded to 2 concurrent
 interpreters per process; sequences go as `ArgumentList` items, never through string interpolation.
 
 ### `BowtieWrapper` / `Services.BowtieService`
-`BowtieService.ProcessMultipleSequencesAsync(sequences, mismatches, threads, ct)` returns one alignment count per read.
+`BowtieService.ProcessMultipleSequencesAsync(sequences, mismatches, threads, ct)` returns one offtarget count per read.
 It implements `IBowtieRunner`, the seam for substituting a stub. `FindOffTargetsAsync(window, mismatches, maxHits, ct)` returns the
 alignments with loci (`Parsing.BowtieAlignment`: reference, 0-based offset, strand, mismatch count and detail) for one DNA window. Counts saturate at `-k 6`: **6 means "6 or more"**.
 
@@ -140,7 +140,7 @@ can implicate innocent guides at the intersections of their pools; those are rep
 - The stated reference base is checked against the fetched sequence by `Main.validateAgainstSequence`, but a wrong accession *version* that happens to carry the same base still yields a plausible but different sequence: pin the version.
 - NCBI sequences are upper-cased by `parseFasta`, but IUPAC letters other than ACGT inside a window are not handled by the scoring or the folding step, which will fail for that window.
 - `extraNucleotids` is `max 0 (spacer - mutation length)`. A deletion longer than the spacer leaves no window and is refused with a message; this is a limit of the design, not a solved case.
-- Alignment counts saturate at 6 (`-k 6`).
-- The substitution special rule carries the pre-adjustment alignment and fold values onto the adjusted sequence (re-running Bowtie and the folding for one changed base was judged redundant).
+- Offtarget counts saturate at 6 (`-k 6`).
+- The substitution special rule carries the pre-adjustment offtarget and fold values onto the adjusted sequence (re-running Bowtie and the folding for one changed base was judged redundant).
 - Bowtie is serialised per process.
 - `DiseaseVariants` reads at most 3,000 ClinVar records per search (`Truncated` says so), uses only germline classifications, expands subtypes one level (40 at most), and derives an HGVS only for simple A/C/G/T variants (not 3'-shifted: the same sequence results either way).

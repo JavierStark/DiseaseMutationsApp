@@ -7,7 +7,7 @@
 Diana is a web application and command-line tool for turning disease-related variants (HGVS notations [10] or rsIDs [5]) into
 ranked CRISPR-Cas13 guide RNA spacers, for finding those variants from a disease (name, OMIM number or MONDO id, through
 ClinVar [16]), and for planning combinatorial guide pooling onto 96/384-well plates. Spacers are scored for
-GC content, homopolymers, off-target alignments (Bowtie [1]) and RNA secondary structure (ViennaRNA [2, 3]), for both the
+GC content, homopolymers, offtargets (Bowtie [1]) and RNA secondary structure (ViennaRNA [2, 3]), for both the
 mutated and the original (wild-type) sequence. It also flags restriction sites (BsaI, BsmBI, SapI, BbsI, EcoRI, PstI, XbaI,
 SpeI, EcoRV, NotI) in the DNA you would order, shows whether each guide is compatible with the BioBrick RFC[10] and iGEM Type IIS
 RFC[1000] assembly standards, and exports an order-ready oligo CSV.
@@ -38,14 +38,14 @@ keyboard-operable tabs. Numbers in square brackets point to the [References](#re
   `NM_000518.5:n.70A>T` using the coding-sequence start read from the NCBI GenBank record, `c.-5` and `c.*3` included): the guides
   are then designed on the mRNA itself, which is what Cas13 binds, and a notice says what was converted. Limits: spacer size 18-60, at most 50 inputs per run.
 - **Results** per variant: original and mutated sequences (mutation highlighted, copy as FASTA), two ranked spacer tables
-  (sortable, filterable, paged, with an alignment-risk chip), the complete gRNA (scaffold + chosen spacer), ViennaRNA
+  (sortable, filterable, paged, with an offtarget-risk chip), the complete gRNA (scaffold + chosen spacer), ViennaRNA
   structure and a FORNA [4] diagram link.
 - **Can this guide tell the alleles apart?** Each guide has a *Mismatches vs other allele* column: the fewest letters in which its
   DNA target differs from the closest stretch of the other allele (a mutated-sequence guide against the normal sequence). 0 or 1 is
   flagged "not discriminating" (red chip), a filter hides those, and a warning appears when no guide of a variant reaches 2. It
   informs the choice; it does not change the ranking.
 - **Tooltips everywhere.** Hover (or focus) a column header, filter, option or badge to get a one-paragraph explanation of what it
-  is and how it is computed (GC score, alignments, energy, score, mismatches, engineered guide, strands, seed, pooling K, ...).
+  is and how it is computed (GC score, offtargets, energy, score, mismatches, engineered guide, strands, seed, pooling K, ...).
   The wording lives in one file, `DiseaseMutationsApp/Services/HelpText.cs`.
 - **Assembly compatibility**: each guide carries two badges, one per standard. BioBrick RFC[10] requires the DNA to be free of
   EcoRI, NotI, XbaI, SpeI and PstI sites and iGEM Type IIS RFC[1000] of BsaI and SapI sites; a green badge means compatible, a
@@ -54,7 +54,7 @@ keyboard-operable tabs. Numbers in square brackets point to the [References](#re
 - **Runs**: cancellable (whole run or one variant), bounded-parallel, and they survive navigating to another page. A refresh
   restores your inputs (never results: download the CSV report to keep them).
 - **Off-target loci**: expand any spacer to see where its target window aligns in the genome (chromosome, position, strand,
-  mismatches; up to 50 alignments). The table's alignment chip still saturates at "6+", honestly labelled. Loci are looked up for the spacer exactly as displayed; for the
+  mismatches; up to 50 alignments). The table's offtarget chip still saturates at "6+", honestly labelled. Loci are looked up for the spacer exactly as displayed; for the
   substitution special rule's engineered spacer this can differ from the table's count, which is carried over from the unadjusted candidate.
 - **Shortlist**: pick spacers across variants, send them to the Pooling page without a CSV round trip, or download an
   order-ready **oligo CSV** (DNA, optional T7 promoter, top/bottom pairs, plate wells addressed like the pooling plan).
@@ -214,14 +214,14 @@ If a variant fails it shows the reason and a **Retry this variant** button; othe
   `(100 - gc) / 40`. Always in 0-1.
 - **GC content**: raw GC percentage, two decimals.
 - **Homopolymers**: runs of 4 or more identical bases; 0 is best.
-- **Alignments**: Bowtie hits of the DNA window (up to 2 mismatches). 1 is a unique target; the count saturates at 6, shown as
+- **Offtargets**: Bowtie hits of the DNA window (up to 2 mismatches). 1 is a unique target; the count saturates at 6, shown as
   "6+ saturated". **0 means "no genomic match" and is ranked best, by design**: it is common for insertions,
-  duplications and deletions, whose junction windows do not exist in the genome, so for those variants the alignment criterion
+  duplications and deletions, whose junction windows do not exist in the genome, so for those variants the offtarget criterion
   does not separate candidates (see [BIOLOGICAL_REPORT.md](BIOLOGICAL_REPORT.md) section 4.2c).
 - **Spacer unpaired** (`Spacer Unpaired` in the CSV): the share of the spacer's letters left unpaired in the fold of the complete gRNA; a spacer that folds on itself or sticks to the scaffold may bind its target less well.
 - **Hairpin broken** (`Scaffold Intact = No`): the scaffold's own hairpin (the fold of the scaffold alone) is no longer fully formed in the complete gRNA, so the guide may not load into Cas13. Both checks come from the fold already computed; they inform the choice and do not change the ranking.
 - **Energy**: minimum free energy (kcal/mol, Turner 2004 parameters [11]) of the *complete* gRNA (scaffold + spacer); closer to zero is preferred.
-- **Score**: 0-1, from the rank after sorting by (Alignments, Energy, GC score, Homopolymers); ties share a rank. It is a *relative* number for comparing candidates of one variant, not a prediction of guide activity; when a variant has a single ordinary candidate the table says "only candidate" instead of 100 %.
+- **Score**: 0-1, from the rank after sorting by (Offtargets, Energy, GC score, Homopolymers); ties share a rank. It is a *relative* number for comparing candidates of one variant, not a prediction of guide activity; when a variant has a single ordinary candidate the table says "only candidate" instead of 100 %.
 
 - **Mismatches vs other allele** (`WT Mismatches` in the CSV): see above; 2 or more can tell the alleles apart, more is better.
 
