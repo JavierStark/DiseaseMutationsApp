@@ -170,6 +170,13 @@ public class CliTests
     }
 
     [Test]
+    public void Design_NoRuleIsAFlag_NotAnOptionNeedingAValue()
+    {
+        var args = CliProgram.parseArgs(Microsoft.FSharp.Collections.ListModule.OfSeq(new[] { "--hgvs", "x", "--no-rule" }));
+        Assert.That(args.Flags.Contains("no-rule"), Is.True);
+    }
+
+    [Test]
     public void Design_SubstitutionRuleOptionsNeedAValue_AndAreListedInHelp()
     {
         Assert.That(Run("design", "--hgvs", "x", "--snp-pos").Exit, Is.EqualTo(CliProgram.ExitBadInput));

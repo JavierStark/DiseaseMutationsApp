@@ -56,7 +56,7 @@ type Args =
       Options: Map<string, string>
       Flags: Set<string> }
 
-let private flagNames = set [ "complement"; "network"; "help"; "list"; "subtypes"; "all-alleles"; "t7"; "frida"; "biobricks" ]
+let private flagNames = set [ "complement"; "network"; "help"; "list"; "subtypes"; "all-alleles"; "no-rule"; "t7"; "frida"; "biobricks" ]
 
 let parseArgs (argv: string list) : Args =
     let rec go (rest: string list) (pos: string list) (opts: Map<string, string>) (flags: Set<string>) =
