@@ -465,6 +465,8 @@ DiseaseMutationsApp.E2E/   Playwright browser tests against the real UI with a f
 docs/                      about-the-name, runtime-contract, using-the-library, design-system, manual-test-plan, validation
 examples/standalone.fsx    run the library from F# Interactive
 scripts/check-pins.sh      dependency pinning gate
+scripts/                   builder and data generator for the static example site (gallery/README.md)
+gallery/                   saved example results (gallery/data), published by GitLab Pages
 BIOLOGICAL_REPORT.md       each biological step mapped to the code, with the open scientific questions
 THIRD-PARTY-NOTICES.md     licenses of the bundled components
 Dockerfile, Dockerfile.bowtie-base, docker-compose.yml, start.sh, start.ps1, start.bat

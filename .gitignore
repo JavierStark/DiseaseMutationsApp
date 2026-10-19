@@ -24,3 +24,6 @@ bowtie/indexes/*
 showcase/out/
 showcase/remotion/public/footage.mp4
 showcase/remotion/public/timeline.json
+
+# The built GitLab Pages site (scripts/build-gallery.py); CI rebuilds it, it is never committed
+/public/

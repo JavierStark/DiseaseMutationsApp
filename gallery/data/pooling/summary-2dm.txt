@@ -1,0 +1,1 @@
+2D Matrix: V=100 K=5 -> 40 wells (40 to prepare), each guide in 2

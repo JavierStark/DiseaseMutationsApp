@@ -1,0 +1,1 @@
+3D: V=100 K=5 -> 75 wells (60 to prepare), each guide in 3

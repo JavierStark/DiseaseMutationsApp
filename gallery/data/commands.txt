@@ -1,0 +1,16 @@
+grna design --input input.txt --out report.csv    # in rs334
+grna design --input input.txt --out report.csv --complement    # in rs334
+grna design --input input.txt --format json --out normal.json    # in rs334
+grna design --input input.txt --format json --complement --out complement.json    # in rs334
+grna export report.csv --t7 --format genbank --date 2026-10-19 --out guides.gb    # in rs334
+grna export report.csv --t7 --format sbol --out guides.xml    # in rs334
+grna design --input input.txt --out report.csv    # in f508del
+grna design --input input.txt --out report.csv --complement    # in f508del
+grna design --input input.txt --format json --out normal.json    # in f508del
+grna design --input input.txt --format json --complement --out complement.json    # in f508del
+grna export report.csv --t7 --format genbank --date 2026-10-19 --out guides.gb    # in f508del
+grna export report.csv --t7 --format sbol --out guides.xml    # in f508del
+grna pool --count 100 --capacity 5 --plate 96 --model auto --out plan-auto.csv    # in pooling
+grna pool --count 100 --capacity 5 --plate 96 --model 2df --out plan-2df.csv    # in pooling
+grna pool --count 100 --capacity 5 --plate 96 --model 2dm --out plan-2dm.csv    # in pooling
+grna pool --count 100 --capacity 5 --plate 96 --model 3d --out plan-3d.csv    # in pooling
