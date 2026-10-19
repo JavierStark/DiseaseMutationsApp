@@ -52,6 +52,27 @@ public static class OligoExport
         return sb.ToString();
     }
 
+    private static gRNA.Export.ExportGuide ToExportGuide(ShortlistItem item) =>
+        new(item.Hgvs,
+            string.IsNullOrWhiteSpace(item.RsId) ? Microsoft.FSharp.Core.FSharpOption<string>.None : Microsoft.FSharp.Core.FSharpOption<string>.Some(item.RsId),
+            item.IsComplement, item.Spacer,
+            Microsoft.FSharp.Core.FSharpOption<int>.None,
+            Microsoft.FSharp.Core.FSharpOption<double>.Some(item.Score),
+            Microsoft.FSharp.Core.FSharpOption<int>.Some(item.Offtargets));
+
+    private static gRNA.Export.ExportOptions ToExportOptions(bool includeT7, ConstructOptions? construct, string? ns) =>
+        new(GuideConstruct.ToLibrary(construct), includeT7, ns ?? gRNA.Export.DefaultNamespace, DateTime.UtcNow);
+
+    /// <summary>The shortlist as a GenBank flat file (one record per guide): the complete guide as it would be ordered, annotated.</summary>
+    public static string ShortlistGenBank(IEnumerable<ShortlistItem> items, bool includeT7, ConstructOptions? construct = null) =>
+        gRNA.Export.toGenBank(ToExportOptions(includeT7, construct, null),
+            Microsoft.FSharp.Collections.ListModule.OfSeq(items.Select(ToExportGuide)));
+
+    /// <summary>The shortlist as an SBOL 3 document (RDF/XML): one Component and one Sequence per guide.</summary>
+    public static string ShortlistSbol(IEnumerable<ShortlistItem> items, bool includeT7, ConstructOptions? construct = null, string? ns = null) =>
+        gRNA.Export.toSbol3(ToExportOptions(includeT7, construct, ns),
+            Microsoft.FSharp.Collections.ListModule.OfSeq(items.Select(ToExportGuide)));
+
     /// <summary>One FASTA record for a single guide (ends with a newline).</summary>
     public static string FastaRecord(string hgvs, bool isComplement, string spacerRna, ConstructOptions? construct = null, bool rna = false)
     {

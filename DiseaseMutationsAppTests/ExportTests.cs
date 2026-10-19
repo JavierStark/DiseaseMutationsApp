@@ -333,3 +333,39 @@ public class SbolExportTests
         Assert.That(FsExport.toSbol3(ExportFixtures.Options(), guides), Is.EqualTo(first));
     }
 }
+
+public class ShortlistExportTests
+{
+    private static readonly ShortlistItem[] Items =
+    {
+        new("NG_008690.2:g.5000A>T", false, ExportFixtures.Spacer, "rs334", 0.8, 2),
+        new("NC_000017.11:g.7674220C>T", true, "ACGUACGUACGUACGUACGUACGUACGU", null, 1, 0),
+    };
+
+    [Test]
+    public void ShortlistGenBank_OneRecordPerItem_WithTheShortlistsConstructAndT7()
+    {
+        var construct = new ConstructOptions(Frida: true);
+        var text = OligoExport.ShortlistGenBank(Items, true, construct);
+        var first = Regex.Match(text, @"(?m)^\s*1 ([acgt ]+)$").Groups[1].Value.Replace(" ", "");
+        Assert.Multiple(() =>
+        {
+            Assert.That(Regex.Matches(text, @"(?m)^LOCUS ").Count, Is.EqualTo(2));
+            Assert.That(text, Does.Contain("rs334").And.Contain("Score: 0.8").And.Contain("Frida adapter 5'"));
+            Assert.That(first, Is.EqualTo(OligoExport.Template(Items[0].Spacer, true, OligoStrand.Sense, construct).Substring(0, 60).ToLowerInvariant()));
+        });
+    }
+
+    [Test]
+    public void ShortlistSbol_IsWellFormed_AndUsesTheNamespaceGiven()
+    {
+        var doc = XDocument.Parse(OligoExport.ShortlistSbol(Items, false, null, "https://example.org/team"));
+        XNamespace sbol = "http://sbols.org/v3#";
+        Assert.That(doc.Root!.Elements(sbol + "Component").Count(), Is.EqualTo(2));
+        Assert.That(doc.ToString(), Does.Contain("https://example.org/team/NG_008690_2_g_5000A_T"));
+    }
+
+    [Test]
+    public void EmptyShortlist_IsRefusedByTheLibrary() =>
+        Assert.Throws<gRNA.GrnaInputException>(() => OligoExport.ShortlistGenBank(Array.Empty<ShortlistItem>(), true));
+}
