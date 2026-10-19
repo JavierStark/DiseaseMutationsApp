@@ -34,6 +34,8 @@ Usage:
   grna fold <RNA sequence>
   grna pool --guides <report.csv> [--capacity 5] [--plate 96|384] [--model auto|2df|2dm|3d] [--out plan.csv]
   grna pool --count <V>          [--capacity 5] [--plate 96|384] [--model auto|2df|2dm|3d] [--out plan.csv]
+  grna export <session.json | report.csv> [--format genbank|sbol] [--out file] [--t7] [--top 1] [--namespace <URL>] [--date yyyy-MM-dd]
+                                          [--dr lwa|none] [--frida] [--biobricks] [--custom5 <seq>] [--custom3 <seq>]
 
 --repeat is the 5' context every spacer is folded with while screening: default (the 36 nt Cas13 scaffold), none (the spacer alone)
 or your own direct repeat as an RNA/DNA sequence. It changes the energy, hairpin and unpaired-share columns, not the alignments.
@@ -41,6 +43,9 @@ or your own direct repeat as an RNA/DNA sequence. It changes the energy, hairpin
 Environment: GRNA_BOWTIE_BINARY, GRNA_BOWTIE_INDEX, GRNA_PYTHON, GRNA_NCBI_API_KEY, GRNA_NCBI_CONTACT
 Exit codes: 0 ok, 1 failure, 2 bad input, 3 missing native dependency, 4 upstream failure
 A design report in csv format is accepted unchanged by `grna pool --guides` and by the web Pooling tab.
+`grna export` writes the complete guides (what would be ordered) as a GenBank file or an SBOL 3 document. It reads the shortlist and
+construct of a session saved by the web app, or the best guides of a design report (then --dr/--frida/--biobricks/--custom5/--custom3 build
+the construct). It needs no Bowtie, ViennaRNA or network.
 `grna disease 603903 --format rs --out sickle.txt` followed by `grna design --input sickle.txt --out report.csv` goes from a disease to guides."""
 
 exception BadArgs of string
@@ -51,7 +56,7 @@ type Args =
       Options: Map<string, string>
       Flags: Set<string> }
 
-let private flagNames = set [ "complement"; "network"; "help"; "list"; "subtypes"; "all-alleles" ]
+let private flagNames = set [ "complement"; "network"; "help"; "list"; "subtypes"; "all-alleles"; "t7"; "frida"; "biobricks" ]
 
 let parseArgs (argv: string list) : Args =
     let rec go (rest: string list) (pos: string list) (opts: Map<string, string>) (flags: Set<string>) =
@@ -77,7 +82,8 @@ let private allowed =
           "disease", (set [ "pick"; "min-significance"; "format"; "out" ], set [ "list"; "subtypes"; "help" ])
           "design", (set [ "hgvs"; "input"; "spacer"; "seed"; "repeat"; "format"; "out"; "concurrency"; "snp-pos"; "mismatch-pos" ], set [ "complement"; "all-alleles"; "help" ])
           "fold", (Set.empty, set [ "help" ])
-          "pool", (set [ "guides"; "count"; "capacity"; "plate"; "model"; "out" ], set [ "help" ]) ]
+          "pool", (set [ "guides"; "count"; "capacity"; "plate"; "model"; "out" ], set [ "help" ])
+          "export", (set [ "format"; "out"; "top"; "dr"; "custom5"; "custom3"; "namespace"; "date" ], set [ "t7"; "frida"; "biobricks"; "help" ]) ]
 
 /// Throws BadArgs naming the first option or flag the command does not take.
 let checkKnownOptions (command: string) (args: Args) : unit =
@@ -537,6 +543,148 @@ let pool (args: Args) (ct: CancellationToken) : Task<int> =
         return ExitOk
     }
 
+// ---- export -----------------------------------------------------------------------------------------
+
+let private mkGuide hgvs rsId complement spacer rank score offtargets : Export.ExportGuide =
+    { Hgvs = hgvs; RsId = rsId; Complement = complement; Spacer = spacer; Rank = rank; Score = score; Offtargets = offtargets }
+
+let private mkConstruct dr frida bioBricks custom5 custom3 : Construct.ConstructOptions =
+    { DrId = dr; Frida = frida; BioBricks = bioBricks; Custom5 = custom5; Custom3 = custom3 }
+
+/// The shortlist and construct of a session saved by the web app (camelCase JSON).
+let private guidesFromSession (text: string) (file: string) : Export.ExportGuide list * Construct.ConstructOptions option =
+    try
+        use doc = JsonDocument.Parse text
+        let root = doc.RootElement
+        let str (e: JsonElement) (n: string) =
+            match e.TryGetProperty n with
+            | true, v when v.ValueKind = JsonValueKind.String -> Some(v.GetString())
+            | _ -> None
+        let flag (e: JsonElement) (n: string) =
+            match e.TryGetProperty n with
+            | true, v -> v.ValueKind = JsonValueKind.True
+            | _ -> false
+        let number (e: JsonElement) (n: string) =
+            match e.TryGetProperty n with
+            | true, v when v.ValueKind = JsonValueKind.Number -> Some v
+            | _ -> None
+        let guides =
+            match root.TryGetProperty "shortlist" with
+            | true, list when list.ValueKind = JsonValueKind.Array ->
+                [ for item in list.EnumerateArray() ->
+                    match str item "hgvs", str item "spacer" with
+                    | Some h, Some sp ->
+                        mkGuide h (str item "rsId" |> Option.filter (fun r -> r <> "")) (flag item "isComplement") sp None
+                            (number item "score" |> Option.map _.GetDouble()) (number item "offtargets" |> Option.map _.GetInt32())
+                    | _ -> raise (BadArgs(sprintf "'%s' has a shortlist entry without hgvs or spacer." file)) ]
+            | _ -> []
+        let construct =
+            match root.TryGetProperty "construct" with
+            | true, c when c.ValueKind = JsonValueKind.Object ->
+                Some(mkConstruct (defaultArg (str c "drId") Construct.LwaId) (flag c "frida") (flag c "bioBricks") (defaultArg (str c "custom5") "") (defaultArg (str c "custom3") ""))
+            | _ -> None
+        guides, construct
+    with :? JsonException -> raise (BadArgs(sprintf "'%s' is not a valid session file." file))
+
+/// The first `top` Mutated rows of each variant and strand of a design report, in report order (engineered guide first).
+let private guidesFromDesignReport (path: string) (top: int) : Export.ExportGuide list =
+    let lines =
+        File.ReadAllLines path
+        |> Array.map _.Trim()
+        |> Array.filter (fun l -> l <> "" && not (l.StartsWith "#"))
+    if lines.Length = 0 then raise (BadArgs(sprintf "'%s' is empty." path))
+    let tabs = lines[0] |> Seq.filter ((=) '\t') |> Seq.length
+    let commas = lines[0] |> Seq.filter ((=) ',') |> Seq.length
+    let split (l: string) = if tabs > commas then List.ofArray (l.Split '\t') else ReportSchema.splitCsvLine l
+    let header = split lines[0] |> List.map _.Trim()
+    if header.Length < 5 || List.take 3 header <> List.take 3 ReportSchema.columns then
+        raise (BadArgs(sprintf "'%s' is neither a session file nor a Diana design report (expected the header '%s')." path ReportSchema.header))
+    let strandCol = ReportSchema.columns |> List.findIndex ((=) "Strand")
+    let counts = Collections.Generic.Dictionary<string, int>()
+    let inv = Globalization.CultureInfo.InvariantCulture
+    let cell (f: string list) i = if i < f.Length then f[i].Trim() else ""
+    [ for l in lines |> Array.skip 1 do
+        let f = split l
+        if f.Length >= 5 && cell f 2 = ReportSchema.mutatedType then
+            let strand = cell f strandCol
+            let key = cell f 1 + "|" + strand
+            let seen = match counts.TryGetValue key with | true, n -> n | _ -> 0
+            if seen < top then
+                counts[key] <- seen + 1
+                yield
+                    mkGuide (cell f 1) (match cell f 0 with | "" -> None | r -> Some r) (strand = ReportSchema.complementStrand) (cell f 4)
+                        (match Int32.TryParse(cell f 3, Globalization.NumberStyles.Integer, inv) with | true, n -> Some n | _ -> None)
+                        (match Double.TryParse(cell f 5, Globalization.NumberStyles.Float, inv) with | true, x -> Some x | _ -> None)
+                        (match Int32.TryParse(cell f 7, Globalization.NumberStyles.Integer, inv) with | true, n -> Some n | _ -> None) ]
+
+/// Writes the complete guides (what would be ordered) as GenBank or SBOL 3. Reads a session file or a design report; offline.
+let exportCommand (args: Args) (ct: CancellationToken) : Task<int> =
+    task {
+        let file =
+            match args.Positional with
+            | [ f ] -> f
+            | _ -> raise (BadArgs "export takes exactly one file: a session saved by the web app (.json) or a design report (.csv).")
+        if not (File.Exists file) then raise (BadArgs(sprintf "Input file '%s' not found." file))
+        let format =
+            match (defaultArg (opt args "format") "genbank").ToLowerInvariant() with
+            | "genbank" | "gb" -> "genbank"
+            | "sbol" | "sbol3" -> "sbol"
+            | f -> raise (BadArgs(sprintf "--format must be genbank or sbol, got '%s'." f))
+        let top = intOpt args "top" 1
+        if top < 1 then raise (BadArgs "--top must be 1 or more.")
+        let date =
+            match opt args "date" with
+            | None -> DateTime.UtcNow
+            | Some d ->
+                match DateTime.TryParseExact(d, "yyyy-MM-dd", Globalization.CultureInfo.InvariantCulture, Globalization.DateTimeStyles.None) with
+                | true, v -> v
+                | _ -> raise (BadArgs(sprintf "--date must look like 2026-10-19, got '%s'." d))
+        let constructFlags =
+            [ "dr", args.Options.ContainsKey "dr"
+              "frida", args.Flags.Contains "frida"
+              "biobricks", args.Flags.Contains "biobricks"
+              "custom5", args.Options.ContainsKey "custom5"
+              "custom3", args.Options.ContainsKey "custom3" ]
+            |> List.filter snd
+            |> List.map (fun (n, _) -> "--" + n)
+
+        let text = File.ReadAllText file
+        let guides, sessionConstruct =
+            if text.TrimStart().StartsWith "{" then
+                if args.Options.ContainsKey "top" then raise (BadArgs "--top applies to a design report; a session already holds the chosen guides.")
+                if not constructFlags.IsEmpty then
+                    raise (BadArgs(sprintf "%s cannot be combined with a session file: the session holds the construct you built in the web app." (String.concat ", " constructFlags)))
+                let g, c = guidesFromSession text file
+                if g.IsEmpty then raise (BadArgs(sprintf "The shortlist of '%s' is empty; add guides to the shortlist in the web app and save the session again." file))
+                g, c
+            else
+                let g = guidesFromDesignReport file top
+                if g.IsEmpty then raise (BadArgs(sprintf "No Mutated guides found in '%s'." file))
+                g, None
+        let construct =
+            match sessionConstruct with
+            | Some c -> c
+            | None ->
+                let dr = (defaultArg (opt args "dr") Construct.LwaId).ToLowerInvariant()
+                if not (Construct.drPresets |> List.exists (fun p -> p.Id = dr)) then
+                    raise (BadArgs(sprintf "--dr must be %s, got '%s'." (Construct.drPresets |> List.map _.Id |> String.concat " or ") dr))
+                let custom name =
+                    let v = defaultArg (opt args name) ""
+                    if not (Construct.isValidCustom v) then raise (BadArgs(sprintf "--%s may only contain A, C, G, T or U." name))
+                    v
+                mkConstruct dr (args.Flags.Contains "frida") (args.Flags.Contains "biobricks") (custom "custom5") (custom "custom3")
+        let options : Export.ExportOptions =
+            { Construct = construct
+              IncludeT7 = args.Flags.Contains "t7"
+              Namespace = defaultArg (opt args "namespace") Export.DefaultNamespace
+              Date = date }
+        let body = if format = "sbol" then Export.toSbol3 options guides else Export.toGenBank options guides
+        writeOut (opt args "out") body
+        eprintfn "exported %d guide%s as %s (%s%s)." guides.Length (if guides.Length = 1 then "" else "s")
+            (if format = "sbol" then "SBOL 3" else "GenBank") (Construct.describe construct) (if options.IncludeT7 then ", T7 promoter" else "")
+        return ExitOk
+    }
+
 let run (argv: string[]) (ct: CancellationToken) : Task<int> =
     task {
         match List.ofArray argv with
@@ -561,6 +709,7 @@ let run (argv: string[]) (ct: CancellationToken) : Task<int> =
                 | "design" -> return! design args ct
                 | "fold" -> return! fold args ct
                 | "pool" -> return! pool args ct
+                | "export" -> return! exportCommand args ct
                 | other ->
                     eprintfn "Unknown command '%s'.\n\n%s" other usage
                     return ExitBadInput
