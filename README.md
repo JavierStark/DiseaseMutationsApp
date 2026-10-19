@@ -37,6 +37,7 @@ Numbers in square brackets point to the [References](#references).
 [App Status](#app-status-app-status-healthz) · [`grna` command line](#grna-command-line) ·
 [Standards and interoperability](#standards-and-interoperability) · [gRNA metrics](#grna-metrics) ·
 [The complete gRNA](#the-complete-grna-direct-repeat-adapters-custom-flanks) ·
+[Cloning checks](#cloning-checks-enzyme-warnings-and-assembly-standards) ·
 [Validation](#validation) · [Architecture](#architecture) · [Project layout](#project-layout) ·
 [Installation](#installation) · [Testing](#testing) · [Configuration](#configuration) · [Troubleshooting](#troubleshooting) ·
 [Security](#security) · [Contributing](#contributing) · [References](#references) · [Future enhancements](#future-enhancements)
@@ -109,10 +110,13 @@ The guide design page, and the home page of the app (`/`).
   [Validation](#validation) for why that matters).
 - **Substitution rule.** For substitutions, a spacer with one deliberate extra mismatch is listed first, highlighted; the whole
   ordinary ranked list follows it ([details](#grna-metrics)). The two positions of the rule are parameters.
-- **Assembly compatibility.** Each guide carries two badges, one per standard. BioBrick RFC[10] requires the DNA to be free of
-  EcoRI, NotI, XbaI, SpeI and PstI sites and iGEM Type IIS RFC[1000] of BsaI and SapI sites; a green badge means compatible, a
-  red one means a site is present (hover it for the enzyme). Ten cloning enzymes in all are scanned (the seven named above plus
-  BsmBI, BbsI and EcoRV), on both strands, in the DNA you would order, and flagged with a chip next to the sequence.
+- **Assembly compatibility and enzyme warnings.** Each guide carries two badges, one per standard. BioBrick RFC[10] [19] requires
+  the DNA to be free of EcoRI, NotI, XbaI, SpeI and PstI sites and iGEM Type IIS RFC[1000] [20] of BsaI and SapI sites; a green
+  badge means compatible, a red one means a site is present (hover it for the enzyme). Ten cloning enzymes in all are scanned
+  (the seven named above plus BsmBI, BbsI and EcoRV), on both strands, in the DNA you would order. Every site found raises a
+  warning that names the enzyme, as a chip next to the sequence (*Warning: This DNA sequence includes a restriction site for the
+  enzyme: 'BsmBI'*); BsmBI, BbsI and EcoRV belong to neither standard, so they warn but leave both badges green. Sites that the
+  Frida and BioBricks adapters bring on purpose are not reported. Details: [Cloning checks](#cloning-checks-enzyme-warnings-and-assembly-standards).
 - **Off-target loci.** Expand any spacer to see where its target window aligns in the genome (chromosome, position, strand,
   mismatches; up to 50 alignments). The table's offtarget chip still saturates at "6+", honestly labelled. Loci are looked up for
   the spacer exactly as displayed; for the substitution rule's engineered spacer this can differ from the table's count, which is
@@ -217,7 +221,7 @@ Diana reads and writes existing formats instead of inventing new ones:
 | **dbSNP rsIDs** [5], **NCBI RefSeq** [6, 7] | An rsID is resolved to HGVS through the NCBI Variation Services; reference sequences and GenBank coding ranges come from E-utilities. |
 | **ClinVar** [13] and **SPDI** [8] | Disease variants; ClinVar's canonical SPDI is converted to a genomic HGVS that Diana's own parser must accept. |
 | **GRCh38** [9] | The reference for the offtarget search (Bowtie 1.3.1 index `GRCh38_noalt_as`) and for coordinates. |
-| **BioBrick RFC[10]** and **iGEM Type IIS Assembly RFC[1000]** | Each guide gets a compatible / not compatible badge per standard, from the enzymes the standard excludes (EcoRI, NotI, XbaI, SpeI, PstI; BsaI, SapI). Diana checks the internal sites of the DNA you would order; it does not add or check the standards' prefix and suffix. The BioBricks adapter in the Builder is built from that standard's sites (EcoRI, NotI, XbaI/SpeI, PstI). |
+| **BioBrick RFC[10]** [19] and **iGEM Type IIS Assembly RFC[1000]** [20] | Each guide gets a compatible / not compatible badge per standard, from the enzymes the standard excludes (EcoRI, NotI, XbaI, SpeI, PstI; BsaI, SapI). Diana checks the internal sites of the DNA you would order and also warns, by name, about other cloning enzymes such as BsmBI and BbsI ([Cloning checks](#cloning-checks-enzyme-warnings-and-assembly-standards)). It does not check a prefix and suffix that you type yourself; the BioBricks adapter in the Builder writes the RFC[10] prefix and suffix [18] (EcoRI, NotI, XbaI/SpeI, PstI). |
 | **FASTA** | Sequences copied from the Builder and the complete gRNAs (DNA or RNA) exported from the shortlist. |
 | **Dot-bracket notation** (ViennaRNA [2, 3]) and **FORNA** [4] | The predicted structure is shown as dot-bracket and drawn with the FORNA viewer. |
 | **CSV, TSV, JSON** | The CSV report schema is shared by the web export, `grna design` and the Pooling import (documented in the CLI reference); `design` can also write TSV and JSON. Session files are JSON; oligo orders and pooling plans are CSV. Every CSV field that starts with `=`, `+`, `-` or `@` is neutralised so a spreadsheet does not run it. |
@@ -286,8 +290,8 @@ what surrounds the spacer:
 | Option | What it adds |
 |---|---|
 | **Direct repeat** selector | Which DR goes before the spacer: `LwaCas13a` (default) or `None`. More Cas13 DRs are a one-line addition to `GuideConstruct.DrPresets` once their sequence is verified. |
-| **Frida adapter** | Our own engineered adapter: `AGAGCGTCTCTAAAC` - spacer - `GCTTAGAGACGTACT`. |
-| **BioBricks assembly adapter** | `GGCTAGCGAATTCGCGGCCGCTTCT` - spacer - `AGTAGCGGCCGCTGCAGCGATCGT`. Usable alone or together with Frida; when both are on it always wraps the Frida adapter. |
+| **Frida adapter** | Our own engineered adapter, made for Neith, our tandem assembly system: `AGAGCGTCTCTAAAC` - spacer - `GCTTAGAGACGTACT` (see [below](#the-frida-adapter-and-neith)). |
+| **BioBricks assembly adapter** | The iGEM BioBrick prefix and suffix [18], written in two halves: `GGCTAGCGAATTCGCGGCCGCTTCT` - spacer - `AGTAGCGGCCGCTGCAGCGATCGT`. Usable alone or together with Frida; when both are on it always wraps the Frida adapter. |
 | **Custom 5' / 3'** | Two free text boxes (A, C, G, T or U; either may stay empty) for your own DR, adapter or any other sequence. Invalid text is flagged and ignored. |
 
 The pieces are assembled in this order (5' to 3'), with the "spacer" being the DR-plus-spacer core:
@@ -310,13 +314,82 @@ saved in the session file and loaded back with it. Notes:
   checks on that fold and warns when the repeat hairpin is intact in the table but broken in the built guide, or the other way round.
 - The command line `grna design` reports the screening fold (`--repeat`, no adapters); `grna fold` folds any RNA sequence you give
   it, so a built construct can be folded with it.
-- The adapters were not tested for function in Diana, and the program does not assess whether they leave Cas13's processing of the
-  DR and spacer intact.
+- The program does not assess whether the adapters leave Cas13's processing of the DR and spacer intact. Laboratory testing of
+  constructs made with them has started; there are no results yet.
 
 **FASTA export.** The built, complete gRNA can be downloaded as FASTA: **FASTA** on the card for the selected guide (RNA), and
 **Complete gRNAs (FASTA)** in the shortlist for all shortlisted guides (DNA by default, RNA with **FASTA as RNA**). Each record's
 header is `>variant[_C]|spacer=<bare spacer>|construct=<recipe, e.g. LwaCas13a DR + Frida + BioBricks>|DNA|<length>nt`, followed by
 the sequence on one line. The order CSV keeps its oligo format.
+
+### The Frida adapter and Neith
+
+To move from single-guide detection to a fully multiplexed system, **Neith**, our assembly system, integrates several guide
+sequences into a tandem construct [12, 16]. Producing the guides in tandem poses no problem, because Cas13a itself is able to
+process the array, cleaving the guides apart from one another when it acts [17]. This strategy has three advantages:
+
+- **Compatibility with mass screening.** The most efficient pooling models require several guides to coexist in the same well.
+  Adding each compound separately would take a great deal of time, whereas a single tandem array brings all of them into the well
+  at once.
+- **Equimolar proportions.** Adding the guides as a single array ensures an equimolar ratio of all of them, avoiding, for example,
+  a drop in concentration caused by unintended dilutions.
+- **Optimised, lower-cost assembly.** Neith allows ordered, multiplexed arrays to be designed from an adapted guide spacer. The
+  direct repeat is acquired during assembly instead of being synthesised, which substantially reduces the number of nucleotides to
+  order (the 36-nt direct repeat is not needed for every guide) and helps lower the cost of screening.
+
+The Frida adapter is how Diana adapts a spacer: `AGAG` + the BsmBI site `CGTCTC` + `T` + the fusion site `AAAC` on the 5' side, and
+the fusion site `GCTT` + `A` + the BsmBI site in the opposite orientation (`GAGACG`) + `TACT` on the 3' side. BsmBI is a Type IIS
+enzyme, so it cuts outside its site and leaves a defined four-letter overhang. `AAAC` matches the terminal end of the LwaCas13a
+direct repeat, so the spacer joins the repeat without a scar; `GCTT` is compatible with the terminator prefix of our Golden Gate
+standard, which keeps single-guide constructs possible while leaving the construct ready for tandem assembly. To order the short,
+Neith-style version, set **Direct repeat** to **None** and tick **Frida adapter**: the order carries only the adapter and the
+spacer. The program does not assess whether the adapter leaves Cas13's processing intact.
+
+### The BioBricks adapter
+
+The BioBrick standard RFC[10] puts the same prefix and suffix around every part. The Registry gives them as the prefix
+`GAATTCGCGGCCGCTTCTAGAG` (EcoRI, NotI and XbaI sites) and the suffix `TACTAGTAGCGGCCGCTGCAG` (SpeI, NotI and PstI sites) [18, 19].
+Diana's BioBricks adapter writes them in two halves so that it can sit outside the Frida adapter: `…GCTTCT` + the Frida letters
+`AGAG` gives the prefix, and the Frida letters `TACT` + `AGTAGCGGCCGCTGCAG…` gives the suffix. Used alone, the adapter carries the
+EcoRI, NotI and PstI sites but not the XbaI and SpeI sites, which only appear at the junction with Frida. `GGCTAGC` (5') and
+`CGATCGT` (3') are extra letters that are not part of the standard.
+
+## Cloning checks: enzyme warnings and assembly standards
+
+A guide can rank first and still be impossible to clone: a recognition site of the cloning enzyme inside the DNA you order lets the
+enzyme cut the construct apart. Diana therefore scans the DNA that would be ordered (the complete gRNA as built, behind the T7
+promoter if ticked) for ten enzymes, on both strands because the Type IIS sites are not palindromic
+(`DiseaseMutationsApp/Services/RestrictionSites.cs`):
+
+| Enzyme | Site | Why it matters | Effect on the badges |
+|---|---|---|---|
+| BsaI | `GGTCTC` | Type IIS enzyme of Golden Gate assembly | blocks RFC[1000] |
+| SapI | `GCTCTTC` | Type IIS enzyme of Golden Gate assembly | blocks RFC[1000] |
+| BsmBI | `CGTCTC` | Type IIS enzyme whose sites the Frida adapter carries on purpose | warning only |
+| BbsI | `GAAGAC` | Type IIS enzyme used in Golden Gate assembly | warning only |
+| EcoRI | `GAATTC` | site of the BioBrick prefix, so it must not occur inside a part | blocks RFC[10] |
+| XbaI | `TCTAGA` | site of the BioBrick prefix | blocks RFC[10] |
+| SpeI | `ACTAGT` | site of the BioBrick suffix | blocks RFC[10] |
+| PstI | `CTGCAG` | site of the BioBrick suffix | blocks RFC[10] |
+| NotI | `GCGGCCGC` | site of both prefix and suffix (the Registry lists it as one to avoid [19]) | blocks RFC[10] |
+| EcoRV | `GATATC` | common blunt cutter | warning only |
+
+How the warnings appear:
+
+- **A chip with the enzyme's name** next to the guide sequence in the ranked tables and in the shortlist; hovering it shows
+  *Warning: This DNA sequence includes a restriction site for the enzyme: 'BsmBI'*. In the ranked tables the chip covers the direct
+  repeat plus the spacer; the shortlist covers the guide as built (adapters, flanks, T7 promoter if ticked).
+- **An alert with the same message** under the Complete gRNA card, which checks the guide exactly as built, and under the original
+  and the mutated sequence of each variant.
+- **Two badges** per guide, **10** (RFC[10]) and **1000** (RFC[1000]): green when none of the standard's enzymes cuts, red when
+  one does. BsmBI, BbsI and EcoRV warn but leave both badges green.
+- **A `Restriction sites` column** in the oligo CSV (enzymes separated by `;`), so the warning travels with the order.
+- **Sites that an adapter brings on purpose are not reported**: BsmBI in Frida, and EcoRI, NotI, PstI and the XbaI/SpeI
+  junctions in BioBricks. Only sites beyond those count, so a BsmBI site inside the spacer is still flagged with Frida on
+  (`GuideConstructTests.AdapterOwnSites_AreNotReported_ButSitesInTheSpacerStillAre`).
+
+The check looks for recognition sites only: it does not predict whether an enzyme cuts efficiently, and it does not validate a
+prefix and suffix that you type yourself.
 
 ## Validation
 
@@ -332,7 +405,8 @@ The full account, with what each claim rests on, is in [docs/validation.md](docs
   above the negative controls), and a five-guide tandem transcript was processed by Cas13a. **Allele discrimination was not
   achieved** with the mismatch placements tested, so the substitution rule is not lab-validated. The data and their limits are on
   the team wiki, [Results](https://2026.igem.wiki/uma-malaga/results) and
-  [Engineering](https://2026.igem.wiki/uma-malaga/engineering) pages. The pooling layout has not been tested on a real pooled screen.
+  [Engineering](https://2026.igem.wiki/uma-malaga/engineering) pages. Testing of the adapters and of a pooled screen has started in the
+  laboratory; there are no results yet, so neither the pooling layout nor the adapters are validated on real data.
 
 ## Architecture
 
@@ -525,6 +599,11 @@ are stated in [THIRD-PARTY-NOTICES.md](THIRD-PARTY-NOTICES.md).
 13. Landrum, M. J., Chitipiralla, S., Kaur, K., Brown, G., Chen, C., Hart, J., Hoffman, D., Jang, W., Liu, C., Maddipatla, Z., Maiti, R., Mitchell, J., Rezaie, T., Riley, G., Song, G., Yang, J., Ziyabari, L., Russette, A., & Kattman, B. L. (2025). ClinVar: updates to support classifications of both germline and somatic variants. *Nucleic Acids Research*, 53(D1). https://doi.org/10.1093/nar/gkae1090
 14. Putman, T. E., Schaper, K., Matentzoglu, N., et al. (2024). The Monarch Initiative in 2024: an analytic platform integrating phenotypes, genes and diseases across species. *Nucleic Acids Research*, 52(D1), D938-D949. https://doi.org/10.1093/nar/gkad1082
 15. Gootenberg, J. S. et al. (2017). Nucleic acid detection with CRISPR-Cas13a/C2c2. *Science*, 356(6336), 438-442. https://doi.org/10.1126/science.aam9321
+16. Zhao, X. et al. (2025). High-accuracy crRNA array assembly strategy for multiplex CRISPR. *Molecular Therapy Nucleic Acids*, 36(1), 102428. https://doi.org/10.1016/j.omtn.2024.102428
+17. East-Seletsky, A., O'Connell, M. R., Knight, S. C., Burstein, D., Cate, J. H. D., Tjian, R., & Doudna, J. A. (2016). Two distinct RNase activities of CRISPR-C2c2 enable guide-RNA processing and RNA detection. *Nature*, 538(7624), 270-273. https://doi.org/10.1038/nature19802
+18. iGEM Registry of Standard Biological Parts. *Help:BioBrick Prefix and Suffix*. https://parts.igem.org/Help:BioBrick_Prefix_and_Suffix (accessed 19 October 2026)
+19. iGEM Registry of Standard Biological Parts. *Help:Standards/Assembly/RFC10* (BioBrick RFC[10], developed by T. Knight). https://parts.igem.org/Help:Standards/Assembly/RFC10 (accessed 19 October 2026)
+20. iGEM Registry of Standard Biological Parts. *Help:Standards/Assembly/Type IIS* (iGEM Type IIS Assembly RFC[1000]). https://parts.igem.org/Help:Standards/Assembly/Type_IIS (accessed 19 October 2026)
 
 ## Future enhancements
 

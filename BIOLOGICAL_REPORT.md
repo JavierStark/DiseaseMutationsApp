@@ -289,7 +289,7 @@ part, and iGEM Type IIS Assembly RFC[1000] excludes BsaI and SapI.
   chosen in the Complete gRNA card), behind the T7 promoter if that option is on. Sites that the chosen adapters bring on purpose are
   not reported; any extra site is.
 * `CompatibilityForGuide` turns the found enzymes into one badge per standard: compatible when none of the standard's enzymes is
-  present. The check covers internal sites only; it does not add or verify the standards' prefix and suffix. An enzyme outside both
+  present. The check covers internal sites only; it does not verify a prefix and suffix typed as a custom flank (the BioBricks adapter writes the RFC[10] ones, completed at its junctions with the Frida adapter). An enzyme outside both
   lists (BsmBI, BbsI, EcoRV) still produces a warning chip but leaves both badges green.
 * `OligoExport` writes DNA, not RNA: the complete guide with `U` read as `T`, optionally behind the T7 class III promoter
   `TAATACGACTCACTATA` (the direct repeat begins with `G`, which becomes the +1 base), as a top and bottom pair ready to anneal, with
