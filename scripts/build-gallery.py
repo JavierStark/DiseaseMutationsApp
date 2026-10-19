@@ -241,7 +241,7 @@ TABLE_HEAD = """<thead><tr>
 
 def guide_row(guide, seed, judge_mismatches):
     engineered = guide["engineered"]
-    chip = ('<span class="chip chip-engineered" title="Substitution rule: one deliberate extra mismatch next to the variant. '
+    chip = ('<span class="chip chip-engineered" title="Substitution rule: one or two deliberate extra mismatches near the variant (positions 10 and 11 from the 3&#39; end by default; the variant is at 9). '
             'Not shown to discriminate alleles in the lab.">engineered</span> ') if engineered else ""
     hairpin = ('<span class="chip chip-ok">intact</span>' if guide["scaffoldIntact"]
                else '<span class="chip chip-caution" title="The direct repeat hairpin is no longer fully formed, so the guide may '
@@ -289,7 +289,7 @@ allele (for a guide from the mutated sequence: the normal sequence). 0 or 1 cann
 and does not change the ranking.</dd>
 <dt>Scaffold hairpin, Unpaired</dt><dd>Read from the same fold. "Broken" means the direct repeat's own hairpin is no longer fully formed, so the guide
 may not load into Cas13. Unpaired is the share of the spacer left unpaired. Both inform the choice and do not change the ranking.</dd>
-<dt>Engineered</dt><dd>For substitutions, a spacer with one deliberate extra mismatch next to the variant (the substitution rule, after the
+<dt>Engineered</dt><dd>For substitutions, a spacer with one or two deliberate extra mismatches near the variant (the substitution rule, by default the variant at position 9 and the mismatches at 10 and 11 from the 3' end; after the lab specification, Molina Vargas et al. 2024 and Shembrey et al. 2024, and the
 SHERLOCK strategy). It is listed first and shares rank 1. The rule has not been shown to discriminate alleles in the lab.</dd>
 </dl></div></details>"""
 

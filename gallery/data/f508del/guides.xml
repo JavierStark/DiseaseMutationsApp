@@ -4,7 +4,7 @@
     <sbol:displayId>NM_000492_4_c_1521_1523del</sbol:displayId>
     <sbol:hasNamespace rdf:resource="https://2026.igem.wiki/uma-malaga/diana" />
     <sbol:name>Diana guide for NM_000492.4:c.1521_1523del</sbol:name>
-    <sbol:description>Diana Cas13 guide construct for NM_000492.4:c.1521_1523del (normal strand); LwaCas13a DR behind a T7 promoter. Computational design made by Diana; its activity has not been validated experimentally. Variant: NM_000492.4:c.1521_1523del. Strand: normal strand. Spacer (5' to 3', RNA): GGAAACACCAAUGAUAUUUUCUUUAAUG. Rank: 1. Score: 1 (relative rank, not a prediction of activity). Offtargets (GRCh38, up to 2 mismatches, 6 = 6 or more): 0.</sbol:description>
+    <sbol:description>Diana Cas13 guide construct for NM_000492.4:c.1521_1523del (normal strand); LwaCas13a DR behind a T7 promoter. Computational design made by Diana; its activity has not been validated experimentally. Variant: NM_000492.4:c.1521_1523del. Strand: normal strand. Spacer (5' to 3', RNA): AAACACCAAUGAUAUUUUCUUUA. Rank: 1. Score: 1 (relative rank, not a prediction of activity). Offtargets (GRCh38, up to 2 mismatches, 6 = 6 or more): 0.</sbol:description>
     <sbol:type rdf:resource="https://identifiers.org/SBO:0000251" />
     <sbol:type rdf:resource="https://identifiers.org/SO:0000987" />
     <sbol:role rdf:resource="https://identifiers.org/SO:0000804" />
@@ -53,7 +53,7 @@
           <sbol:Range rdf:about="https://2026.igem.wiki/uma-malaga/diana/NM_000492_4_c_1521_1523del/feature_03/range">
             <sbol:displayId>range</sbol:displayId>
             <sbol:start rdf:datatype="http://www.w3.org/2001/XMLSchema#integer">54</sbol:start>
-            <sbol:end rdf:datatype="http://www.w3.org/2001/XMLSchema#integer">81</sbol:end>
+            <sbol:end rdf:datatype="http://www.w3.org/2001/XMLSchema#integer">76</sbol:end>
             <sbol:orientation rdf:resource="http://sbols.org/v3#inline" />
             <sbol:hasSequence rdf:resource="https://2026.igem.wiki/uma-malaga/diana/NM_000492_4_c_1521_1523del_seq" />
           </sbol:Range>
@@ -64,14 +64,14 @@
   <sbol:Sequence rdf:about="https://2026.igem.wiki/uma-malaga/diana/NM_000492_4_c_1521_1523del_seq">
     <sbol:displayId>NM_000492_4_c_1521_1523del_seq</sbol:displayId>
     <sbol:hasNamespace rdf:resource="https://2026.igem.wiki/uma-malaga/diana" />
-    <sbol:elements>taatacgactcactatagatttagactaccccaaaaacgaaggggactaaaacggaaacaccaatgatattttctttaatg</sbol:elements>
+    <sbol:elements>taatacgactcactatagatttagactaccccaaaaacgaaggggactaaaacaaacaccaatgatattttcttta</sbol:elements>
     <sbol:encoding rdf:resource="https://identifiers.org/edam:format_1207" />
   </sbol:Sequence>
   <sbol:Component rdf:about="https://2026.igem.wiki/uma-malaga/diana/NM_000492_4_c_1521_1523del_C">
     <sbol:displayId>NM_000492_4_c_1521_1523del_C</sbol:displayId>
     <sbol:hasNamespace rdf:resource="https://2026.igem.wiki/uma-malaga/diana" />
     <sbol:name>Diana guide for NM_000492.4:c.1521_1523del (complement)</sbol:name>
-    <sbol:description>Diana Cas13 guide construct for NM_000492.4:c.1521_1523del (complement strand); LwaCas13a DR behind a T7 promoter. Computational design made by Diana; its activity has not been validated experimentally. Variant: NM_000492.4:c.1521_1523del. Strand: complement strand. Spacer (5' to 3', RNA): CUGGCACCAUUAAAGAAAAUAUCAUUGG. Rank: 1. Score: 1 (relative rank, not a prediction of activity). Offtargets (GRCh38, up to 2 mismatches, 6 = 6 or more): 0.</sbol:description>
+    <sbol:description>Diana Cas13 guide construct for NM_000492.4:c.1521_1523del (complement strand); LwaCas13a DR behind a T7 promoter. Computational design made by Diana; its activity has not been validated experimentally. Variant: NM_000492.4:c.1521_1523del. Strand: complement strand. Spacer (5' to 3', RNA): CCAUUAAAGAAAAUAUCAUUGGU. Rank: 1. Score: 1 (relative rank, not a prediction of activity). Offtargets (GRCh38, up to 2 mismatches, 6 = 6 or more): 0.</sbol:description>
     <sbol:type rdf:resource="https://identifiers.org/SBO:0000251" />
     <sbol:type rdf:resource="https://identifiers.org/SO:0000987" />
     <sbol:role rdf:resource="https://identifiers.org/SO:0000804" />
@@ -120,7 +120,7 @@
           <sbol:Range rdf:about="https://2026.igem.wiki/uma-malaga/diana/NM_000492_4_c_1521_1523del_C/feature_03/range">
             <sbol:displayId>range</sbol:displayId>
             <sbol:start rdf:datatype="http://www.w3.org/2001/XMLSchema#integer">54</sbol:start>
-            <sbol:end rdf:datatype="http://www.w3.org/2001/XMLSchema#integer">81</sbol:end>
+            <sbol:end rdf:datatype="http://www.w3.org/2001/XMLSchema#integer">76</sbol:end>
             <sbol:orientation rdf:resource="http://sbols.org/v3#inline" />
             <sbol:hasSequence rdf:resource="https://2026.igem.wiki/uma-malaga/diana/NM_000492_4_c_1521_1523del_C_seq" />
           </sbol:Range>
@@ -131,7 +131,7 @@
   <sbol:Sequence rdf:about="https://2026.igem.wiki/uma-malaga/diana/NM_000492_4_c_1521_1523del_C_seq">
     <sbol:displayId>NM_000492_4_c_1521_1523del_C_seq</sbol:displayId>
     <sbol:hasNamespace rdf:resource="https://2026.igem.wiki/uma-malaga/diana" />
-    <sbol:elements>taatacgactcactatagatttagactaccccaaaaacgaaggggactaaaacctggcaccattaaagaaaatatcattgg</sbol:elements>
+    <sbol:elements>taatacgactcactatagatttagactaccccaaaaacgaaggggactaaaacccattaaagaaaatatcattggt</sbol:elements>
     <sbol:encoding rdf:resource="https://identifiers.org/edam:format_1207" />
   </sbol:Sequence>
 </rdf:RDF>

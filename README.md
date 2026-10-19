@@ -108,8 +108,9 @@ The guide design page, and the home page of the app (`/`).
   flagged "not discriminating" (red chip), a filter hides those, and a warning appears when no guide of a variant reaches 2. It
   informs the choice; it does not change the ranking, and it counts differences without judging their type or position (see
   [Validation](#validation) for why that matters).
-- **Substitution rule.** For substitutions, a spacer with one deliberate extra mismatch is listed first, highlighted; the whole
-  ordinary ranked list follows it ([details](#grna-metrics)). The two positions of the rule are parameters.
+- **Substitution rule.** For substitutions, a spacer with one or two deliberate extra mismatches is listed first, highlighted; the whole
+  ordinary ranked list follows it ([details](#grna-metrics)). The variant position (default 9), the artificial mutations (1 or 2, at
+  10 and 11 by default), the engineered base table and an opt-out checkbox are parameters.
 - **Assembly compatibility and enzyme warnings.** Each guide carries two badges, one per standard. BioBrick RFC[10] [19] requires
   the DNA to be free of EcoRI, NotI, XbaI, SpeI and PstI sites and iGEM Type IIS RFC[1000] [20] of BsaI and SapI sites; a green
   badge means compatible, a red one means a site is present (hover it for the enzyme). Ten cloning enzymes in all are scanned
@@ -424,7 +425,7 @@ prefix and suffix that you type yourself.
 
 The full account, with what each claim rests on, is in [docs/validation.md](docs/validation.md). In short:
 
-- **Automated tests**: 1,164 unit and component test cases (NUnit, bUnit; no container, no network; 1,151 pass and 13 skip
+- **Automated tests**: 1,184 unit and component test cases (NUnit, bUnit; no container, no network; 1,170 pass and 14 skip
   themselves because they need the live services or ViennaRNA) and 75 browser tests (Playwright, with axe-core accessibility
   scans), none failing. See [Testing](#testing).
 - **Hand checks against the real sequences**: the sickle-cell (rs334) and cystic fibrosis F508del designs were rebuilt by hand from
@@ -652,7 +653,7 @@ are stated in [THIRD-PARTY-NOTICES.md](THIRD-PARTY-NOTICES.md).
   exons. Today only transcript records (`NM_`, `XM_`) are converted; others are refused with the advice to use the `NM_` accession.
 - **Run history and design comparison** (reopen or diff earlier runs with different spacer/seed).
 - **Enzyme presets** for other Cas variants: the complete gRNA is configurable, but only the LwaCas13a DR is built in and the
-  28 / 10-17 defaults are fixed. Other Cas variants need their DRs, seed windows and mismatch positions verified against the
+  23 / 10-17 defaults are fixed. Other Cas variants need their DRs, seed windows and mismatch positions verified against the
   literature first. The candidate table's fold columns use the screening repeat and no adapters; the Complete gRNA card re-folds the
   full construct.
 - **Pooling** tested against a real pooled screen.

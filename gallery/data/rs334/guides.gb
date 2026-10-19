@@ -1,4 +1,4 @@
-LOCUS       Diana_001                 81 bp    DNA     linear   SYN 19-OCT-2026
+LOCUS       Diana_001                 76 bp    DNA     linear   SYN 19-OCT-2026
 DEFINITION  Diana Cas13 guide construct for NG_000007.3:g.70614A>T (normal
             strand); LwaCas13a DR behind a T7 promoter.
 KEYWORDS    .
@@ -10,12 +10,12 @@ COMMENT     Computational design made by Diana; its activity has not been
             Variant: NG_000007.3:g.70614A>T.
             dbSNP: rs334.
             Strand: normal strand.
-            Spacer (5' to 3', RNA): CAGGGCAGUAACGGCAGACUUCUCAACA.
+            Spacer (5' to 3', RNA): CGGCAGACUUCUAAACAGGAGUC.
             Rank: 1.
             Score: 1 (relative rank, not a prediction of activity).
             Offtargets (GRCh38, up to 2 mismatches, 6 = 6 or more): 1.
 FEATURES             Location/Qualifiers
-     source          1..81
+     source          1..76
                      /organism="synthetic construct"
                      /mol_type="other DNA"
                      /db_xref="taxon:32630"
@@ -29,15 +29,15 @@ FEATURES             Location/Qualifiers
                      /label="LwaCas13a DR"
                      /note="Cas13 direct repeat (the constant handle before the
                      spacer)"
-     misc_feature    54..81
+     misc_feature    54..76
                      /label="Spacer"
                      /note="Targeting sequence: the reverse complement of the
                      target window"
 ORIGIN
-        1 taatacgact cactatagat ttagactacc ccaaaaacga aggggactaa aaccagggca
-       61 gtaacggcag acttctcaac a
+        1 taatacgact cactatagat ttagactacc ccaaaaacga aggggactaa aaccggcaga
+       61 cttctaaaca ggagtc
 //
-LOCUS       Diana_002                 81 bp    DNA     linear   SYN 19-OCT-2026
+LOCUS       Diana_002                 76 bp    DNA     linear   SYN 19-OCT-2026
 DEFINITION  Diana Cas13 guide construct for NG_000007.3:g.70614A>T (complement
             strand); LwaCas13a DR behind a T7 promoter.
 KEYWORDS    .
@@ -49,12 +49,12 @@ COMMENT     Computational design made by Diana; its activity has not been
             Variant: NG_000007.3:g.70614A>T.
             dbSNP: rs334.
             Strand: complement strand.
-            Spacer (5' to 3', RNA): GACACCAUGGUGCAUCUGACUCCUAUGG.
+            Spacer (5' to 3', RNA): GCAUCUGACUCCACUGGAGAAGU.
             Rank: 1.
             Score: 1 (relative rank, not a prediction of activity).
             Offtargets (GRCh38, up to 2 mismatches, 6 = 6 or more): 2.
 FEATURES             Location/Qualifiers
-     source          1..81
+     source          1..76
                      /organism="synthetic construct"
                      /mol_type="other DNA"
                      /db_xref="taxon:32630"
@@ -68,11 +68,11 @@ FEATURES             Location/Qualifiers
                      /label="LwaCas13a DR"
                      /note="Cas13 direct repeat (the constant handle before the
                      spacer)"
-     misc_feature    54..81
+     misc_feature    54..76
                      /label="Spacer"
                      /note="Targeting sequence: the reverse complement of the
                      target window"
 ORIGIN
-        1 taatacgact cactatagat ttagactacc ccaaaaacga aggggactaa aacgacacca
-       61 tggtgcatct gactcctatg g
+        1 taatacgact cactatagat ttagactacc ccaaaaacga aggggactaa aacgcatctg
+       61 actccactgg agaagt
 //

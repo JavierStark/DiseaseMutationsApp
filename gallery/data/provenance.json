@@ -1,8 +1,8 @@
 {
   "generatedOn": "2026-10-19",
-  "sourceCommit": "391091a",
-  "sourceNote": "image built with docker build from an extracted git archive of the commit (no uncommitted changes)",
-  "image": "diana-gallery:391091a",
-  "imageId": "sha256:1fd31eb485c34487b808acd3ba0ef15d18bdc85a2f1ae9dcfd0354543152e5dc",
-  "imageCreated": "2026-10-19T08:17:55.153377473Z"
+  "sourceCommit": "19a8e08",
+  "sourceNote": "image rebuilt from commit 19a8e08 (clean tracked tree) with docker compose build",
+  "image": "disease-mutations-app:latest",
+  "imageId": "sha256:8c987b7096dfaacf4676f2fc9c03afe44ba6c414195faf4c902e4e03fdc9ad47",
+  "imageCreated": "2026-10-19T19:46:24.430241574Z"
 }

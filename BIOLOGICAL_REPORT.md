@@ -237,7 +237,7 @@ This rigorous selection process ensures the gRNAs recommended by the application
 #### 4.4. Special Rule for Substitution SNPs
 
 **Concept:**
-The intent of the rule is to make a guide more sensitive to a single-base difference between the two alleles of a substitution, by adding one deliberate ("synthetic") mismatch next to the base where the alleles differ, close to the 3' end of the spacer. *[Needs source: the literature that supports synthetic mismatches at these positions, and the choice of `A`/`U` as the replacement, has not yet been added to this report.]*
+The intent of the rule is to make a guide more sensitive to a single-base difference between the two alleles of a substitution, by adding one or two deliberate ("synthetic") mismatches near the base where the alleles differ, in the 3' half of the spacer (by default the variant at position 9 and the mismatches at 10 and 11, counted from the 3' end). The positions and the replacement table come from the lab's specification of 2026-10-19, which cites Molina Vargas et al. 2024 and Shembrey et al. 2024 (see *Sources of the 2026-10-19 defaults* below).
 
 What the code actually produces, stated exactly because it is easy to read as something stronger: the spacer is designed against the **mutated** sequence, and the rule then changes one or two more bases of it (by default indices `N-10` and `N-11`). The engineered spacer therefore has **one or two** mismatches against the mutated target (the synthetic ones) and **one more** against the wild-type target (the mutation itself, by default at `N-9`). It is not a perfect match to either allele.
 
