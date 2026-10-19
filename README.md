@@ -124,9 +124,12 @@ The guide design page, and the home page of the app (`/`).
 - **Complete gRNA.** Choose the direct repeat, add the Frida or BioBricks adapters or your own flanks, copy it, fold it, export
   it as FASTA ([below](#the-complete-grna-direct-repeat-adapters-custom-flanks)).
 - **Shortlist.** Pick spacers across variants, send them to the Pooling page without a CSV round trip, or download an
-  order-ready **oligo CSV** (DNA, optional T7 promoter, top/bottom pairs, plate wells addressed like the pooling plan; columns
+  download the whole shortlist with one button: an **Export as** dropdown picks the format, either an order-ready **oligo CSV**
+  (DNA, optional T7 promoter, top/bottom pairs, plate wells addressed like the pooling plan; columns
   `Well, Name, Oligo, Sequence 5'-3', Length, Restriction sites`), the complete gRNAs as FASTA, or the same constructs as a
-  **GenBank** file or an **SBOL 3** document (see [Standards and interoperability](#standards-and-interoperability)).
+  **GenBank** file, an **SBOL 3** or an **SBOL 2** document (see [Standards and interoperability](#standards-and-interoperability)).
+  Only the options that apply to the chosen format are shown (pairs for the oligo CSV, RNA letters for FASTA); the T7 promoter
+  tick applies to the oligo CSV, GenBank and both SBOL formats.
 - **Runs.** Cancellable (whole run or one variant), bounded-parallel, and they survive navigating to another page. A refresh
   restores your inputs (never results: download the CSV report to keep them).
 - **Files and sessions.** Load inputs from a plain list, a Diana CSV report or a saved session; *Save session* downloads a

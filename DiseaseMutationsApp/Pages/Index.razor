@@ -160,14 +160,26 @@
                 <div class="d-flex flex-wrap justify-content-between align-items-center gap-2 mb-3">
                     <h2 class="card-title section-title mb-0" title="@HelpText.Shortlist"><Icon Name="list" />Shortlist <span class="shortlist-badge">@StateService.Shortlist.Count</span></h2>
                     <div class="d-flex flex-wrap align-items-center gap-3">
-                        <div class="form-check mb-0"><input id="oligo-t7" class="form-check-input" type="checkbox" @bind="_oligoT7" /><label class="form-check-label" for="oligo-t7" title="@HelpText.T7">T7 promoter</label></div>
-                        <div class="form-check mb-0"><input id="oligo-pairs" class="form-check-input" type="checkbox" @bind="_oligoPairs" /><label class="form-check-label" for="oligo-pairs" title="@HelpText.Pairs">Top and bottom oligos</label></div>
-                        <button type="button" class="btn btn-sm btn-outline-secondary" @onclick="DownloadOligos"><Icon Name="download" />Order CSV (DNA)</button>
-                        <div class="form-check mb-0"><input id="fasta-rna" class="form-check-input" type="checkbox" @bind="_fastaRna" /><label class="form-check-label" for="fasta-rna" title="@HelpText.FastaRna">FASTA as RNA</label></div>
-                        <button type="button" class="btn btn-sm btn-outline-secondary" title="@HelpText.Fasta" @onclick="DownloadFasta"><Icon Name="download" />Complete gRNAs (FASTA)</button>
-                        <button type="button" class="btn btn-sm btn-outline-secondary" title="@HelpText.GenBank" @onclick="DownloadGenBank"><Icon Name="download" />GenBank (.gb)</button>
-                        <button type="button" class="btn btn-sm btn-outline-secondary" title="@HelpText.Sbol" @onclick="DownloadSbol"><Icon Name="download" />SBOL 3 (.xml)</button>
-                        <button type="button" class="btn btn-sm btn-outline-secondary" title="@HelpText.Sbol2" @onclick="DownloadSbol2"><Icon Name="download" />SBOL 2 (.xml)</button>
+                        <div class="d-flex flex-wrap align-items-center gap-2">
+                            <label for="export-format" class="form-label mb-0 small" title="@HelpText.ExportFormat">Export as</label>
+                            <select id="export-format" class="form-select form-select-sm w-auto" title="@HelpText.ExportFormat" @bind="_exportFormat">
+                                <option value="@ExportFormat.OligoCsv">Order CSV (DNA oligos)</option>
+                                <option value="@ExportFormat.Fasta">Complete gRNAs (FASTA)</option>
+                                <option value="@ExportFormat.GenBank">GenBank (.gb)</option>
+                                <option value="@ExportFormat.Sbol3">SBOL 3 (.xml)</option>
+                                <option value="@ExportFormat.Sbol2">SBOL 2 (.xml)</option>
+                            </select>
+                            <div class="form-check mb-0"><input id="oligo-t7" class="form-check-input" type="checkbox" @bind="_oligoT7" /><label class="form-check-label" for="oligo-t7" title="@HelpText.T7">T7 promoter</label></div>
+                            @if (_exportFormat == ExportFormat.OligoCsv)
+                            {
+                                <div class="form-check mb-0"><input id="oligo-pairs" class="form-check-input" type="checkbox" @bind="_oligoPairs" /><label class="form-check-label" for="oligo-pairs" title="@HelpText.Pairs">Top and bottom oligos</label></div>
+                            }
+                            @if (_exportFormat == ExportFormat.Fasta)
+                            {
+                                <div class="form-check mb-0"><input id="fasta-rna" class="form-check-input" type="checkbox" @bind="_fastaRna" /><label class="form-check-label" for="fasta-rna" title="@HelpText.FastaRna">As RNA</label></div>
+                            }
+                            <button type="button" class="btn btn-sm btn-outline-secondary" title="@HelpText.ExportDownload" @onclick="DownloadExport"><Icon Name="download" />Download export</button>
+                        </div>
                         <button type="button" class="btn btn-sm btn-primary" @onclick="SendShortlistToPooling"><Icon Name="send" />Send to Pooling</button>
                         <button type="button" class="btn btn-sm btn-outline-secondary" @onclick="StateService.ClearShortlist"><Icon Name="trash" />Clear</button>
                     </div>

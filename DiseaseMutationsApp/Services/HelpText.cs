@@ -56,6 +56,8 @@ public static class HelpText
     public const string BioBricks = "BioBricks assembly adapter: GGCTAGCGAATTCGCGGCCGCTTCT - spacer - AGTAGCGGCCGCTGCAGCGATCGT. Can be used alone or with the Frida adapter, in which case it wraps the Frida adapter.";
     public const string CustomWrapper = "Your own sequence on one or both sides (a different DR, an adapter, anything). A, C, G, T or U only. It sits next to the DR and spacer, inside the adapters.";
     public const string Fasta = "Download each shortlisted guide as its complete built sequence (DR, adapters and custom flanks included) in FASTA format.";
+    public const string ExportFormat = "What to download for the whole shortlist: an order-ready oligo CSV, the complete guides as FASTA, or the same constructs as a GenBank file, an SBOL 3 document or an SBOL 2 document (for tools that cannot read SBOL 3).";
+    public const string ExportDownload = "Download the shortlist in the format chosen on the left.";
     public const string GenBank = "Download the shortlist as a GenBank file (one record per guide): the DNA you would order, with the T7 promoter (if ticked), adapters, direct repeat and spacer annotated. A standard flat-file format that sequence editors read.";
     public const string Sbol = "Download the shortlist as an SBOL 3 document (RDF/XML): one DNA component per guide with its sequence and annotated parts, for synthetic-biology tools that read the Synthetic Biology Open Language.";
     public const string Sbol2 = "The same shortlist as an SBOL 2 document (RDF/XML), for tools that cannot read SBOL 3 (for example libSBOLj based ones).";

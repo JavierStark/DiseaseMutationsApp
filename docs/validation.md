@@ -75,6 +75,7 @@ What is checked, and by what:
   validator reports no error and no warning, sequences and ranges match, and it survives pySBOL3's own write-and-reread. Run on
   2026-10-19 with Biopython 1.88 and sbol3 1.2.0 (rdflib 6.3.2, pyshacl 0.28.1) on Python 3.14.3. The test skips itself when Python or
   either package is missing, as on the GitLab runners, so a green CI run does **not** include this check.
+- **SBOL 2** (`Sbol2ExportTests`): the same checks on the structure (namespace `http://sbols.org/v2#`, compliant `/1` identities, ranges equal to the layout). Added after a libSBOLj based tool refused the SBOL 3 file with `sbol-10101` (SBOL 2 namespace missing). pySBOL2 1.4.1 read the SBOL 2 file and its online validator answered "Valid" in a one-off check on 2026-10-19; that check is **not** part of the automated suite, and the tool that raised the error has not been re-run on the SBOL 2 file by us.
 - **Front ends**: `CliExportTests` (in-process `grna export`, every bad-input path) and `ExportDownloadTests` (the buttons in a
   real browser, files read back and compared).
 

@@ -16,13 +16,14 @@ public class ExportDownloadTests : E2EBase
         await Expect(DoneStatus).ToContainTextAsync("1 of 1 variants analysed");
         await Page.GetByRole(AriaRole.Button, new() { Name = "Use" }).First.ClickAsync();
         await Page.GetByRole(AriaRole.Button, new() { Name = "Add to shortlist" }).ClickAsync();
-        await Expect(Page.GetByRole(AriaRole.Button, new() { Name = "GenBank (.gb)" })).ToBeVisibleAsync();
+        await Expect(Page.GetByLabel("Export as")).ToBeVisibleAsync();
     }
 
-    private async Task<string> DownloadAsync(string buttonName, string expectedExtension)
+    private async Task<string> DownloadAsync(string format, string expectedExtension)
     {
+        await Page.GetByLabel("Export as").SelectOptionAsync(new SelectOptionValue { Label = format });
         var download = await Page.RunAndWaitForDownloadAsync(async () =>
-            await Page.GetByRole(AriaRole.Button, new() { Name = buttonName }).ClickAsync());
+            await Page.GetByRole(AriaRole.Button, new() { Name = "Download export" }).ClickAsync());
         Assert.That(download.SuggestedFilename, Does.EndWith(expectedExtension));
         return await File.ReadAllTextAsync((await download.PathAsync())!);
     }
@@ -74,5 +75,25 @@ public class ExportDownloadTests : E2EBase
         var xml = XDocument.Parse(await DownloadAsync("SBOL 2 (.xml)", ".xml"));
         XNamespace s2 = "http://sbols.org/v2#";
         Assert.That(xml.Root!.Elements(s2 + "ComponentDefinition").Count(), Is.EqualTo(1));
+    }
+
+    [Test]
+    public async Task ExportDropdown_OffersEveryFormat_WithOneDownloadButton_AndShowsOnlyTheOptionsThatApply()
+    {
+        await ShortlistOneGuideAsync();
+        var select = Page.GetByLabel("Export as");
+        Assert.That(await select.Locator("option").AllInnerTextsAsync(), Is.EqualTo(new[]
+            { "Order CSV (DNA oligos)", "Complete gRNAs (FASTA)", "GenBank (.gb)", "SBOL 3 (.xml)", "SBOL 2 (.xml)" }));
+        await Expect(Page.GetByRole(AriaRole.Button, new() { Name = "Download export" })).ToHaveCountAsync(1);
+
+        await Expect(Page.GetByLabel("Top and bottom oligos")).ToBeVisibleAsync();
+        await Expect(Page.GetByLabel("As RNA")).ToHaveCountAsync(0);
+        await select.SelectOptionAsync(new SelectOptionValue { Label = "Complete gRNAs (FASTA)" });
+        await Expect(Page.GetByLabel("As RNA")).ToBeVisibleAsync();
+        await Expect(Page.GetByLabel("Top and bottom oligos")).ToHaveCountAsync(0);
+
+        await select.SelectOptionAsync(new SelectOptionValue { Label = "Order CSV (DNA oligos)" });
+        var csv = await DownloadAsync("Order CSV (DNA oligos)", ".csv");
+        Assert.That(csv, Does.Contain("Well,Name,Oligo,Sequence 5'-3'"));
     }
 }

@@ -408,6 +408,19 @@ namespace DiseaseMutationsApp.Pages
         private bool _oligoPairs = true;
         private bool _fastaRna;
 
+        private enum ExportFormat { OligoCsv, Fasta, GenBank, Sbol3, Sbol2 }
+        private ExportFormat _exportFormat = ExportFormat.OligoCsv;
+
+        /// <summary>One download for the shortlist; the format is chosen in the dropdown next to it.</summary>
+        private Task DownloadExport() => _exportFormat switch
+        {
+            ExportFormat.Fasta => DownloadFasta(),
+            ExportFormat.GenBank => DownloadGenBank(),
+            ExportFormat.Sbol3 => DownloadSbol(),
+            ExportFormat.Sbol2 => DownloadSbol2(),
+            _ => DownloadOligos(),
+        };
+
         private async Task DownloadOligos()
         {
             if (StateService.Shortlist.Count == 0) return;
