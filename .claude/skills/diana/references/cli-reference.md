@@ -242,7 +242,7 @@ grna pool --count <V>     [--capacity 5] [--plate 96|384] [--model auto|2df|2dm|
 ## `grna export`
 
 ```
-grna export <session.json | report.csv> [--format genbank|sbol] [--out file] [--t7] [--top 1] [--namespace <URL>] [--date yyyy-MM-dd]
+grna export <session.json | report.csv> [--format genbank|sbol|sbol2] [--out file] [--t7] [--top 1] [--namespace <URL>] [--date yyyy-MM-dd]
                                         [--dr lwa|none] [--frida] [--biobricks] [--custom5 <seq>] [--custom3 <seq>]
 ```
 
@@ -251,7 +251,7 @@ Writes the complete guides (the DNA that would be ordered) as a GenBank flat fil
 | Option | Default | Notes |
 |---|---|---|
 | positional file | | exactly one. A **session** (`.json` saved by the web app) exports its `shortlist` with its `construct`; a **design report** (CSV or TSV) exports the first `--top` `Mutated` rows of each variant and strand |
-| `--format` | `genbank` | `genbank` (alias `gb`) or `sbol` (alias `sbol3`) |
+| `--format` | `genbank` | `genbank` (alias `gb`), `sbol` (SBOL 3, alias `sbol3`) or `sbol2` (SBOL 2.3, for tools that cannot read SBOL 3, such as libSBOLj based ones) |
 | `--t7` | off | put the T7 promoter in front, as the oligo export does |
 | `--top` | 1 | report input only; with a session it is exit 2 |
 | `--dr`, `--frida`, `--biobricks`, `--custom5`, `--custom3` | `lwa`, off, off, empty, empty | build the construct from a report; **with a session file they are exit 2** (the session already holds the construct). `--dr` is `lwa` or `none`; custom text may only hold A, C, G, T, U |

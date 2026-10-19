@@ -34,7 +34,7 @@ Usage:
   grna fold <RNA sequence>
   grna pool --guides <report.csv> [--capacity 5] [--plate 96|384] [--model auto|2df|2dm|3d] [--out plan.csv]
   grna pool --count <V>          [--capacity 5] [--plate 96|384] [--model auto|2df|2dm|3d] [--out plan.csv]
-  grna export <session.json | report.csv> [--format genbank|sbol] [--out file] [--t7] [--top 1] [--namespace <URL>] [--date yyyy-MM-dd]
+  grna export <session.json | report.csv> [--format genbank|sbol|sbol2] [--out file] [--t7] [--top 1] [--namespace <URL>] [--date yyyy-MM-dd]
                                           [--dr lwa|none] [--frida] [--biobricks] [--custom5 <seq>] [--custom3 <seq>]
 
 --repeat is the 5' context every spacer is folded with while screening: default (the 36 nt Cas13 scaffold), none (the spacer alone)
@@ -629,7 +629,8 @@ let exportCommand (args: Args) (ct: CancellationToken) : Task<int> =
             match (defaultArg (opt args "format") "genbank").ToLowerInvariant() with
             | "genbank" | "gb" -> "genbank"
             | "sbol" | "sbol3" -> "sbol"
-            | f -> raise (BadArgs(sprintf "--format must be genbank or sbol, got '%s'." f))
+            | "sbol2" -> "sbol2"
+            | f -> raise (BadArgs(sprintf "--format must be genbank, sbol (SBOL 3) or sbol2, got '%s'." f))
         let top = intOpt args "top" 1
         if top < 1 then raise (BadArgs "--top must be 1 or more.")
         let date =
@@ -678,10 +679,10 @@ let exportCommand (args: Args) (ct: CancellationToken) : Task<int> =
               IncludeT7 = args.Flags.Contains "t7"
               Namespace = defaultArg (opt args "namespace") Export.DefaultNamespace
               Date = date }
-        let body = if format = "sbol" then Export.toSbol3 options guides else Export.toGenBank options guides
+        let body = match format with | "sbol" -> Export.toSbol3 options guides | "sbol2" -> Export.toSbol2 options guides | _ -> Export.toGenBank options guides
         writeOut (opt args "out") body
         eprintfn "exported %d guide%s as %s (%s%s)." guides.Length (if guides.Length = 1 then "" else "s")
-            (if format = "sbol" then "SBOL 3" else "GenBank") (Construct.describe construct) (if options.IncludeT7 then ", T7 promoter" else "")
+            (match format with | "sbol" -> "SBOL 3" | "sbol2" -> "SBOL 2" | _ -> "GenBank") (Construct.describe construct) (if options.IncludeT7 then ", T7 promoter" else "")
         return ExitOk
     }
 

@@ -369,3 +369,54 @@ public class ShortlistExportTests
     public void EmptyShortlist_IsRefusedByTheLibrary() =>
         Assert.Throws<gRNA.GrnaInputException>(() => OligoExport.ShortlistGenBank(Array.Empty<ShortlistItem>(), true));
 }
+
+public class Sbol2ExportTests
+{
+    private static readonly XNamespace Rdf = "http://www.w3.org/1999/02/22-rdf-syntax-ns#";
+    private static readonly XNamespace S2 = "http://sbols.org/v2#";
+
+    private static XDocument Export(FsExport.ExportOptions o, params FsExport.ExportGuide[] guides) =>
+        XDocument.Parse(FsExport.toSbol2(o, Microsoft.FSharp.Collections.ListModule.OfArray(guides)));
+
+    [Test]
+    public void Document_DeclaresTheSbol2Namespace_AndRefusesNoSbol3Terms()
+    {
+        var text = FsExport.toSbol2(ExportFixtures.Options(), Microsoft.FSharp.Collections.ListModule.OfArray(new[] { ExportFixtures.Guide() }));
+        var doc = XDocument.Parse(text);
+        Assert.Multiple(() =>
+        {
+            Assert.That(doc.Root!.GetNamespaceOfPrefix("sbol")!.NamespaceName, Is.EqualTo("http://sbols.org/v2#"));
+            Assert.That(text, Does.Not.Contain("sbols.org/v3"));
+            Assert.That(doc.Root.Elements(S2 + "ComponentDefinition").Count(), Is.EqualTo(1));
+            Assert.That(doc.Root.Elements(S2 + "Sequence").Count(), Is.EqualTo(1));
+        });
+    }
+
+    [Test]
+    public void Annotations_AreOneBasedInclusive_AndEqualTheLayout_WithCompliantIdentities()
+    {
+        var o = ExportFixtures.Options(ExportFixtures.Construct(frida: true, bioBricks: true), t7: true);
+        var doc = Export(o, ExportFixtures.Guide());
+        var cd = doc.Root!.Element(S2 + "ComponentDefinition")!;
+        var ranges = cd.Elements(S2 + "sequenceAnnotation").Select(a => a.Element(S2 + "SequenceAnnotation")!.Element(S2 + "location")!.Element(S2 + "Range")!)
+            .Select(r => (int.Parse(r.Element(S2 + "start")!.Value), int.Parse(r.Element(S2 + "end")!.Value))).ToList();
+        var seq = doc.Root.Element(S2 + "Sequence")!;
+
+        Assert.Multiple(() =>
+        {
+            Assert.That(ranges, Is.EqualTo(FsExport.layout(o, ExportFixtures.Guide()).Select(s => (s.Start, s.End)).ToList()));
+            Assert.That(seq.Element(S2 + "elements")!.Value, Is.EqualTo(FsExport.sequence(o, ExportFixtures.Guide()).ToLowerInvariant()));
+            var about = (string)cd.Attribute(Rdf + "about")!;
+            Assert.That(about, Does.EndWith("/1"));
+            Assert.That((string)cd.Element(S2 + "persistentIdentity")!.Attribute(Rdf + "resource")!, Is.EqualTo(about[..^2]));
+            Assert.That(cd.Element(S2 + "version")!.Value, Is.EqualTo("1"));
+            Assert.That((string)cd.Element(S2 + "sequence")!.Attribute(Rdf + "resource")!, Is.EqualTo((string)seq.Attribute(Rdf + "about")!));
+            var uris = doc.Descendants().Select(e => (string?)e.Attribute(Rdf + "about")).Where(u => u is not null).ToList();
+            Assert.That(uris, Is.Unique);
+        });
+    }
+
+    [Test]
+    public void HostileText_CannotBreakTheXml() =>
+        Assert.DoesNotThrow(() => Export(ExportFixtures.Options(), ExportFixtures.Guide("<a>&\"'\u0001]]>")));
+}

@@ -66,4 +66,13 @@ public class ExportDownloadTests : E2EBase
         var text = await DownloadAsync("GenBank (.gb)", ".gb");
         Assert.That(text, Does.Not.Contain("T7 promoter"));
     }
+
+    [Test]
+    public async Task Sbol2_Downloads_AnSbol2Document()
+    {
+        await ShortlistOneGuideAsync();
+        var xml = XDocument.Parse(await DownloadAsync("SBOL 2 (.xml)", ".xml"));
+        XNamespace s2 = "http://sbols.org/v2#";
+        Assert.That(xml.Root!.Elements(s2 + "ComponentDefinition").Count(), Is.EqualTo(1));
+    }
 }

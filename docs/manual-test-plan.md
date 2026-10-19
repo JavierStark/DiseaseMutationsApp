@@ -2,7 +2,7 @@
 
 What the automated suites cannot check: the real Bowtie index, ViennaRNA and NCBI, the Docker install routes on each
 operating system, assistive technology, and behaviour over a real network. Run this before a release or after changing the
-algorithm, the Dockerfile or the scripts. The automated checks (`dotnet test`, which includes the 73 browser tests in
+algorithm, the Dockerfile or the scripts. The automated checks (`dotnet test`, which includes the 74 browser tests in
 `DiseaseMutationsApp.E2E`) must be green first.
 
 Record every run in section 9. A step that was not run is written as "not run", never left blank.

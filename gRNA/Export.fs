@@ -380,3 +380,83 @@ let toSbol3 (o: ExportOptions) (guides: ExportGuide list) : string =
 /// File extension and media type for each format, so every front end names its downloads the same way.
 let genBankExtension = ".gb"
 let sbolExtension = ".xml"
+
+// ---- SBOL 2 ------------------------------------------------------------------------------------------
+
+let private sbol2Ns = "http://sbols.org/v2#"
+let private dctermsNs = "http://purl.org/dc/terms/"
+let private soUri (curie: string) = "http://identifiers.org/so/" + curie
+
+/// SBOL 2.3 RDF/XML for tools that have not moved to SBOL 3 (for example libSBOLj based ones, which refuse SBOL 3 files).
+/// Same layout and the same parts as `toSbol3`; compliant URIs are `{namespace}/{displayId}/{version}` with version 1.
+let toSbol2 (o: ExportOptions) (guides: ExportGuide list) : string =
+    if guides.IsEmpty then raise (GrnaInputException "There is no guide to export.")
+    let ns = normaliseNamespace o.Namespace
+    let ids = uniqueIds guides
+    let sb = StringBuilder()
+    let settings = XmlWriterSettings(Indent = true, IndentChars = "  ", Encoding = UTF8Encoding(false), NewLineChars = "\n")
+    use sw = new Utf8StringWriter(sb)
+    use w = XmlWriter.Create(sw, settings)
+    let resource (prefix: string) (nsUri: string) (name: string) (uri: string) =
+        w.WriteStartElement(prefix, name, nsUri)
+        w.WriteAttributeString("rdf", "resource", rdfNs, uri)
+        w.WriteEndElement()
+    let sbolRes name uri = resource "sbol" sbol2Ns name uri
+    let text (name: string) (value: string) = w.WriteElementString("sbol", name, sbol2Ns, xmlSafe value)
+    let integer (name: string) (value: int) = w.WriteElementString("sbol", name, sbol2Ns, string value)
+    /// Opens an object with its compliant identity: about = base/1, persistentIdentity = base, displayId and version.
+    let openObject (kind: string) (baseUri: string) (displayId: string) =
+        w.WriteStartElement("sbol", kind, sbol2Ns)
+        w.WriteAttributeString("rdf", "about", rdfNs, baseUri + "/1")
+        sbolRes "persistentIdentity" baseUri
+        text "displayId" displayId
+        text "version" "1"
+
+    w.WriteStartDocument()
+    w.WriteStartElement("rdf", "RDF", rdfNs)
+    w.WriteAttributeString("xmlns", "dcterms", null, dctermsNs)
+    w.WriteAttributeString("xmlns", "sbol", null, sbol2Ns)
+
+    List.zip guides ids
+    |> List.iter (fun (g, id) ->
+        let segments = layout o g
+        let dna = segments |> List.map _.Dna |> String.concat ""
+        let comp = ns + "/" + id
+        let seqBase = comp + "_seq"
+
+        openObject "ComponentDefinition" comp id
+        w.WriteElementString("dcterms", "title", dctermsNs, xmlSafe (sprintf "Diana guide for %s%s" g.Hgvs (if g.Complement then " (complement)" else "")))
+        w.WriteElementString("dcterms", "description", dctermsNs,
+            xmlSafe (String.Join(" ", describeGuide o g + ".", notValidated, String.Join(" ", facts g |> List.map (fun (k, v) -> sprintf "%s: %s." k v)))))
+        sbolRes "type" "http://www.biopax.org/release/biopax-level3.owl#DnaRegion"
+        sbolRes "type" (soUri SoLinear)
+        sbolRes "role" (soUri SoEngineeredRegion)
+        sbolRes "sequence" (seqBase + "/1")
+        segments
+        |> List.iteri (fun i s ->
+            let aid = sprintf "feature_%02d" (i + 1)
+            w.WriteStartElement("sbol", "sequenceAnnotation", sbol2Ns)
+            openObject "SequenceAnnotation" (comp + "/" + aid) aid
+            w.WriteElementString("dcterms", "title", dctermsNs, xmlSafe s.Label)
+            w.WriteElementString("dcterms", "description", dctermsNs, xmlSafe (roleNote s))
+            w.WriteStartElement("sbol", "location", sbol2Ns)
+            openObject "Range" (comp + "/" + aid + "/range") "range"
+            integer "start" s.Start
+            integer "end" s.End
+            sbolRes "orientation" (sbol2Ns + "inline")
+            w.WriteEndElement() // Range
+            w.WriteEndElement() // location
+            sbolRes "role" (soUri (soFor s.Role))
+            w.WriteEndElement() // SequenceAnnotation
+            w.WriteEndElement()) // sequenceAnnotation
+        w.WriteEndElement() // ComponentDefinition
+
+        openObject "Sequence" seqBase (id + "_seq")
+        text "elements" (dna.ToLowerInvariant())
+        sbolRes "encoding" "http://www.chem.qmul.ac.uk/iubmb/misc/naseq.html"
+        w.WriteEndElement()) // Sequence
+
+    w.WriteEndElement() // RDF
+    w.WriteEndDocument()
+    w.Flush()
+    sw.ToString()

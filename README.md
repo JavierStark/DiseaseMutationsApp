@@ -234,6 +234,7 @@ Diana reads and writes existing formats instead of inventing new ones:
 | **BioBrick RFC[10]** [19] and **iGEM Type IIS Assembly RFC[1000]** [20] | Each guide gets a compatible / not compatible badge per standard, from the enzymes the standard excludes (EcoRI, NotI, XbaI, SpeI, PstI; BsaI, SapI). Diana checks the internal sites of the DNA you would order and also warns, by name, about other cloning enzymes such as BsmBI and BbsI ([Cloning checks](#cloning-checks-enzyme-warnings-and-assembly-standards)). It does not check a prefix and suffix that you type yourself; the BioBricks adapter in the Builder writes the RFC[10] prefix and suffix [18] (EcoRI, NotI, XbaI/SpeI, PstI). |
 | **FASTA** | Sequences copied from the Builder and the complete gRNAs (DNA or RNA) exported from the shortlist. |
 | **GenBank flat file** (INSDC feature table [21]) | The shortlist, or `grna export`, writes one record per guide: the DNA that would be ordered (T7 promoter if ticked, adapters, custom flanks, direct repeat, spacer) with each part as a feature (`regulatory` promoter, `repeat_region` direct repeat, `misc_feature` for the rest), the variant, strand, spacer and scores in the COMMENT, and the sequence in ORIGIN. |
+| **SBOL 2** | `--format sbol2` and the *SBOL 2* button write the same construct as SBOL 2.3 (`ComponentDefinition`, `SequenceAnnotation`, compliant URIs), because tools built on libSBOLj reject SBOL 3 files (they report that the SBOL 2 namespace is missing). pySBOL2 reads it and its validator reports it valid; no other tool has been tried. |
 | **SBOL 3** [22] | The same construct as an RDF/XML document: one `Component` (DNA, linear, role *engineered region*) and one `Sequence` per guide, and a `SequenceFeature` with a `Range` for each part, using Sequence Ontology roles (T7 promoter `SO:0001207`, direct repeat `SO:0000314`, engineered region `SO:0000804`). Identities start with a namespace you can set. |
 | **Dot-bracket notation** (ViennaRNA [2, 3]) and **FORNA** [4] | The predicted structure is shown as dot-bracket and drawn with the FORNA viewer. |
 | **CSV, TSV, JSON** | The CSV report schema is shared by the web export, `grna design` and the Pooling import (documented in the CLI reference); `design` can also write TSV and JSON. Session files are JSON; oligo orders and pooling plans are CSV. Every CSV field that starts with `=`, `+`, `-` or `@` is neutralised so a spreadsheet does not run it. |
@@ -416,8 +417,8 @@ prefix and suffix that you type yourself.
 
 The full account, with what each claim rests on, is in [docs/validation.md](docs/validation.md). In short:
 
-- **Automated tests**: 1,160 unit and component test cases (NUnit, bUnit; no container, no network; 1,147 pass and 13 skip
-  themselves because they need the live services or ViennaRNA) and 73 browser tests (Playwright, with axe-core accessibility
+- **Automated tests**: 1,164 unit and component test cases (NUnit, bUnit; no container, no network; 1,151 pass and 13 skip
+  themselves because they need the live services or ViennaRNA) and 74 browser tests (Playwright, with axe-core accessibility
   scans), none failing. See [Testing](#testing).
 - **Hand checks against the real sequences**: the sickle-cell (rs334) and cystic fibrosis F508del designs were rebuilt by hand from
   the NCBI sequences ([docs/validation.md](docs/validation.md) section 4); the real Bowtie index, ViennaRNA and the Docker routes are
@@ -514,7 +515,7 @@ dotnet restore --locked-mode
 dotnet test DiseaseMutationsAppTests
 ```
 
-The unit suite has 1,160 test cases (1,147 pass, 13 skip themselves because they need the live services or
+The unit suite has 1,164 test cases (1,151 pass, 13 skip themselves because they need the live services or
 ViennaRNA) and needs no container and no network: the library's pure logic (scoring, parsing, validation, pooling and decoding, CSV
 round trips), the `grna` CLI driven in-process (exit codes, option checking, resume), the `AnalysisRunner` (concurrency bound,
 cancellation, per-variant cancel, timeouts, retry) against a fake pipeline, and the components with bUnit, including markup checks
@@ -522,7 +523,7 @@ for the accessibility requirements. `RnaFoldIntegrationTests` run the real Vienn
 otherwise. The GitLab pipeline (`.gitlab-ci.yml`) runs the pinning gate (which also covers the CI job images) and these tests,
 publishes the coverage report, and builds no images, so run `grna doctor` in the locally built image yourself.
 
-**Browser tests.** `DiseaseMutationsApp.E2E` has 73 tests that serve the real web app with a deterministic fake pipeline (no
+**Browser tests.** `DiseaseMutationsApp.E2E` has 74 tests that serve the real web app with a deterministic fake pipeline (no
 Bowtie, ViennaRNA or NCBI needed) and drive Chromium with Playwright: runs, cancel and retry, limits, permalinks, CSV downloads,
 the disease search and its hand-off to the Builder, the pooling plate map and decoder, dark/light theme, a 375 px phone viewport,
 and an axe-core scan (WCAG 2.0 to 2.2 A/AA) of every page state. They skip themselves, with the reason, when Chromium is not

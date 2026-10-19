@@ -436,6 +436,13 @@ namespace DiseaseMutationsApp.Pages
             await JSRuntime.InvokeVoidAsync("downloadFile", $"Shortlist_{DateTime.Now:yyyyMMdd_HHmmss}_sbol3.xml", "application/rdf+xml;charset=utf-8", xml);
         }
 
+        private async Task DownloadSbol2()
+        {
+            if (StateService.Shortlist.Count == 0) return;
+            var xml = OligoExport.ShortlistSbol2(StateService.Shortlist, _oligoT7, StateService.Construct);
+            await JSRuntime.InvokeVoidAsync("downloadFile", $"Shortlist_{DateTime.Now:yyyyMMdd_HHmmss}_sbol2.xml", "application/rdf+xml;charset=utf-8", xml);
+        }
+
         private string? _uploadMessage;
 
         private async Task OnFileSelected(InputFileChangeEventArgs e)

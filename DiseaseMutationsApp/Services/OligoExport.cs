@@ -73,6 +73,11 @@ public static class OligoExport
         gRNA.Export.toSbol3(ToExportOptions(includeT7, construct, ns),
             Microsoft.FSharp.Collections.ListModule.OfSeq(items.Select(ToExportGuide)));
 
+    /// <summary>The shortlist as an SBOL 2 document (RDF/XML), for tools that do not read SBOL 3.</summary>
+    public static string ShortlistSbol2(IEnumerable<ShortlistItem> items, bool includeT7, ConstructOptions? construct = null, string? ns = null) =>
+        gRNA.Export.toSbol2(ToExportOptions(includeT7, construct, ns),
+            Microsoft.FSharp.Collections.ListModule.OfSeq(items.Select(ToExportGuide)));
+
     /// <summary>One FASTA record for a single guide (ends with a newline).</summary>
     public static string FastaRecord(string hgvs, bool isComplement, string spacerRna, ConstructOptions? construct = null, bool rna = false)
     {

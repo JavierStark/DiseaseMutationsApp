@@ -16,7 +16,7 @@ Status words: **automated** (a test fails if it breaks), **by hand** (a person r
 | Bowtie and ViennaRNA output are read correctly | `ParsingTests` (captured real output), `BowtieWrapperTests`, `RnaFoldIntegrationTests` (real ViennaRNA when present) | automated; the real index is checked by `grna doctor` and the [manual test plan](manual-test-plan.md) |
 | Disease search returns what ClinVar and Monarch return | `DiseaseVariantsTests`, `CliDiseaseTests`, `DiseaseSearchPageTests` over trimmed real responses; opt-in `Category=Live` contract tests | automated offline; live contract tests are not in CI |
 | Pooling layouts, well counts and decoding are correct | `PoolingMathTests`, `PoolingInvariantTests`, `PoolingLayoutTests`, `PoolingDecodeTests`, `WellAddressTests` (each guide in exactly R wells, no pool above K, unique well sets, 96 and 384-well addressing) | automated; formulas also checked against the team's design workbook, which is not in the repository |
-| The interface works, is accessible and survives failure | `ComponentTests`, `AccessibilityTests`, `AnalysisRunnerTests`, 73 Playwright browser tests with an axe-core scan of every page state | automated |
+| The interface works, is accessible and survives failure | `ComponentTests`, `AccessibilityTests`, `AnalysisRunnerTests`, 74 Playwright browser tests with an axe-core scan of every page state | automated |
 | Guides designed with Diana activate Cas13a | Wet lab, cystic fibrosis panel: signal significantly above the negative controls in every setup | **lab** (see section 3) |
 | A five-guide tandem transcript is processed by Cas13a | Wet lab: MT + 5G clearly above the no-Cas control | **lab**, partly (section 3) |
 | Guides tell the two alleles apart | Wet lab: not achieved with the placements tested | **not validated** (a negative result) |
@@ -29,8 +29,8 @@ Status words: **automated** (a test fails if it breaks), **by hand** (a person r
 
 ## 2. Automated tests
 
-`dotnet test DiseaseMutationsAppTests`: **1,160 test cases, 1,147 passed, 13 skipped, 0 failed** (13 need the live services or a
-Python with ViennaRNA and skip themselves). `dotnet test DiseaseMutationsApp.E2E`: **73 tests, 73 passed, 0 skipped** (real web
+`dotnet test DiseaseMutationsAppTests`: **1,164 test cases, 1,151 passed, 13 skipped, 0 failed** (13 need the live services or a
+Python with ViennaRNA and skip themselves). `dotnet test DiseaseMutationsApp.E2E`: **74 tests, 74 passed, 0 skipped** (real web
 app, deterministic fake pipeline, Chromium through Playwright). Both on 2026-10-19 (the unit run with GRNA_PYTHON pointing at a Python that has Biopython and sbol3; without them 14 are skipped).
 
 What they cover, by area:
@@ -153,8 +153,8 @@ memory-mapped and reclaimable).
 
 ```bash
 dotnet restore --locked-mode
-dotnet test DiseaseMutationsAppTests                      # 1,160 cases
-E2E_INSTALL_BROWSERS=1 dotnet test DiseaseMutationsApp.E2E   # 73 browser tests (first run downloads Chromium)
+dotnet test DiseaseMutationsAppTests                      # 1,164 cases
+E2E_INSTALL_BROWSERS=1 dotnet test DiseaseMutationsApp.E2E   # 74 browser tests (first run downloads Chromium)
 GRNA_LIVE_TESTS=1 dotnet test --filter Category=Live      # contract tests against the real services
 docker run --rm --entrypoint grna disease-mutations-app:latest doctor --network   # real Bowtie index, ViennaRNA, NCBI
 ```

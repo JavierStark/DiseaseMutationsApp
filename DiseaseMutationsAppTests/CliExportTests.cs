@@ -101,6 +101,19 @@ public class CliExportTests
     }
 
     [Test]
+    public void Session_ToSbol2_WritesSbol2Definitions()
+    {
+        var r = Run("export", Session(), "--format", "sbol2");
+        XNamespace s2 = "http://sbols.org/v2#";
+        Assert.Multiple(() =>
+        {
+            Assert.That(r.Exit, Is.EqualTo(0), r.Err);
+            Assert.That(XDocument.Parse(r.Out).Root!.Elements(s2 + "ComponentDefinition").Count(), Is.EqualTo(2));
+            Assert.That(r.Err, Does.Contain("SBOL 2"));
+        });
+    }
+
+    [Test]
     public void Report_TakesTheFirstMutatedGuidePerVariantAndStrand()
     {
         var r = Run("export", Report(), "--date", "2026-10-19");
@@ -181,7 +194,7 @@ public class CliExportTests
         var report = Report();
         var cases = new (string[] Args, string Message)[]
         {
-            (new[] { "export", session, "--format", "pdf" }, "--format must be genbank or sbol"),
+            (new[] { "export", session, "--format", "pdf" }, "--format must be genbank, sbol (SBOL 3) or sbol2"),
             (new[] { "export", report, "--top", "0" }, "--top must be 1 or more"),
             (new[] { "export", report, "--top", "x" }, "--top must be an integer"),
             (new[] { "export", report, "--dr", "cas12" }, "--dr must be"),
