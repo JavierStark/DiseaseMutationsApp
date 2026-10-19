@@ -30,7 +30,7 @@ or `.claude/skills/diana/scripts/grna.sh doctor`). Each non-passing check prints
 | `DLL load failed while importing _RNA: The filename or extension is too long` | Windows venv at a very long path | Recreate the venv at a short path (e.g. `C:\venvs\grna`). |
 | `error: design needs exactly one of --hgvs or --input.` though you passed one | both given, or neither | Pass exactly one. (`design --help` now prints the usage and exits 0; a misspelled option is reported as an unknown option.) |
 | `error: Unknown option --capasity for 'pool'.` | a misspelled option, or one the command does not take | Compare against `grna <command> --help` exactly; there is no `--opt=value` form. |
-| `error: Seed must satisfy 0 <= start <= end < spacer.` | `--seed` outside the spacer | e.g. `--spacer 28 --seed 10-17`. |
+| `error: Seed must satisfy 0 <= start <= end < spacer.` | `--seed` outside the spacer | e.g. `--spacer 23 --seed 10-17`. |
 | Batch re-run does nothing / finishes instantly | resume: every variant already present in `--out` | Intended when the report is complete. The key is RS ID + HGVS + strand. A report made with another `--spacer`/`--seed`, `--repeat`, `--snp-pos` or `--mismatch-pos` is refused with exit 2 (`... was made with spacer=30 seed=10-17, not ...`, `... was made with --snp-pos 3 --mismatch-pos 4, not ...`): write to a new `--out`. |
 | `design` exit 1 with some `FAIL` lines | partial failure; successful rows were written | Re-run the same command: resume retries only the failed variants. Read each `FAIL` reason first; input errors won't fix themselves. |
 | exit 4 / `GrnaUpstreamException` / HTTP 429 | NCBI unreachable or rate limited | Check connectivity (`grna doctor --network`); set `GRNA_NCBI_API_KEY` + `GRNA_NCBI_CONTACT`; lower `--concurrency`; retry later. |
@@ -44,7 +44,7 @@ or `.claude/skills/diana/scripts/grna.sh doctor`). Each non-passing check prints
 | `FAIL <hgvs>: c. positions can be converted only on a transcript record ...` | the notation is `c.` on a genomic record (`NG_`, `NC_`) | Use the transcript accession (`NM_000518.5:c.20A>T`) or the `g.` notation (an rsID resolves to those). |
 | `FAIL <hgvs>: ... has an intronic offset` | `c.92+2`-style positions do not exist in an mRNA | Use the `g.` coordinates of the intronic base. |
 | `FAIL <hgvs>: The mutated region is N nt, shorter than the spacer size` | e.g. a deletion longer than the spacer leaves no window | Use a smaller `--spacer` (minimum 18) or a shorter variant. |
-| `error: Spacer size must be between 18 and 60` | `--spacer` out of range | Use 18-60 (default 28). |
+| `error: Spacer size must be between 18 and 60` | `--spacer` out of range | Use 18-60 (default 23). |
 | Output file empty except header, exit != 0 | every variant failed; the header is still written | Check exit code and stderr `FAIL` lines, not just whether the file exists. |
 | Git Bash: `docker: invalid reference format` or paths like `C:/Program Files/Git/work` | MSYS path conversion of `/work` | `export MSYS_NO_PATHCONV=1` and use `$(pwd -W)` for the host side, or use `scripts/grna.sh`, which does both. |
 | Files written through a bind mount are owned by uid 1654 (Linux) | container user `app` | Run with `--user "$(id -u):$(id -g)"` (the wrapper does on Linux), or write to stdout and redirect on the host. |

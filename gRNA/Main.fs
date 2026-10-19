@@ -23,22 +23,29 @@ let MinSpacerSize = 18
 [<Literal>]
 let MaxSpacerSize = 60
 
-/// Where the substitution rule puts the variant and its deliberate extra mismatch in the spacer. Both positions are counted
-/// from the spacer's 3' end, 1 being the last letter (the default is 3 and 4).
-type SpecialRuleOptions = { SnpPos: int; MismatchPos: int }
+/// The substitution rule's options live in SpacerFinder (positions counted from the spacer's 3' end, see there).
+type SpecialRuleOptions = SpacerFinder.SpecialRuleOptions
 
-let defaultSpecialRule : SpecialRuleOptions =
-    { SnpPos = SpacerFinder.DefaultSnpPosition; MismatchPos = SpacerFinder.DefaultMismatchPosition }
+let defaultSpecialRule : SpecialRuleOptions = SpacerFinder.defaultSpecialRule
 
-/// Throws GrnaInputException unless both positions lie inside the spacer (1 = its last letter) and they differ: changing the
-/// variant's own letter would defeat the purpose of the rule.
+/// Throws GrnaInputException unless the variant and every engineered position lie inside the spacer (1 = its last letter),
+/// none of the engineered positions is the variant's own (changing that letter would defeat the rule), one or two
+/// mismatches are requested and the base table is valid.
 let validateSpecialRule (grnaSize: int) (rule: SpecialRuleOptions) : unit =
+  if rule.Enabled then
     if rule.SnpPos < 1 || rule.SnpPos > grnaSize then
         raise (GrnaInputException(sprintf "The variant position must be between 1 and the spacer size (%d), counted from the spacer's 3' end, got %d." grnaSize rule.SnpPos))
-    if rule.MismatchPos < 1 || rule.MismatchPos > grnaSize then
-        raise (GrnaInputException(sprintf "The mismatch position must be between 1 and the spacer size (%d), counted from the spacer's 3' end, got %d." grnaSize rule.MismatchPos))
-    if rule.SnpPos = rule.MismatchPos then
-        raise (GrnaInputException "The engineered mismatch cannot be at the variant's own position: choose two different positions.")
+    if rule.MismatchCount < 1 || rule.MismatchCount > 2 then
+        raise (GrnaInputException(sprintf "The number of artificial mutations must be 1 or 2, got %d." rule.MismatchCount))
+    for pos in SpacerFinder.mismatchPositions rule do
+        if pos < 1 || pos > grnaSize then
+            raise (GrnaInputException(sprintf "The artificial mutation position %d must be inside the spacer: between 1 and the spacer size (%d), counted from the spacer's 3' end." pos grnaSize))
+        if pos = rule.SnpPos then
+            raise (GrnaInputException(sprintf "An artificial mutation cannot be at the variant's own position (%d): choose different positions." pos))
+    try
+        SpacerFinder.parseEngineeredBases rule.EngineeredBases |> ignore
+    with :? System.ArgumentException as e ->
+        raise (GrnaInputException(sprintf "Engineered base table: %s" (e.Message.Split('\n').[0])))
 
 /// Throws GrnaInputException unless 18 <= spacer <= 60 and 0 <= seedStart <= seedEnd < spacer.
 let validateSpacerParameters (grnaSize: int) (seedStart: int) (seedEnd: int) : unit =
@@ -89,7 +96,7 @@ let specialRuleNoticeAt (snpPos: int) (hgvs: HGVS.HGVS) (sequenceLength: int) (w
         Some(sprintf "The substitution rule (an engineered mismatch near the mutation, with the mutation at position %d from the spacer's 3' end) could not be applied to the %s: the mutation is at position %d of %s (%d bases), too close to an end of the sequence for a window that puts it there, which needs at least %d and %d bases on its two sides. The ordinary ranking is shown instead."
                 snpPos which (fst hgvs.Position) hgvs.Accession sequenceLength (snpPos - 1) (windowSize - snpPos))
 
-/// The warning with the default variant position (3rd from the 3' end).
+/// The warning with the default variant position (9th from the 3' end).
 let specialRuleNotice (hgvs: HGVS.HGVS) (sequenceLength: int) (windowSize: int) (appliesToMutated: bool) (appliesToOriginal: bool) : string option =
     specialRuleNoticeAt SpacerFinder.DefaultSnpPosition hgvs sequenceLength windowSize appliesToMutated appliesToOriginal
 
@@ -182,14 +189,15 @@ let getBestgRNAFromHGVSWithRuleAndRepeat (rule: SpecialRuleOptions) (repeat: str
     let! gRNAs = gRNAsTask
     let! originalGRNAs = originalGRNAsTask
 
-    let isSubstitution = hgvsObj.Mutation = HGVS.MutationType.Substitution
+    // The rule is skipped for other mutation types and when the researcher opted out of it.
+    let isSubstitution = hgvsObj.Mutation = HGVS.MutationType.Substitution && rule.Enabled
     let appliesToMutated = SpacerFinder.specialRuleAppliesAt rule.SnpPos grnaSize gRNAs
     let appliesToOriginal = SpacerFinder.specialRuleAppliesAt rule.SnpPos grnaSize originalGRNAs
 
     let gRNAs, originalGRNAs =
         if isSubstitution then
-            SpacerFinder.applySubstitutionSpecialRuleAt rule.SnpPos rule.MismatchPos seedStart seedEnd grnaSize gRNAs,
-            SpacerFinder.applySubstitutionSpecialRuleAt rule.SnpPos rule.MismatchPos seedStart seedEnd grnaSize originalGRNAs
+            SpacerFinder.applySubstitutionSpecialRuleWith rule seedStart seedEnd grnaSize gRNAs,
+            SpacerFinder.applySubstitutionSpecialRuleWith rule seedStart seedEnd grnaSize originalGRNAs
         else
             gRNAs, originalGRNAs
 
@@ -222,7 +230,7 @@ let getBestgRNAFromHGVSWithRuleAndRepeat (rule: SpecialRuleOptions) (repeat: str
 let getBestgRNAFromHGVSWithRule (rule: SpecialRuleOptions) (hgvsString: string) (grnaSize: int) (seedStart: int) (seedEnd: int) (bowtieService: gRNA.Services.BowtieService) (cancellationToken: System.Threading.CancellationToken) (complement: bool) =
     getBestgRNAFromHGVSWithRuleAndRepeat rule SpacerFinder.scaffold hgvsString grnaSize seedStart seedEnd bowtieService cancellationToken complement
 
-/// `getBestgRNAFromHGVSWithRuleAndRepeat` with the default substitution rule (variant 3rd and mismatch 4th from the spacer's 3' end).
+/// `getBestgRNAFromHGVSWithRuleAndRepeat` with the default substitution rule (variant 9th, mismatches 10th and 11th from the spacer's 3' end).
 let getBestgRNAFromHGVSWith (repeat: string) (hgvsString: string) (grnaSize: int) (seedStart: int) (seedEnd: int) (bowtieService: gRNA.Services.BowtieService) (cancellationToken: System.Threading.CancellationToken) (complement: bool) =
     getBestgRNAFromHGVSWithRuleAndRepeat defaultSpecialRule repeat hgvsString grnaSize seedStart seedEnd bowtieService cancellationToken complement
 

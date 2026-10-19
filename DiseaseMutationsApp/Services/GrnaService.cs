@@ -10,12 +10,12 @@ public interface IGrnaAnalysis
     string? GetNcbiNuccoreUrl(string hgvs);
 
     /// <summary>
-    /// Same as <see cref="GetBestgRNAFromHgvs"/> with the substitution rule's positions, both counted from the spacer's
-    /// 3' end (1 = last letter): the variant at <paramref name="snpPos"/>, the engineered mismatch at <paramref name="mismatchPos"/>.
-    /// The default implementation ignores the positions.
+    /// Same as <see cref="GetBestgRNAFromHgvs"/> with the substitution rule: the variant position, the engineered mismatch
+    /// position(s) (all counted from the spacer's 3' end, 1 = last letter) and the engineered base table.
+    /// The default implementation ignores the rule.
     /// </summary>
     /// <param name="repeat">The 5' context the spacers are folded with while screening: null = the default Cas13 repeat, "" = the spacer alone, otherwise a direct repeat (see <see cref="RepeatChoice"/>). Like the rule, the default implementation ignores it.</param>
-    Task<ResultFromHGVS> GetBestgRNAFromHgvsWithRule(string hgvs, int window, int seedStart, int seedEnd, int snpPos, int mismatchPos, bool complement = false, CancellationToken cancellationToken = default, string? repeat = null) =>
+    Task<ResultFromHGVS> GetBestgRNAFromHgvsWithRule(string hgvs, int window, int seedStart, int seedEnd, SpacerFinder.SpecialRuleOptions rule, bool complement = false, CancellationToken cancellationToken = default, string? repeat = null) =>
         GetBestgRNAFromHgvs(hgvs, window, seedStart, seedEnd, complement, cancellationToken);
 
     /// <summary>
@@ -51,16 +51,15 @@ public class GrnaService : IGrnaAnalysis
     public static string Scaffold => gRNA.SpacerFinder.scaffold;
 
     public Task<ResultFromHGVS> GetBestgRNAFromHgvs(string hgvs, int window, int seedStart, int seedEnd, bool complement = false, CancellationToken cancellationToken = default) =>
-        GetBestgRNAFromHgvsWithRule(hgvs, window, seedStart, seedEnd, SpacerFinder.DefaultSnpPosition, SpacerFinder.DefaultMismatchPosition, complement, cancellationToken);
+        GetBestgRNAFromHgvsWithRule(hgvs, window, seedStart, seedEnd, SpacerFinder.defaultSpecialRule, complement, cancellationToken);
 
     /// <param name="repeat">The 5' context the spacers are folded with while screening: null = the default Cas13 repeat, "" = the spacer alone, otherwise a direct repeat (see <see cref="RepeatChoice"/>).</param>
-    public async Task<ResultFromHGVS> GetBestgRNAFromHgvsWithRule(string hgvs, int window, int seedStart, int seedEnd, int snpPos, int mismatchPos, bool complement = false, CancellationToken cancellationToken = default, string? repeat = null)
+    public async Task<ResultFromHGVS> GetBestgRNAFromHgvsWithRule(string hgvs, int window, int seedStart, int seedEnd, SpacerFinder.SpecialRuleOptions rule, bool complement = false, CancellationToken cancellationToken = default, string? repeat = null)
     {
         try
         {
-            _logger.LogDebug("Getting best gRNA from HGVS: {Hgvs}, Window: {Window}, Seed: [{SeedStart}, {SeedEnd}], Rule: variant {SnpPos}, mismatch {MismatchPos}, Complement: {Complement}, Repeat: {Repeat}", hgvs, window, seedStart, seedEnd, snpPos, mismatchPos, complement, repeat is null ? "default" : repeat.Length == 0 ? "none" : $"{repeat.Length} nt");
+            _logger.LogDebug("Getting best gRNA from HGVS: {Hgvs}, Window: {Window}, Seed: [{SeedStart}, {SeedEnd}], Rule: variant {SnpPos}, mismatch {MismatchPos} x{MismatchCount}, bases {Bases}, Complement: {Complement}, Repeat: {Repeat}", hgvs, window, seedStart, seedEnd, rule.SnpPos, rule.MismatchPos, rule.MismatchCount, rule.EngineeredBases, complement, repeat is null ? "default" : repeat.Length == 0 ? "none" : $"{repeat.Length} nt");
 
-            var rule = new Main.SpecialRuleOptions(snpPos, mismatchPos);
             var fsharpResult = await Main.getBestgRNAFromHGVSWithRuleAndRepeat(rule, repeat ?? gRNA.SpacerFinder.scaffold, hgvs, window, seedStart, seedEnd, _bowtieService, cancellationToken, complement);
 
             return new ResultFromHGVS

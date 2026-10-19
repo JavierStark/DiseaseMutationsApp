@@ -5,6 +5,9 @@ namespace DiseaseMutationsAppTests;
 
 public class SpacerFinderHighlightTests
 {
+    /// <summary>The short-spacer rule these examples use: variant 3rd, one engineered mismatch 4th from the 3' end, default base table.</summary>
+    private static readonly SpacerFinder.SpecialRuleOptions FourthRule = new(3, 4, 1, SpacerFinder.DefaultEngineeredBases, true);
+
     [Test]
     public void GetMutationHighlightSpan_SubstitutionOverlap_ReturnsIntersection()
     {
@@ -72,13 +75,6 @@ public class SpacerFinderHighlightTests
     }
 
     [Test]
-    public void AdjustFourthFromEndToAorU_ChangesToA_WhenNotA()
-    {
-        var adjusted = SpacerFinder.adjustFourthFromEndToAorU("UUUUGG");
-        Assert.That(adjusted, Is.EqualTo("UUAUGG"));
-    }
-
-    [Test]
     public void ApplySubstitutionSpecialRule_SelectsSingleGrnaAndAdjustsFourthFromEnd()
     {
         var selected = new SpacerFinder.gRNAResult(
@@ -107,7 +103,7 @@ public class SpacerFinderHighlightTests
             1, -1, false, true, -1.0);
 
         var input = Microsoft.FSharp.Collections.ListModule.OfSeq(new[] { other, selected });
-        var results = SpacerFinder.applySubstitutionSpecialRule(0, 3, 6, input);
+        var results = SpacerFinder.applySubstitutionSpecialRuleWith(FourthRule, 0, 3, 6, input);
 
         Assert.Multiple(() =>
         {
@@ -157,7 +153,7 @@ public class SpacerFinderHighlightTests
             .ToArray();
 
         var input = Microsoft.FSharp.Collections.ListModule.OfSeq(others.Append(matching));
-        var results = SpacerFinder.applySubstitutionSpecialRule(0, 3, 6, input);
+        var results = SpacerFinder.applySubstitutionSpecialRuleWith(FourthRule, 0, 3, 6, input);
 
         Assert.Multiple(() =>
         {
@@ -185,7 +181,7 @@ public class SpacerFinderHighlightTests
             1, -1, false, true, -1.0);
 
         var input = Microsoft.FSharp.Collections.ListModule.OfSeq(new[] { nonMatching });
-        var results = SpacerFinder.applySubstitutionSpecialRule(0, 3, 6, input);
+        var results = SpacerFinder.applySubstitutionSpecialRuleWith(FourthRule, 0, 3, 6, input);
 
         // Decision 2026-10-13: when no spacer carries the mutation at N-3 the ranked list is kept, not emptied.
         Assert.Multiple(() =>
@@ -198,27 +194,10 @@ public class SpacerFinderHighlightTests
     }
 
     [Test]
-    public void AdjustFourthFromEndToAorU_ChangesToU_WhenA()
-    {
-        var adjusted = SpacerFinder.adjustFourthFromEndToAorU("UUAUGG");
-        Assert.That(adjusted, Is.EqualTo("UUUUGG"));
-    }
-
-    [Test]
-    public void AdjustFourthFromEndToAorU_ShorterThanFour_ReturnsUnchanged()
-    {
-        Assert.Multiple(() =>
-        {
-            Assert.That(SpacerFinder.adjustFourthFromEndToAorU("UUU"), Is.EqualTo("UUU"));
-            Assert.That(SpacerFinder.adjustFourthFromEndToAorU(""), Is.EqualTo(""));
-        });
-    }
-
-    [Test]
     public void ApplySubstitutionSpecialRule_RecomputesMetricsFromAdjustedSequence_ButKeepsOfftargetsAndFold()
     {
         var selected = new SpacerFinder.gRNAResult(
-            "AAAAGG", // GC content 33.33%, adjust index (len-4)=2 'A' -> 'U' => "AAUAGG"
+            "AAAAGG", // GC content 33.33%, index (len-4)=2: 'A' pairs with U, whose guide base is C => "AACAGG"
             1.0,
             0,
             0,
@@ -231,15 +210,15 @@ public class SpacerFinderHighlightTests
             1, -1, false, true, -1.0);
 
         var input = Microsoft.FSharp.Collections.ListModule.OfSeq(new[] { selected });
-        var results = SpacerFinder.applySubstitutionSpecialRule(0, 3, 6, input);
+        var results = SpacerFinder.applySubstitutionSpecialRuleWith(FourthRule, 0, 3, 6, input);
 
         Assert.Multiple(() =>
         {
             Assert.That(results.Count, Is.EqualTo(2));
-            Assert.That(results[0].Sequence, Is.EqualTo("AAUAGG"));
+            Assert.That(results[0].Sequence, Is.EqualTo("AACAGG"));
             Assert.That(results[1].Sequence, Is.EqualTo("AAAAGG"), "the ordinary candidate stays after the engineered one");
-            Assert.That(results[0].GCContent, Is.EqualTo(SpacerFinder.calculateGCContent("AAUAGG")));
-            Assert.That(results[0].HomopolymerCount, Is.EqualTo(SpacerFinder.countHomopolymers("AAUAGG")));
+            Assert.That(results[0].GCContent, Is.EqualTo(SpacerFinder.calculateGCContent("AACAGG")));
+            Assert.That(results[0].HomopolymerCount, Is.EqualTo(SpacerFinder.countHomopolymers("AACAGG")));
             // Carried over from the original selected candidate:
             Assert.That(results[0].Offtargets, Is.EqualTo(5));
             Assert.That(results[0].RnaFoldResult.Energy, Is.EqualTo(-3.4));

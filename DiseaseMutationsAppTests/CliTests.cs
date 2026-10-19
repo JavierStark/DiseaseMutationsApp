@@ -140,10 +140,11 @@ public class CliTests
     }
 
     [TestCase("--snp-pos", "0")]
-    [TestCase("--snp-pos", "29")]
+    [TestCase("--snp-pos", "24")]
     [TestCase("--mismatch-pos", "0")]
-    [TestCase("--mismatch-pos", "29")]
-    [TestCase("--mismatch-pos", "3")]   // equal to the default variant position
+    [TestCase("--mismatch-pos", "24")]
+    [TestCase("--mismatch-pos", "23")]  // with the default two mutations the second one (24) is outside the 23 nt spacer
+    [TestCase("--mismatch-pos", "8")]   // with the default two mutations the second one (9) is the variant's own position
     public void Design_SubstitutionRulePositionsOutOfRange_AreBadInput(string option, string value)
     {
         var r = Run("design", "--hgvs", "NC_000017.11:g.7674220C>T", option, value);
@@ -151,6 +152,20 @@ public class CliTests
         {
             Assert.That(r.Exit, Is.EqualTo(CliProgram.ExitBadInput));
             Assert.That(r.Err, Does.Contain("position").Or.Contain("different positions"));
+        });
+    }
+
+    [TestCase("--mismatches", "3")]
+    [TestCase("--mismatches", "0")]
+    [TestCase("--bases", "A>A,G>A,C>C")]
+    [TestCase("--bases", "A>A,A>C,C>C,U>C")]
+    public void Design_ArtificialMutationCountAndBaseTable_AreValidated(string option, string value)
+    {
+        var r = Run("design", "--hgvs", "NC_000017.11:g.7674220C>T", option, value);
+        Assert.Multiple(() =>
+        {
+            Assert.That(r.Exit, Is.EqualTo(CliProgram.ExitBadInput));
+            Assert.That(r.Err, Does.Contain("artificial mutations").Or.Contain("base table"));
         });
     }
 
@@ -163,6 +178,8 @@ public class CliTests
         {
             Assert.That(help.Out, Does.Contain("--snp-pos"));
             Assert.That(help.Out, Does.Contain("--mismatch-pos"));
+            Assert.That(help.Out, Does.Contain("--mismatches"));
+            Assert.That(help.Out, Does.Contain("--bases"));
         });
     }
 
@@ -238,7 +255,20 @@ public class CliTests
         Assert.Multiple(() =>
         {
             Assert.That(r.Exit, Is.EqualTo(CliProgram.ExitBadInput));
-            Assert.That(r.Err, Does.Contain("spacer=30").And.Contain("spacer=28"));
+            Assert.That(r.Err, Does.Contain("spacer=30").And.Contain("spacer=23"));
+        });
+    }
+
+    [Test]
+    public void Resume_ReportMadeWithAnotherRule_IsRefused()
+    {
+        var list = File_("list.txt", "NC_000017.11:g.7674220C>T\n");
+        var out_ = File_("out.csv", ReportSchema.provenance(23, 10, 17) + "\n" + ReportSchema.header + "\n");
+        var r = Run("design", "--input", list, "--out", out_, "--mismatches", "1");
+        Assert.Multiple(() =>
+        {
+            Assert.That(r.Exit, Is.EqualTo(CliProgram.ExitBadInput));
+            Assert.That(r.Err, Does.Contain("another substitution rule").And.Contain("N-10 and N-11"));
         });
     }
 
@@ -246,7 +276,7 @@ public class CliTests
     public void Resume_VariantAlreadyInTheReport_IsSkipped_WithoutAnyWork()
     {
         var list = File_("list.txt", "NC_000017.11:g.7674220C>T\n");
-        var report = "# Diana report; spacer=28; seed=10-17; generated=2026-01-01T00:00:00Z\n" + ReportSchema.header + "\n"
+        var report = ReportSchema.provenance(23, 10, 17) + "\n" + ReportSchema.header + "\n"
                      + ",NC_000017.11:g.7674220C>T,Mutated,1,AGUUCCUGCAUGGGCGGCAUGAACAAGA,1,53.57,1,UGGGCGGC,0,-13.1,Normal\n";
         var out_ = File_("out.csv", report);
 

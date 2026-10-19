@@ -122,9 +122,9 @@ public class RepeatTests
         public Task<ResultFromHGVS> GetBestgRNAFromHgvs(string hgvs, int window, int seedStart, int seedEnd, bool complement = false, CancellationToken cancellationToken = default) =>
             throw new NotSupportedException("the runner must use the rule-aware call");
 
-        public Task<ResultFromHGVS> GetBestgRNAFromHgvsWithRule(string hgvs, int window, int seedStart, int seedEnd, int snpPos, int mismatchPos, bool complement = false, CancellationToken cancellationToken = default, string? repeat = null)
+        public Task<ResultFromHGVS> GetBestgRNAFromHgvsWithRule(string hgvs, int window, int seedStart, int seedEnd, SpacerFinder.SpecialRuleOptions rule, bool complement = false, CancellationToken cancellationToken = default, string? repeat = null)
         {
-            lock (Calls) Calls.Add((repeat, snpPos, mismatchPos));
+            lock (Calls) Calls.Add((repeat, rule.SnpPos, rule.MismatchPos));
             return Task.FromResult(new ResultFromHGVS { gRNA = new(), OriginalGRNA = new(), MutatedSequence = "ACGT", OriginalSequence = "ACGA" });
         }
 

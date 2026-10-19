@@ -142,22 +142,24 @@ grna design --input sickle.txt --out report.csv      # then design guides for th
 ## `grna design`
 
 ```
-grna design --hgvs <HGVS>           [--spacer 28] [--seed 10-17] [--complement] [--format csv|json|tsv] [--out file] [--concurrency 2] [--snp-pos 3] [--mismatch-pos 4]
-grna design --input <file|session.json> [--spacer 28] [--seed 10-17] [--complement] [--format csv|json|tsv] [--out file] [--concurrency 2] [--snp-pos 3] [--mismatch-pos 4]
+grna design --hgvs <HGVS>           [--spacer 23] [--seed 10-17] [--complement] [--format csv|json|tsv] [--out file] [--concurrency 2] [--snp-pos 9] [--mismatch-pos 10] [--mismatches 2] [--bases A>A,G>A,C>C,U>C]
+grna design --input <file|session.json> [--spacer 23] [--seed 10-17] [--complement] [--format csv|json|tsv] [--out file] [--concurrency 2] [--snp-pos 9] [--mismatch-pos 10] [--mismatches 2] [--bases A>A,G>A,C>C,U>C]
 ```
 
 | Option | Default | Notes |
 |---|---|---|
 | `--hgvs` | | exactly one of `--hgvs` / `--input`. An rsID here is also accepted and expanded. |
 | `--input` | | text list or web-app session `.json` (detected by `.json` extension) |
-| `--spacer` | 28 (or the session's) | spacer length, 18 to 60, else exit 2 |
+| `--spacer` | 23 (or the session's) | spacer length, 18 to 60, else exit 2 |
 | `--seed` | `10-17` (or the session's) | `start-end`, inclusive, 0-based in the spacer; must satisfy `0 <= start <= end < spacer` else exit 2 |
 | `--complement` | off | design against the opposite strand (the reverse complement, read 5'->3') instead of the reference strand; one strand per run |
 | `--format` | `csv` | `csv`, `json` or `tsv` (case-insensitive); anything else exit 2 |
 | `--out` | stdout | output file |
 | `--concurrency` | 2 | variants in flight, clamped to 1-4. Bowtie is serialised per process anyway, so >2 rarely helps. |
-| `--snp-pos` | 3 | substitution rule: where the variant sits in the engineered spacer, counted from the spacer's 3' end (1 = last letter). Must be 1..spacer size and differ from `--mismatch-pos`; otherwise exit 2. |
-| `--mismatch-pos` | 4 | substitution rule: which letter is deliberately changed to A (or U if it is A), counted from the 3' end. A resumed report made with other positions is refused (exit 2); the positions are in the report's `# Diana report` line. |
+| `--snp-pos` | 9 | substitution rule: where the variant sits in the engineered spacer, counted from the spacer's 3' end (1 = last letter). Must be 1..spacer size and differ from `--mismatch-pos`; otherwise exit 2. |
+| `--mismatch-pos` | 10 | substitution rule: the first letter deliberately changed, counted from the 3' end. Every artificial position must be inside the spacer and differ from `--snp-pos`; otherwise exit 2. |
+| `--mismatches` | 2 | substitution rule: 1 or 2 artificial mutations; with 2 the positions are `--mismatch-pos` and the next one (10 and 11 by default). |
+| `--bases` | `A>A,G>A,C>C,U>C` | substitution rule: for each target ("sequence") base, the guide base written at an artificial position; each of A, C, G, U must appear once as a sequence base. A resumed report made with another rule is refused (exit 2); the rule is in the report's `# Diana report` line. |
 
 Explicit `--spacer`/`--seed` override the values stored in a session file.
 
@@ -269,7 +271,7 @@ Writes the complete guides (the DNA that would be ordered) as a GenBank flat fil
 ### Design CSV (default; same schema as the web export and the Pooling page import)
 
 ```
-# Diana report; spacer=28; seed=10-17; generated=2026-10-18T14:11:05Z; gc-score-range=40-60; special-rule=variant at N-3, mismatch at N-4; repeat=GAUUUAGACUACCCCAAAAACGAAGGGGACUAAAAC; off-target index=GRCh38 genome (not a transcriptome)
+# Diana report; spacer=23; seed=10-17; generated=2026-10-18T14:11:05Z; gc-score-range=40-60; special-rule=variant at N-9, mismatch at N-10 and N-11, bases A>A C>C G>A U>C; repeat=GAUUUAGACUACCCCAAAAACGAAGGGGACUAAAAC; off-target index=GRCh38 genome (not a transcriptome)
 RS ID,HGVS,Sequence Type,Rank,Sequence,Score,GC Content,Offtargets,Seed Region,Homopolymers,Fold Energy,Strand,WT Mismatches,Engineered,Scaffold Intact,Spacer Unpaired
 ,NC_000017.11:g.7674220C>T,Mutated,1,AGUUCCUGCAUGGGCGGCAUGAACAAGA,1,53.57,1,UGGGCGGC,0,-13.100000381469727,Normal,1,Yes,Yes,0.57
 ,NC_000017.11:g.7674220C>T,Original,1,AGUUCCUGCAUGGGCGGCAUGAACAGGA,1,57.14,1,UGGGCGGC,0,-13.300000190734863,Normal,1,No,Yes,0.61

@@ -119,30 +119,88 @@ let getgRNAResult (seedStart: int) (seedEnd: int) (sequence: string) : gRNAResul
         SpacerUnpaired = -1.0
     }
 
-/// Flips the letter `positionFromEnd` places from the 3' end (1 = the last letter) to A, or to U when it already is A.
-/// A sequence shorter than that is returned unchanged.
-let adjustPositionFromEndToAorU (positionFromEnd: int) (sequence: string) =
+/// Default engineered base table (Molina Vargas et al. 2024; Shembrey et al. 2024): for each base of the target RNA ("sequence
+/// base") the base the guide carries at an engineered position, so the pair is a deliberate mismatch. Written as
+/// "target>guide" pairs; each target base appears once.
+[<Literal>]
+let DefaultEngineeredBases = "A>A,G>A,C>C,U>C"
+
+/// Parses "A>A,G>A,C>C,U>C" into a map target base -> guide base. Throws ArgumentException unless every one of A, C, G, U
+/// appears exactly once as a target base and every guide base is one of A, C, G, U.
+let parseEngineeredBases (text: string) : Map<char, char> =
+    let pairs =
+        (if isNull text then "" else text).Split([| ','; ';'; ' ' |], System.StringSplitOptions.RemoveEmptyEntries)
+        |> Array.map (fun p ->
+            let t = p.Trim().ToUpperInvariant().Replace('T', 'U').Split('>')
+            if t.Length <> 2 || t.[0].Length <> 1 || t.[1].Length <> 1 then
+                invalidArg "text" (sprintf "'%s' is not a pair like 'A>A' (sequence base > guide base)." p)
+            t.[0].[0], t.[1].[0])
+    let valid = "ACGU"
+    for (s, g) in pairs do
+        if not (valid.Contains s) || not (valid.Contains g) then
+            invalidArg "text" (sprintf "Bases must be A, C, G or U, got '%c>%c'." s g)
+    if pairs.Length <> 4 || (pairs |> Array.map fst |> Array.distinct |> Array.length) <> 4 then
+        invalidArg "text" "Each sequence base (A, C, G, U) must appear exactly once."
+    Map.ofArray pairs
+
+/// The guide letter that replaces spacer letter `spacerBase`. The spacer pairs with the target, so the target ("sequence")
+/// base is its complement (A-U, C-G); the table maps that to the guide letter. Letters outside ACGU are returned unchanged.
+let engineeredLetter (bases: Map<char, char>) (spacerBase: char) =
+    let target =
+        match spacerBase with
+        | 'A' -> Some 'U'
+        | 'U' | 'T' -> Some 'A'
+        | 'C' -> Some 'G'
+        | 'G' -> Some 'C'
+        | _ -> None
+    match target |> Option.bind (fun t -> Map.tryFind t bases) with
+    | Some g -> g
+    | None -> spacerBase
+
+/// Replaces the letter `positionFromEnd` places from the 3' end (1 = the last letter) following the base table. A sequence
+/// shorter than that is returned unchanged.
+let engineerPositionFromEnd (bases: Map<char, char>) (positionFromEnd: int) (sequence: string) =
     if System.String.IsNullOrEmpty(sequence) || positionFromEnd < 1 || sequence.Length < positionFromEnd then
         sequence
     else
         let targetIndex = sequence.Length - positionFromEnd
-        let replacement =
-            if sequence.[targetIndex] = 'A' then 'U'
-            else 'A'
-
+        let replacement = engineeredLetter bases sequence.[targetIndex]
         sequence.Remove(targetIndex, 1).Insert(targetIndex, string replacement)
 
-/// The default rule changes the 4th letter from the 3' end.
-let adjustFourthFromEndToAorU (sequence: string) = adjustPositionFromEndToAorU 4 sequence
-
-/// Default positions of the substitution rule, both counted from the spacer's 3' end (1 = last letter):
-/// the variant is the 3rd letter, the engineered mismatch the 4th.
+/// Defaults of the substitution rule, all counted from the spacer's 3' end (1 = last letter): the variant is the 9th
+/// letter and the engineered mismatches are the 10th and 11th (only the 10th when a single one is requested).
 [<Literal>]
-let DefaultSnpPosition = 3
+let DefaultSnpPosition = 9
 [<Literal>]
-let DefaultMismatchPosition = 4
+let DefaultMismatchPosition = 10
+[<Literal>]
+let DefaultMismatchCount = 2
+[<Literal>]
+let DefaultSpacerSize = 23
 
-/// True when some candidate carries the mutation at index `windowSize - 3`, i.e. when the rule below can build its
+/// Where the substitution rule puts the variant and its deliberate extra mismatches in the spacer. `MismatchPos` is the first
+/// engineered position; with `MismatchCount` = 2 the next one (MismatchPos + 1) is engineered too. `EngineeredBases` is the
+/// "target>guide" table (see `DefaultEngineeredBases`).
+type SpecialRuleOptions =
+    { SnpPos: int
+      MismatchPos: int
+      MismatchCount: int
+      EngineeredBases: string
+      /// False = the researcher opted out: no engineered spacer is built and the ordinary ranking is shown.
+      Enabled: bool }
+
+let defaultSpecialRule : SpecialRuleOptions =
+    { SnpPos = DefaultSnpPosition
+      MismatchPos = DefaultMismatchPosition
+      MismatchCount = DefaultMismatchCount
+      EngineeredBases = DefaultEngineeredBases
+      Enabled = true }
+
+/// The engineered positions (counted from the 3' end) of a rule: MismatchPos, then MismatchPos + 1 when two are asked for.
+let mismatchPositions (rule: SpecialRuleOptions) =
+    [ for i in 0 .. rule.MismatchCount - 1 -> rule.MismatchPos + i ]
+
+/// True when some candidate carries the mutation at index `windowSize - snpPos`, i.e. when the rule below can build its
 /// engineered spacer. It cannot when the mutation is too close to an end of the sequence for such a window to exist.
 let specialRuleAppliesAt (snpPos: int) (windowSize: int) (results: gRNAResult list) =
     results
@@ -154,17 +212,19 @@ let specialRuleApplies (windowSize: int) (results: gRNAResult list) =
     specialRuleAppliesAt DefaultSnpPosition windowSize results
 
 /// Puts the mismatch-engineered candidate FIRST (marked `Engineered`, Rank 1, Score 1.0) and keeps the whole ordinary
-/// ranked list after it, unchanged. When no candidate carries the mutation at `windowSize - 3` (see `specialRuleApplies`)
+/// ranked list after it, unchanged. When no candidate carries the mutation at `windowSize - snpPos` (see `specialRuleAppliesAt`)
 /// the ranked list is returned UNCHANGED: the caller reports that the rule did not apply.
-let applySubstitutionSpecialRuleAt (snpPos: int) (mismatchPos: int) (seedStart: int) (seedEnd: int) (windowSize: int) (results: gRNAResult list) =
-    let targetMutationIndex = windowSize - snpPos
+let applySubstitutionSpecialRuleWith (rule: SpecialRuleOptions) (seedStart: int) (seedEnd: int) (windowSize: int) (results: gRNAResult list) =
+    let targetMutationIndex = windowSize - rule.SnpPos
+    let bases = parseEngineeredBases rule.EngineeredBases
 
     results
     |> List.tryFind (fun result ->
         result.MutationHighlightStart = targetMutationIndex
         && result.MutationHighlightLength > 0)
     |> Option.map (fun selected ->
-        let adjustedSequence = adjustPositionFromEndToAorU mismatchPos selected.Sequence
+        let adjustedSequence =
+            mismatchPositions rule |> List.fold (fun seq pos -> engineerPositionFromEnd bases pos seq) selected.Sequence
         let adjustedBaseResult = getgRNAResult seedStart seedEnd adjustedSequence
 
         { adjustedBaseResult with
@@ -181,9 +241,9 @@ let applySubstitutionSpecialRuleAt (snpPos: int) (mismatchPos: int) (seedStart: 
         | Some adjusted -> adjusted :: results
         | None -> results
 
-/// The default rule: variant 3rd from the 3' end, engineered mismatch 4th from the 3' end.
+/// The default rule: variant 9th from the 3' end, engineered mismatches 10th and 11th.
 let applySubstitutionSpecialRule (seedStart: int) (seedEnd: int) (windowSize: int) (results: gRNAResult list) =
-    applySubstitutionSpecialRuleAt DefaultSnpPosition DefaultMismatchPosition seedStart seedEnd windowSize results
+    applySubstitutionSpecialRuleWith defaultSpecialRule seedStart seedEnd windowSize results
 
 /// The DNA window a spacer was derived from: spacer = reverse(complement(window)) with T to U.
 let windowOfSpacer (spacer: string) =

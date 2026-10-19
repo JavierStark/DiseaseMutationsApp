@@ -114,9 +114,9 @@ grna doctor [--network]                                       # PASS/WARN/FAIL l
 grna resolve rs334 [rs... ] [--all-alleles]                    # stdout: "<rsID>\t<HGVS>"; default = disease-relevant allele (1 line for rs334), --all-alleles = 12
 grna design --hgvs 'NC_000017.11:g.7674220C>T'                # CSV report to stdout (default --format csv)
 grna design --hgvs '<HGVS>' --format json|tsv [--out file]    # other formats
-grna design --hgvs '<HGVS>' --spacer 28 --seed 10-17 --complement   # parameters (these values are the defaults, minus --complement)
+grna design --hgvs '<HGVS>' --spacer 23 --seed 10-17 --complement   # parameters (these values are the defaults, minus --complement)
 grna design --hgvs '<HGVS>' --repeat none                           # fold the spacer alone; --repeat default (36 nt scaffold) or --repeat <RNA/DNA sequence> too
-grna design --hgvs 'NM_000492.4:c.1624G>T' --snp-pos 3 --mismatch-pos 4    # substitution rule positions from the 3' end (defaults shown); a transcript c. position is converted
+grna design --hgvs 'NM_000492.4:c.1624G>T' --snp-pos 9 --mismatch-pos 10 --mismatches 2 --bases A>A,G>A,C>C,U>C    # substitution rule: positions from the 3' end, number of artificial mutations, sequence base>guide base (defaults shown); a transcript c. position is converted
 grna disease 603903 --format rs --out sickle.txt               # rsIDs of a disease's pathogenic/likely pathogenic ClinVar variants (progress on stderr, needs internet)
 grna disease "sickle cell disease" --list                      # the matching diseases (--pick N chooses one, --subtypes widens, --format csv|tsv|json)
 grna design --input variants.txt --out report.csv [--concurrency 2] # batch; RESUMABLE (re-run skips variants already in report.csv)
@@ -148,7 +148,7 @@ session `.json`. Exact formats, output schemas, resume rules and pooling details
 5. **Typos are rejected, not ignored.** An unknown option (`--capasity 2`) or a flag that does not apply to the command
    exits 2 and names it. Only `--complement`, `--all-alleles`, `--list`, `--subtypes`, `--network` and `--help` are value-less flags; there is no `--opt=value` form.
 6. **Resume semantics.** With `--input` + `--out <file>.csv` + csv format, an existing report is appended to and variants
-   already in it (keyed by RS ID + HGVS + strand) are skipped. A report made with a different `--spacer`, `--seed`, `--repeat`, `--snp-pos` or `--mismatch-pos` is
+   already in it (keyed by RS ID + HGVS + strand) are skipped. A report made with a different `--spacer`, `--seed`, `--repeat`, `--snp-pos`, `--mismatch-pos`, `--mismatches` or `--bases` is
    refused (exit 2, the message names both settings): use a new `--out` file when changing those. Running the other strand (`--complement`) into the same
    file is fine and appends its rows.
 7. **`--complement` analyses one strand per run:** the opposite strand (the reverse complement, read 5'->3'). For both

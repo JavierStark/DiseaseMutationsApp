@@ -31,10 +31,14 @@ public static class GrnaCsvSchema
 
     /// <summary>A leading comment line recording the parameters, so an exported report can be reproduced.</summary>
     /// <param name="snpPos">Where the substitution rule puts the variant, counted from the spacer's 3' end (1 = last letter).</param>
-    /// <param name="mismatchPos">Where it puts the engineered mismatch, counted the same way.</param>
+    /// <param name="mismatchPos">Where it puts the first engineered mismatch, counted the same way.</param>
+    /// <param name="mismatchCount">1 or 2: with 2 the next position is engineered too.</param>
+    /// <param name="engineeredBases">The "sequence base&gt;guide base" table, e.g. <c>A&gt;A,G&gt;A,C&gt;C,U&gt;C</c>.</param>
     /// <param name="repeat">The screening's direct repeat as <see cref="RunParameters.Repeat"/> holds it: null = default, "" = none.</param>
-    public static string ProvenanceLine(int spacerSize, int seedStart, int seedEnd, int snpPos = 3, int mismatchPos = 4, string? repeat = null) =>
-        gRNA.ReportSchema.provenanceWithRuleAndRepeat(snpPos, mismatchPos, repeat ?? gRNA.SpacerFinder.scaffold, spacerSize, seedStart, seedEnd);
+    public static string ProvenanceLine(int spacerSize, int seedStart, int seedEnd, int snpPos = gRNA.SpacerFinder.DefaultSnpPosition, int mismatchPos = gRNA.SpacerFinder.DefaultMismatchPosition, string? repeat = null,
+        int mismatchCount = gRNA.SpacerFinder.DefaultMismatchCount, string engineeredBases = gRNA.SpacerFinder.DefaultEngineeredBases, bool applyRule = true) =>
+        gRNA.ReportSchema.provenanceWithRuleAndRepeat(new gRNA.SpacerFinder.SpecialRuleOptions(snpPos, mismatchPos, mismatchCount, engineeredBases, applyRule),
+            repeat ?? gRNA.SpacerFinder.scaffold, spacerSize, seedStart, seedEnd);
 
     public static string Header => string.Join(",", Columns);
 

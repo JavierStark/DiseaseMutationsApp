@@ -60,7 +60,7 @@ The function is **curried**; from C# the compiler exposes it as a normal method 
 `ResultFromHGVS` (note: a different type from the C# record of the same name in `DiseaseMutationsApp.Services`) carries
 `gRNA`, `originalGRNA` (ranked candidate lists), `mutatedSequence`, `originalSequence`, `extraNucleotids` and `windowStart`/`windowEnd` (the 1-based inclusive accession window the sequences were cut from). For
 substitutions the special rule may replace a list with a single engineered candidate (the offtarget and fold values are carried over from the
-unadjusted candidate). If no candidate carries the mutation at index `N-3` (`SpacerFinder.specialRuleApplies` is false: the mutation is too
+unadjusted candidate). If no candidate carries the mutation at index `N-9` (the default variant position; `SpacerFinder.SpecialRuleOptions` holds `SnpPos`, `MismatchPos`, `MismatchCount` and `EngineeredBases`) (`SpacerFinder.specialRuleApplies` is false: the mutation is too
 close to an end of the sequence) the ranked list is kept and `notices` holds a warning (`Main.specialRuleNotice`).
 
 ### `HGVS.HGVS(code)`

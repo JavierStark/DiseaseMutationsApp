@@ -134,7 +134,7 @@ The guide design page, and the home page of the app (`/`).
   restores your inputs (never results: download the CSV report to keep them).
 - **Files and sessions.** Load inputs from a plain list, a Diana CSV report or a saved session; *Save session* downloads a
   JSON document (inputs, spacer/seed, repeat, construct, shortlist) that `grna design --input session.json` reads too.
-- **Permalinks.** *Copy link to this design* encodes `?hgvs=...&spacer=28&seed=10-17` (also `?rs=`, `?snp=`, `?mm=`, `repeat=`);
+- **Permalinks.** *Copy link to this design* encodes `?hgvs=...&spacer=23&seed=10-17` (also `?rs=`, `?snp=`, `?mm=`, `?mn=`, `?bases=`, `repeat=`);
   opening it fills in the form and you press **Run analysis**; a link never starts a run on its own.
 - **CSV report.** Per input (rsID or HGVS) or all inputs at once, with the parameters in a leading `#` line and a `Strand` column.
 - **Tooltips everywhere.** Hover (or focus) a column header, filter, option or badge for a one-paragraph explanation of what it
@@ -147,7 +147,7 @@ The guide design page, and the home page of the app (`/`).
 0. No variant list yet? Open **Disease variants**, find the disease, tick the variants you want and press **Send to Diana**:
    the inputs below are filled in for you.
 1. Enter variants (comma-separated), the spacer size and seed range, and, if you want to try other substitution-rule positions, the
-   variant and mismatch positions (defaults 28 and 10-17, inclusive, 0-based in the spacer; spacer size 18 to 60).
+   variant and mismatch positions (defaults 23 and 10-17, inclusive, 0-based in the spacer; spacer size 18 to 60).
 2. **Run analysis**. rsIDs resolve first, then variants are analysed two at a time. Cancel the run, or one variant, any time.
 3. Pick a tab per input; for rsIDs a second strip lists each resolved variant on both strands. Tabs use arrow keys.
 4. Press **Use** on a spacer to build the complete gRNA, copy it, fold it, or add it to the shortlist.
@@ -194,9 +194,9 @@ The same preflight as `grna doctor`: Bowtie binary and index, Python and ViennaR
 grna doctor [--network]
 grna resolve rs334 [--all-alleles]
 grna disease "sickle cell disease" --format rs --out sickle.txt   # rsIDs of a disease's pathogenic ClinVar variants
-grna design --hgvs NC_000017.11:g.7674220C>T --spacer 28 --seed 10-17 [--repeat default|none|<RNA>] [--complement] [--format csv|json|tsv]
+grna design --hgvs NC_000017.11:g.7674220C>T --spacer 23 --seed 10-17 [--repeat default|none|<RNA>] [--complement] [--format csv|json|tsv]
 grna design --input variants.txt|session.json --out report.csv   # batch, resumable, bounded concurrency ([--all-alleles] for every dbSNP allele)
-grna design --hgvs 'NC_000017.11:g.7674220C>T' --snp-pos 3 --mismatch-pos 4   # where the substitution rule puts the variant and its extra mismatch
+grna design --hgvs 'NC_000017.11:g.7674220C>T' --snp-pos 9 --mismatch-pos 10 --mismatches 2 --bases A>A,G>A,C>C,U>C   # the substitution rule: variant position, first artificial mutation, how many (1 or 2), sequence base>guide base table (these are the defaults)
 grna fold "GAUUUAGACUACCCC..."
 grna pool --guides report.csv --capacity 5 --plate 96 --model auto --out plan.csv
 grna pool --count 100 --capacity 5 --plate 96            # plan from a number of guides
@@ -295,13 +295,17 @@ rule positions and the time. `Sequence Type` is `Mutated` or `Original`; `Strand
 
 **Substitution rule.** Substitution variants get a mismatch-engineered spacer (`Rank = 1`, `Score = 1.0`, `Engineered = Yes`)
 listed **first, highlighted**, with the whole ordinary ranked list following it unchanged. The idea, after the SHERLOCK
-strategy [15], is to make a guide more sensitive to a single-base difference by adding one deliberate mismatch next to the
-variant; the spacer then has one mismatch to the mutated target and two to the original. **The two positions of the rule are
-parameters**: *Variant position* (default 3) and *Engineered mismatch position* (default 4) in the Builder form, `--snp-pos` /
-`--mismatch-pos` on `grna design`, `?snp=` / `?mm=` in a permalink. Both are counted from the spacer's 3' end (1 = last letter) and
-must differ; to use a position counted from the 5' end enter spacer size - position + 1. The positions are written in the CSV's
-provenance line, and a resumed report made with other positions is refused. When the mutation is too close to an end of the
-accession for such a window to exist (at the start or in the last 24 bases for a 28 nt spacer, the sides swapping on the
+strategy [15], is to make a guide more sensitive to a single-base difference by adding deliberate mismatches near the
+variant (lab spec of 2026-10-19, after Molina Vargas et al. 2024 [23] and Shembrey et al. 2024 [24]). **The rule is optional**: untick *Apply the substitution rule* in the Builder (the rule fields are then hidden), pass `--no-rule` to `grna design`, or use `?rule=off`; the ordinary ranking is shown and the report records `special-rule=off`. **When applied, it is a set of parameters**:
+*Variant position* (default 9), *First artificial mutation position* (default 10) and *Artificial mutations* (1 or 2, default 2: with 2
+the positions are 10 and 11, with 1 only 10) in the Builder form, `--snp-pos` / `--mismatch-pos` / `--mismatches` on `grna design`,
+`?snp=` / `?mm=` / `?mn=` in a permalink. Positions are counted from the spacer's 3' end (1 = last letter), must lie inside the
+spacer and must not equal the variant position; to use a position counted from the 5' end enter spacer size - position + 1. An
+editable **engineered base rule** gives, for each base of the target sequence, the guide base written at an artificial position
+(default A>A, G>A, C>C, U>C; each sequence base appears once; *Reset to default* in the form, `--bases A>A,G>A,C>C,U>C` or
+`?bases=` otherwise). Because the spacer pairs with the target, the "sequence base" is the complement of the spacer letter being
+replaced. The rule is written in the CSV's provenance line, and a resumed report made with another rule is refused. When the mutation is too close to an end of the
+accession for such a window to exist (at the start or in the last 14 bases for a 23 nt spacer, the sides swapping on the
 complement strand) the rule cannot apply: the ordinary ranking is shown instead, with a visible warning (a `note` line on stderr
 and a `notices` field in `--format json` for the CLI). **The rule has not been shown to discriminate alleles in the lab** (see
 [Validation](#validation)); the best positions are an open question ([BIOLOGICAL_REPORT.md](BIOLOGICAL_REPORT.md) section 4.4).
@@ -633,6 +637,8 @@ are stated in [THIRD-PARTY-NOTICES.md](THIRD-PARTY-NOTICES.md).
 20. iGEM Registry of Standard Biological Parts. *Help:Standards/Assembly/Type IIS* (iGEM Type IIS Assembly RFC[1000]). https://parts.igem.org/Help:Standards/Assembly/Type_IIS (accessed 19 October 2026)
 21. DDBJ, EMBL-EBI/ENA and NCBI/GenBank (INSDC). *The DDBJ/ENA/GenBank Feature Table Definition*, version 11.4 (April 2026). https://www.insdc.org/submitting-standards/feature-table/ (accessed 19 October 2026)
 22. Baig, H., Fontanarrosa, P., Kulkarni, V., McLaughlin, J. A., Vaidyanathan, P., Bartley, B., Beal, J., Crowther, M., Gorochowski, T. E., Grünberg, R., Misirli, G., Scott-Brown, J., Oberortner, E., Wipat, A., & Myers, C. J. (2020). Synthetic biology open language (SBOL) version 3.0.0. *Journal of Integrative Bioinformatics*, 17(2-3), 20200017. https://doi.org/10.1515/jib-2020-0017
+23. Molina Vargas, A. M., et al. (2024). New design strategies for ultra-specific CRISPR-Cas13a-based RNA detection with single-nucleotide mismatch sensitivity. *Nucleic Acids Research*, 52(2), 921-939. https://doi.org/10.1093/nar/gkad1132
+24. Shembrey, C., et al. (2024). Principles of CRISPR-Cas13 mismatch intolerance enable selective silencing of point-mutated oncogenic RNA with single-base precision. *Science Advances*, 10(51), eadl0731. DOI as supplied by the lab: 10.1126/science.adl0731 (to be checked against the journal page before submission).
 
 ## Future enhancements
 

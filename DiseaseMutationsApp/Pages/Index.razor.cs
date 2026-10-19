@@ -22,6 +22,9 @@ namespace DiseaseMutationsApp.Pages
         [SupplyParameterFromQuery(Name = "seed")] private string? SeedQuery { get; set; }
         [SupplyParameterFromQuery(Name = "snp")] private int? SnpQuery { get; set; }
         [SupplyParameterFromQuery(Name = "mm")] private int? MismatchQuery { get; set; }
+        [SupplyParameterFromQuery(Name = "rule")] private string? RuleQuery { get; set; }
+        [SupplyParameterFromQuery(Name = "mn")] private int? MismatchCountQuery { get; set; }
+        [SupplyParameterFromQuery(Name = "bases")] private string? BasesQuery { get; set; }
         [SupplyParameterFromQuery(Name = "repeat")] private string? RepeatQuery { get; set; }
 
         private readonly Func<Action, Task> _marshal;
@@ -97,19 +100,56 @@ namespace DiseaseMutationsApp.Pages
             set => StateService.IndexMismatchPos = value;
         }
 
-        private RunParameters CurrentParameters => new(_gRnaSize, _seedStart, _seedEnd, _snpPos, _mismatchPos, RepeatChoice.Resolve(_repeatMode, _customRepeat));
+        private bool _applyRule
+        {
+            get => StateService.IndexApplyRule;
+            set => StateService.IndexApplyRule = value;
+        }
+
+        private int _mismatchCount
+        {
+            get => StateService.IndexMismatchCount;
+            set => StateService.IndexMismatchCount = value;
+        }
+
+        /// <summary>The engineered base table as the library reads it: "A>A,G>A,C>C,U>C" (sequence base&gt;guide base).</summary>
+        private string EngineeredBasesText => string.Join(",", EngineeredRows.Select(b => $"{b}>{StateService.IndexEngineeredBases[b]}"));
+
+        /// <summary>Each sequence base appears once; only the guide base of a row is editable.</summary>
+        private static readonly char[] EngineeredRows = { 'A', 'G', 'C', 'U' };
+
+        private void SetGuideBase(char sequenceBase, string? guideBase)
+        {
+            if (!string.IsNullOrEmpty(guideBase) && "ACGU".Contains(guideBase[0]))
+                StateService.IndexEngineeredBases[sequenceBase] = guideBase[0];
+            OnInputChanged();
+        }
+
+        private void ResetEngineeredBases()
+        {
+            StateService.IndexEngineeredBases = new() { ['A'] = 'A', ['G'] = 'A', ['C'] = 'C', ['U'] = 'C' };
+            OnInputChanged();
+        }
+
+        private RunParameters CurrentParameters => new(_gRnaSize, _seedStart, _seedEnd, _snpPos, _mismatchPos, RepeatChoice.Resolve(_repeatMode, _customRepeat), _mismatchCount, EngineeredBasesText, _applyRule);
 
         private bool CanFetchData =>
             !Runner.IsBusy && !string.IsNullOrWhiteSpace(_hgvs) && InputCountMessage == null && SeedRangeValidationMessage == null && RuleValidationMessage == null && RepeatValidationMessage == null;
 
-        /// <summary>Both positions lie inside the spacer (1 = its 3' end) and differ; null when valid.</summary>
+        /// <summary>The variant and every engineered position lie inside the spacer (1 = its 3' end) and no engineered one is the variant's; null when valid.</summary>
         private string? RuleValidationMessage
         {
             get
             {
+                if (!_applyRule) return null;
                 if (_snpPos < 1 || _snpPos > _gRnaSize) return $"Variant position must be between 1 and {_gRnaSize} (counted from the spacer's 3' end).";
-                if (_mismatchPos < 1 || _mismatchPos > _gRnaSize) return $"Mismatch position must be between 1 and {_gRnaSize} (counted from the spacer's 3' end).";
-                if (_snpPos == _mismatchPos) return "The engineered mismatch cannot be at the variant's own position.";
+                if (_mismatchCount < 1 || _mismatchCount > 2) return "The number of artificial mutations must be 1 or 2.";
+                for (var i = 0; i < _mismatchCount; i++)
+                {
+                    var pos = _mismatchPos + i;
+                    if (pos < 1 || pos > _gRnaSize) return $"Artificial mutation position {pos} must be inside the spacer: between 1 and {_gRnaSize} (counted from the spacer's 3' end).";
+                    if (pos == _snpPos) return $"An artificial mutation cannot be at the variant's own position ({_snpPos}).";
+                }
                 return null;
             }
         }
@@ -225,7 +265,7 @@ namespace DiseaseMutationsApp.Pages
             var input = !string.IsNullOrWhiteSpace(HgvsQuery) ? HgvsQuery : RsQuery;
             if (string.IsNullOrWhiteSpace(input)) return;
 
-            var claim = $"{input}|{SpacerQuery}|{SeedQuery}|{SnpQuery}|{MismatchQuery}|{RepeatQuery}";
+            var claim = $"{input}|{SpacerQuery}|{SeedQuery}|{SnpQuery}|{MismatchQuery}|{MismatchCountQuery}|{BasesQuery}|{RuleQuery}|{RepeatQuery}";
             if (StateService.IndexClaimedQuery == claim) return;
             StateService.IndexClaimedQuery = claim;
 
@@ -233,6 +273,17 @@ namespace DiseaseMutationsApp.Pages
             if (SpacerQuery is > 0) _gRnaSize = SpacerQuery.Value;
             if (SnpQuery is > 0) _snpPos = SnpQuery.Value;
             if (MismatchQuery is > 0) _mismatchPos = MismatchQuery.Value;
+            if (string.Equals(RuleQuery, "off", StringComparison.OrdinalIgnoreCase)) _applyRule = false;
+            if (MismatchCountQuery is 1 or 2) _mismatchCount = MismatchCountQuery.Value;
+            if (!string.IsNullOrWhiteSpace(BasesQuery))
+            {
+                try
+                {
+                    foreach (var (t, g) in gRNA.SpacerFinder.parseEngineeredBases(BasesQuery))
+                        StateService.IndexEngineeredBases[t] = g;
+                }
+                catch (ArgumentException) { /* a malformed link keeps the table as it is */ }
+            }
             if (!string.IsNullOrWhiteSpace(SeedQuery))
             {
                 var parts = SeedQuery.Split('-', 2);
@@ -335,8 +386,11 @@ namespace DiseaseMutationsApp.Pages
                 ["spacer"] = _gRnaSize,
                 ["seed"] = $"{_seedStart}-{_seedEnd}",
                 // Only written when it differs from the default, so ordinary links stay short.
-                ["snp"] = _snpPos == 3 ? null : _snpPos,
-                ["mm"] = _mismatchPos == 4 ? null : _mismatchPos,
+                ["snp"] = _snpPos == gRNA.SpacerFinder.DefaultSnpPosition ? null : _snpPos,
+                ["mm"] = _mismatchPos == gRNA.SpacerFinder.DefaultMismatchPosition ? null : _mismatchPos,
+                ["rule"] = _applyRule ? null : "off",
+                ["mn"] = _mismatchCount == gRNA.SpacerFinder.DefaultMismatchCount ? null : _mismatchCount,
+                ["bases"] = EngineeredBasesText == gRNA.SpacerFinder.DefaultEngineeredBases ? null : EngineeredBasesText,
                 ["repeat"] = _repeatMode == RepeatMode.Default ? null : RepeatChoice.ToToken(_repeatMode, _customRepeat)
             });
             try
@@ -401,7 +455,7 @@ namespace DiseaseMutationsApp.Pages
         private void AppendProvenance(StringBuilder sb)
         {
             var p = Runner.Parameters ?? CurrentParameters;
-            sb.AppendLine(GrnaCsvSchema.ProvenanceLine(p.SpacerSize, p.SeedStart, p.SeedEnd, p.SnpPos, p.MismatchPos, p.Repeat));
+            sb.AppendLine(GrnaCsvSchema.ProvenanceLine(p.SpacerSize, p.SeedStart, p.SeedEnd, p.SnpPos, p.MismatchPos, p.Repeat, p.MismatchCount, p.EngineeredBases, p.ApplyRule));
         }
 
         private bool _oligoT7 = true;

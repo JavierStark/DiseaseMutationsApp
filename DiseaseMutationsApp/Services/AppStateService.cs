@@ -13,16 +13,22 @@ namespace DiseaseMutationsApp.Services
     {
         // ===== Index Page State =====
         public string? IndexHgvsInput { get; set; }
-        public int IndexGRnaSize { get; set; } = 28;
+        public int IndexGRnaSize { get; set; } = gRNA.SpacerFinder.DefaultSpacerSize;
         public int IndexSeedStart { get; set; } = 10;
         public int IndexSeedEnd { get; set; } = 17;
         /// <summary>Which 5' context the spacers are folded with while screening.</summary>
         public RepeatMode IndexRepeatMode { get; set; } = RepeatMode.Default;
         /// <summary>The typed direct repeat, used when <see cref="IndexRepeatMode"/> is Custom.</summary>
         public string? IndexCustomRepeat { get; set; }
-        /// <summary>Substitution rule: position of the variant and of the engineered mismatch, from the spacer's 3' end (1 = last letter).</summary>
-        public int IndexSnpPos { get; set; } = 3;
-        public int IndexMismatchPos { get; set; } = 4;
+        /// <summary>Substitution rule: position of the variant and of the first engineered mismatch, from the spacer's 3' end (1 = last letter).</summary>
+        /// <summary>False = the researcher opted out of the substitution rule (the rule section is hidden and no engineered spacer is built).</summary>
+        public bool IndexApplyRule { get; set; } = true;
+        public int IndexSnpPos { get; set; } = gRNA.SpacerFinder.DefaultSnpPosition;
+        public int IndexMismatchPos { get; set; } = gRNA.SpacerFinder.DefaultMismatchPosition;
+        /// <summary>How many engineered mismatches (1 or 2); with 2 the next position after <see cref="IndexMismatchPos"/> is engineered too.</summary>
+        public int IndexMismatchCount { get; set; } = gRNA.SpacerFinder.DefaultMismatchCount;
+        /// <summary>Engineered base table: for each sequence base A, C, G, U the guide base (editable; reset restores the default).</summary>
+        public Dictionary<char, char> IndexEngineeredBases { get; set; } = new() { ['A'] = 'A', ['G'] = 'A', ['C'] = 'C', ['U'] = 'C' };
         /// <summary>List every dbSNP allele and RefSeqGene record of an rsID, not only the relevant ones.</summary>
         public bool IndexShowAllAlleles { get; set; }
         /// <summary>Replaced wholesale (never mutated in place) so a render never sees a half-built list.</summary>
@@ -77,7 +83,7 @@ namespace DiseaseMutationsApp.Services
         {
             // Clear Index state
             IndexHgvsInput = null;
-            IndexGRnaSize = 28;
+            IndexGRnaSize = gRNA.SpacerFinder.DefaultSpacerSize;
             IndexSeedStart = 10;
             IndexSeedEnd = 17;
             IndexRepeatMode = RepeatMode.Default;
@@ -101,7 +107,7 @@ namespace DiseaseMutationsApp.Services
         public void ClearIndexState()
         {
             IndexHgvsInput = null;
-            IndexGRnaSize = 28;
+            IndexGRnaSize = gRNA.SpacerFinder.DefaultSpacerSize;
             IndexSeedStart = 10;
             IndexSeedEnd = 17;
             IndexRepeatMode = RepeatMode.Default;

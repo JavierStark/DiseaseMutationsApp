@@ -108,7 +108,7 @@ public class SpecialRuleNoticeTests
         {
             Assert.That(notice, Does.Contain(which));
             Assert.That(notice, Does.Contain("position 1 of NG_000007.3 (1000 bases)"));
-            Assert.That(notice, Does.Contain("at least 2 and 25 bases"));
+            Assert.That(notice, Does.Contain("at least 8 and 19 bases"));
             Assert.That(notice, Does.Contain("ordinary ranking is shown instead"));
         });
     }
@@ -116,6 +116,6 @@ public class SpecialRuleNoticeTests
     [Test]
     public void TheNoticeFollowsTheSpacerSize()
     {
-        Assert.That(Main.specialRuleNotice(Sub(5), 100, 20, false, false)!.Value, Does.Contain("at least 2 and 17 bases"));
+        Assert.That(Main.specialRuleNotice(Sub(5), 100, 20, false, false)!.Value, Does.Contain("at least 8 and 11 bases"));
     }
 }

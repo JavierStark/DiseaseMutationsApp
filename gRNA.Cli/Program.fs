@@ -28,9 +28,9 @@ Usage:
   grna resolve <rsID> [<rsID> ...] [--all-alleles]
   grna disease <name | OMIM number | MONDO id> [--list] [--pick 1] [--subtypes] [--min-significance pathogenic-likely|pathogenic|any]
                                               [--format rs|csv|tsv|json] [--out file]
-  grna design --hgvs <HGVS> [--spacer 28] [--seed 10-17] [--repeat default|none|<RNA>] [--complement] [--format csv|json|tsv] [--out file]
-  grna design --input <list.txt|session.json> --out <report.csv> [--spacer 28] [--seed 10-17] [--repeat default|none|<RNA>] [--complement] [--concurrency 2] [--all-alleles]
-                                      [--snp-pos 3] [--mismatch-pos 4]
+  grna design --hgvs <HGVS> [--spacer 23] [--seed 10-17] [--repeat default|none|<RNA>] [--complement] [--format csv|json|tsv] [--out file]
+  grna design --input <list.txt|session.json> --out <report.csv> [--spacer 23] [--seed 10-17] [--repeat default|none|<RNA>] [--complement] [--concurrency 2] [--all-alleles]
+                                      [--snp-pos 9] [--mismatch-pos 10] [--mismatches 1|2] [--bases A>A,G>A,C>C,U>C] [--no-rule]
   grna fold <RNA sequence>
   grna pool --guides <report.csv> [--capacity 5] [--plate 96|384] [--model auto|2df|2dm|3d] [--out plan.csv]
   grna pool --count <V>          [--capacity 5] [--plate 96|384] [--model auto|2df|2dm|3d] [--out plan.csv]
@@ -80,7 +80,7 @@ let private allowed =
         [ "doctor", (Set.empty, set [ "network"; "help" ])
           "resolve", (Set.empty, set [ "all-alleles"; "help" ])
           "disease", (set [ "pick"; "min-significance"; "format"; "out" ], set [ "list"; "subtypes"; "help" ])
-          "design", (set [ "hgvs"; "input"; "spacer"; "seed"; "repeat"; "format"; "out"; "concurrency"; "snp-pos"; "mismatch-pos" ], set [ "complement"; "all-alleles"; "help" ])
+          "design", (set [ "hgvs"; "input"; "spacer"; "seed"; "repeat"; "format"; "out"; "concurrency"; "snp-pos"; "mismatch-pos"; "mismatches"; "bases" ], set [ "complement"; "all-alleles"; "no-rule"; "help" ])
           "fold", (Set.empty, set [ "help" ])
           "pool", (set [ "guides"; "count"; "capacity"; "plate"; "model"; "out" ], set [ "help" ])
           "export", (set [ "format"; "out"; "top"; "dr"; "custom5"; "custom3"; "namespace"; "date" ], set [ "t7"; "frida"; "biobricks"; "help" ]) ]
@@ -270,7 +270,7 @@ let private jsonOf (rows: DesignRow list) =
 let private csvOf (rows: DesignRow list) (rule: Main.SpecialRuleOptions) (repeat: string) (spacer, seedS, seedE) (includeHeader: bool) =
     let sb = StringBuilder()
     if includeHeader then
-        sb.AppendLine(ReportSchema.provenanceWithRuleAndRepeat rule.SnpPos rule.MismatchPos repeat spacer seedS seedE) |> ignore
+        sb.AppendLine(ReportSchema.provenanceWithRuleAndRepeat rule repeat spacer seedS seedE) |> ignore
         sb.AppendLine ReportSchema.header |> ignore
     for r in rows do
         for g in r.Result.gRNA do
@@ -307,7 +307,7 @@ let design (args: Args) (ct: CancellationToken) : Task<int> =
         let sessionSpacer = session |> Option.bind (fun (_, sp, _, _) -> sp)
         let sessionSeed = session |> Option.bind (fun (_, _, sd, _) -> sd)
         let sessionRepeat = session |> Option.bind (fun (_, _, _, rp) -> rp)
-        let spacer = intOpt args "spacer" (defaultArg sessionSpacer 28)
+        let spacer = intOpt args "spacer" (defaultArg sessionSpacer SpacerFinder.DefaultSpacerSize)
         let seedS, seedE = parseSeed (defaultArg (opt args "seed") (defaultArg sessionSeed "10-17"))
         // Same bounds as the library and the web app (spacer 18-60, seed inside the spacer); a GrnaInputException ends as exit 2.
         Main.validateSpacerParameters spacer seedS seedE
@@ -317,10 +317,14 @@ let design (args: Args) (ct: CancellationToken) : Task<int> =
             | r when r.Equals("default", StringComparison.OrdinalIgnoreCase) -> SpacerFinder.scaffold
             | r when r.Equals("none", StringComparison.OrdinalIgnoreCase) -> ""
             | r -> SpacerFinder.normaliseRepeat r
-        // Where the substitution rule puts the variant and its extra mismatch, counted from the spacer's 3' end (1 = last letter).
+        // Where the substitution rule puts the variant and its engineered mismatches, counted from the spacer's 3' end (1 = last
+        // letter): --mismatch-pos is the first one, --mismatches 2 adds the next, --bases is the "sequence base > guide base" table.
         let rule : Main.SpecialRuleOptions =
             { SnpPos = intOpt args "snp-pos" Main.defaultSpecialRule.SnpPos
-              MismatchPos = intOpt args "mismatch-pos" Main.defaultSpecialRule.MismatchPos }
+              MismatchPos = intOpt args "mismatch-pos" Main.defaultSpecialRule.MismatchPos
+              MismatchCount = intOpt args "mismatches" Main.defaultSpecialRule.MismatchCount
+              EngineeredBases = defaultArg (opt args "bases") Main.defaultSpecialRule.EngineeredBases
+              Enabled = not (args.Flags.Contains "no-rule") }
         Main.validateSpecialRule spacer rule
         let complement = args.Flags.Contains "complement"
         let concurrency = max 1 (min 4 (intOpt args "concurrency" 2))
@@ -368,8 +372,8 @@ let design (args: Args) (ct: CancellationToken) : Task<int> =
         | _ -> ()
         // Rows made with another substitution rule would be mixed with these: refuse, like a different spacer or seed.
         match existingLines |> Array.tryHead |> Option.bind ReportSchema.tryParseRule with
-        | Some (sn, mm) when (sn, mm) <> (rule.SnpPos, rule.MismatchPos) ->
-            raise (BadArgs(sprintf "'%s' was made with --snp-pos %d --mismatch-pos %d, not --snp-pos %d --mismatch-pos %d. Use a new --out file or the same positions." out.Value sn mm rule.SnpPos rule.MismatchPos))
+        | Some earlier when not (ReportSchema.sameRule earlier rule) ->
+            raise (BadArgs(sprintf "'%s' was made with another substitution rule (%s), not %s. Use a new --out file or the same --snp-pos, --mismatch-pos, --mismatches and --bases." out.Value (ReportSchema.ruleToken earlier) (ReportSchema.ruleToken rule)))
         | _ -> ()
         let alreadyDone =
             existingLines

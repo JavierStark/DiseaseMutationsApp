@@ -82,32 +82,57 @@ let row (rsId: string option) (hgvs: string) (sequenceType: string) (isComplemen
 /// How the direct repeat is written in a provenance line: "none" for the spacer alone, otherwise its RNA sequence.
 let repeatToken (repeat: string) = if repeat = "" then "none" else repeat
 
+/// How a rule is written in a provenance line, e.g. "variant at N-9, mismatch at N-10 and N-11, bases A>A G>A C>C U>C".
+let ruleToken (rule: SpacerFinder.SpecialRuleOptions) =
+  if not rule.Enabled then "off" else
+    let positions = SpacerFinder.mismatchPositions rule |> List.map (sprintf "N-%d") |> String.concat " and "
+    let bases =
+        try SpacerFinder.parseEngineeredBases rule.EngineeredBases |> Map.toList |> List.map (fun (t, g) -> sprintf "%c>%c" t g) |> String.concat " "
+        with _ -> "(older report: the letter was flipped to A, or U)"
+    sprintf "variant at N-%d, mismatch at %s, bases %s" rule.SnpPos positions bases
+
 /// A leading comment line recording the parameters so a report can be reproduced. `repeat` is the 5' context the
 /// spacers were folded with while screening ("" = the spacer alone).
-let provenanceWithRuleAndRepeat (snpPos: int) (mismatchPos: int) (repeat: string) (spacer: int) (seedStart: int) (seedEnd: int) =
+let provenanceWithRuleAndRepeat (rule: SpacerFinder.SpecialRuleOptions) (repeat: string) (spacer: int) (seedStart: int) (seedEnd: int) =
     // After the three parameters the line records the fixed choices behind the numbers, so a report can be reproduced and read later.
-    // "variant at N-3" means the variant is the 3rd letter from the spacer's 3' end (N = spacer length).
-    sprintf "# Diana report; spacer=%d; seed=%d-%d; generated=%s; gc-score-range=40-60; special-rule=variant at N-%d, mismatch at N-%d; repeat=%s; off-target index=GRCh38 genome (not a transcriptome)"
-        spacer seedStart seedEnd (DateTime.UtcNow.ToString("yyyy-MM-ddTHH:mm:ssZ")) snpPos mismatchPos (repeatToken repeat)
+    // "variant at N-9" means the variant is the 9th letter from the spacer's 3' end (N = spacer length).
+    sprintf "# Diana report; spacer=%d; seed=%d-%d; generated=%s; gc-score-range=40-60; special-rule=%s; repeat=%s; off-target index=GRCh38 genome (not a transcriptome)"
+        spacer seedStart seedEnd (DateTime.UtcNow.ToString("yyyy-MM-ddTHH:mm:ssZ")) (ruleToken rule) (repeatToken repeat)
 
 /// The provenance line with the default direct repeat (the 36 nt Cas13 scaffold).
-let provenanceWithRule (snpPos: int) (mismatchPos: int) (spacer: int) (seedStart: int) (seedEnd: int) =
-    provenanceWithRuleAndRepeat snpPos mismatchPos SpacerFinder.scaffold spacer seedStart seedEnd
+let provenanceWithRule (rule: SpacerFinder.SpecialRuleOptions) (spacer: int) (seedStart: int) (seedEnd: int) =
+    provenanceWithRuleAndRepeat rule SpacerFinder.scaffold spacer seedStart seedEnd
 
-/// The provenance line with the default rule (variant 3rd, mismatch 4th from the 3' end).
+/// The provenance line with the default rule (variant 9th, mismatches 10th and 11th from the 3' end).
 let provenanceWithRepeat (repeat: string) (spacer: int) (seedStart: int) (seedEnd: int) =
-    provenanceWithRuleAndRepeat SpacerFinder.DefaultSnpPosition SpacerFinder.DefaultMismatchPosition repeat spacer seedStart seedEnd
+    provenanceWithRuleAndRepeat SpacerFinder.defaultSpecialRule repeat spacer seedStart seedEnd
 
 /// The provenance line with the default rule and the default direct repeat.
 let provenance (spacer: int) (seedStart: int) (seedEnd: int) =
     provenanceWithRepeat SpacerFinder.scaffold spacer seedStart seedEnd
 
-/// Reads the rule positions back from a provenance line; reports made before the rule was recorded used the default.
-let tryParseRule (line: string) : (int * int) option =
-    let m = System.Text.RegularExpressions.Regex.Match(line, @"^#\s*Diana report;.*special-rule=variant at N-(\d+), mismatch at N-(\d+)")
-    if m.Success then Some(int m.Groups.[1].Value, int m.Groups.[2].Value)
-    elif line.StartsWith "# Diana report;" then Some(SpacerFinder.DefaultSnpPosition, SpacerFinder.DefaultMismatchPosition)
+/// Reads the rule back from a provenance line. Reports made before the rule was recorded used a single mismatch at the 4th
+/// letter with the variant 3rd, and flipped the letter to A (U when already A); those come back as variant 3, mismatch 4,
+/// one mismatch and an empty base table, which differs from every current rule.
+let tryParseRule (line: string) : SpacerFinder.SpecialRuleOptions option =
+    let legacy = { SpacerFinder.defaultSpecialRule with SnpPos = 3; MismatchPos = 4; MismatchCount = 1; EngineeredBases = "" }
+    let off = System.Text.RegularExpressions.Regex.IsMatch(line, @"^#\s*Diana report;.*special-rule=off")
+    let m = System.Text.RegularExpressions.Regex.Match(line, @"^#\s*Diana report;.*special-rule=variant at N-(\d+), mismatch at N-(\d+)(?: and N-(\d+))?(?:, bases ((?:[ACGU]>[ACGU] ?)+))?")
+    if off then Some { SpacerFinder.defaultSpecialRule with Enabled = false }
+    elif m.Success then
+        Some { SpacerFinder.defaultSpecialRule with
+                 SnpPos = int m.Groups.[1].Value
+                 MismatchPos = int m.Groups.[2].Value
+                 MismatchCount = (if m.Groups.[3].Success then 2 else 1)
+                 EngineeredBases = (if m.Groups.[4].Success then m.Groups.[4].Value.Trim() else "") }
+    elif line.StartsWith "# Diana report;" then Some legacy
     else None
+
+/// True when two rules put the same letters in the same places (the base tables are compared as tables, not as text).
+let sameRule (a: SpacerFinder.SpecialRuleOptions) (b: SpacerFinder.SpecialRuleOptions) =
+    let table (r: SpacerFinder.SpecialRuleOptions) =
+        try SpacerFinder.parseEngineeredBases r.EngineeredBases |> Map.toList with _ -> []
+    a.Enabled = b.Enabled && (not a.Enabled || a.SnpPos = b.SnpPos) && (not a.Enabled || a.MismatchPos = b.MismatchPos && a.MismatchCount = b.MismatchCount && table a = table b)
 
 /// Reads spacer and seed back from a provenance line written by `provenance`; None when the line is not one.
 let tryParseProvenance (line: string) : (int * int * int) option =
