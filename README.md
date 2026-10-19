@@ -416,8 +416,8 @@ prefix and suffix that you type yourself.
 
 The full account, with what each claim rests on, is in [docs/validation.md](docs/validation.md). In short:
 
-- **Automated tests**: 1,124 unit and component test cases (NUnit, bUnit; no container, no network; 1,111 pass and 13 skip
-  themselves because they need the live services or ViennaRNA) and 70 browser tests (Playwright, with axe-core accessibility
+- **Automated tests**: 1,160 unit and component test cases (NUnit, bUnit; no container, no network; 1,147 pass and 13 skip
+  themselves because they need the live services or ViennaRNA) and 73 browser tests (Playwright, with axe-core accessibility
   scans), none failing. See [Testing](#testing).
 - **Hand checks against the real sequences**: the sickle-cell (rs334) and cystic fibrosis F508del designs were rebuilt by hand from
   the NCBI sequences ([docs/validation.md](docs/validation.md) section 4); the real Bowtie index, ViennaRNA and the Docker routes are
@@ -514,7 +514,7 @@ dotnet restore --locked-mode
 dotnet test DiseaseMutationsAppTests
 ```
 
-The unit suite has 1,124 test cases (1,111 pass, 13 skip themselves because they need the live services or
+The unit suite has 1,160 test cases (1,147 pass, 13 skip themselves because they need the live services or
 ViennaRNA) and needs no container and no network: the library's pure logic (scoring, parsing, validation, pooling and decoding, CSV
 round trips), the `grna` CLI driven in-process (exit codes, option checking, resume), the `AnalysisRunner` (concurrency bound,
 cancellation, per-variant cancel, timeouts, retry) against a fake pipeline, and the components with bUnit, including markup checks
@@ -522,7 +522,7 @@ for the accessibility requirements. `RnaFoldIntegrationTests` run the real Vienn
 otherwise. The GitLab pipeline (`.gitlab-ci.yml`) runs the pinning gate (which also covers the CI job images) and these tests,
 publishes the coverage report, and builds no images, so run `grna doctor` in the locally built image yourself.
 
-**Browser tests.** `DiseaseMutationsApp.E2E` has 70 tests that serve the real web app with a deterministic fake pipeline (no
+**Browser tests.** `DiseaseMutationsApp.E2E` has 73 tests that serve the real web app with a deterministic fake pipeline (no
 Bowtie, ViennaRNA or NCBI needed) and drive Chromium with Playwright: runs, cancel and retry, limits, permalinks, CSV downloads,
 the disease search and its hand-off to the Builder, the pooling plate map and decoder, dark/light theme, a 375 px phone viewport,
 and an axe-core scan (WCAG 2.0 to 2.2 A/AA) of every page state. They skip themselves, with the reason, when Chromium is not
