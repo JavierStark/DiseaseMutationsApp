@@ -124,6 +124,8 @@ printf 'rs334\n' | grna design --input /dev/stdin --format json     # stdin inpu
 grna fold GAUUUAGACUACCCCAAAAACGAAGGGGACUAAAAC                 # 2 lines: sequence, then dot-bracket<TAB>energy
 grna pool --count 100 --capacity 5 --plate 96 --model auto    # plate plan CSV to stdout, summary on stderr
 grna pool --guides report.csv --out plan.csv                  # plan from a design report (one guide per variant)
+grna export session.json --format genbank --t7 --out guides.gb   # shortlist + construct of a saved web session (offline); --format sbol for SBOL 3
+grna export report.csv --top 1 --frida --out guides.gb           # best guide per variant of a design report
 ```
 
 Inputs to `design`: HGVS notations (`g.`, `m.`, `n.`, and `c.` on an `NM_`/`XM_` transcript, which is converted and reported with a `note`)
@@ -159,9 +161,9 @@ session `.json`. Exact formats, output schemas, resume rules and pooling details
 12. **`design` needs network** (NCBI E-utilities for sequences, dbSNP for rsIDs). Set `GRNA_NCBI_API_KEY` and
     `GRNA_NCBI_CONTACT` for large batches (the wrappers forward them; `docker run` needs `-e`). `disease` needs the network too
     (Monarch and NCBI ClinVar).
-13. **The CLI is not the whole app.** The complete-gRNA builder (direct repeat, Frida and BioBricks adapters, custom flanks),
-    the oligo CSV with a T7 promoter, FASTA export, the shortlist and the plate-map page are web-app features; `grna` has none
-    of them. To fold a built construct, pass its RNA to `grna fold`. A `design --format rs` list from `grna disease` leaves out
+13. **The CLI is not the whole app.** The interactive complete-gRNA builder, the oligo CSV, FASTA export, the shortlist and the
+    plate-map page are web-app features. The one CLI route to a built construct is `grna export` (GenBank or SBOL 3, from a saved
+    session or a design report, with `--frida`, `--biobricks`, `--custom5/3`, `--dr`, `--t7`; offline). To fold a built construct, pass its RNA to `grna fold`. A `design --format rs` list from `grna disease` leaves out
     ClinVar records that have no rsID; use `grna disease ... --format csv` to see their genomic HGVS.
 14. **Counts from `disease` change.** ClinVar and Monarch are read live: on 2026-10-18 `grna disease 603903` gave 62 distinct
     rsIDs (80 records read). Never quote a count without running the command.

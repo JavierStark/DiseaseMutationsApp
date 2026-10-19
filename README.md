@@ -125,7 +125,8 @@ The guide design page, and the home page of the app (`/`).
   it as FASTA ([below](#the-complete-grna-direct-repeat-adapters-custom-flanks)).
 - **Shortlist.** Pick spacers across variants, send them to the Pooling page without a CSV round trip, or download an
   order-ready **oligo CSV** (DNA, optional T7 promoter, top/bottom pairs, plate wells addressed like the pooling plan; columns
-  `Well, Name, Oligo, Sequence 5'-3', Length, Restriction sites`) or the complete gRNAs as FASTA.
+  `Well, Name, Oligo, Sequence 5'-3', Length, Restriction sites`), the complete gRNAs as FASTA, or the same constructs as a
+  **GenBank** file or an **SBOL 3** document (see [Standards and interoperability](#standards-and-interoperability)).
 - **Runs.** Cancellable (whole run or one variant), bounded-parallel, and they survive navigating to another page. A refresh
   restores your inputs (never results: download the CSV report to keep them).
 - **Files and sessions.** Load inputs from a plain list, a Diana CSV report or a saved session; *Save session* downloads a
@@ -196,7 +197,16 @@ grna design --hgvs 'NC_000017.11:g.7674220C>T' --snp-pos 3 --mismatch-pos 4   # 
 grna fold "GAUUUAGACUACCCC..."
 grna pool --guides report.csv --capacity 5 --plate 96 --model auto --out plan.csv
 grna pool --count 100 --capacity 5 --plate 96            # plan from a number of guides
+grna export session.json --format genbank --t7 --out guides.gb   # the shortlist of a saved web session as GenBank (or --format sbol)
+grna export report.csv --top 1 --frida --biobricks --format sbol --out guides.xml   # best guide per variant of a design report
 ```
+
+`grna export` writes the complete guides, the DNA you would order, as a GenBank file or an SBOL 3 document. It reads either a
+session saved by the web app (the shortlist and the construct you built there) or a `design` report (the first `--top` Mutated
+guides of each variant and strand; `--dr`, `--frida`, `--biobricks`, `--custom5` and `--custom3` build the construct, as in the
+Complete gRNA card, and `--t7` puts the T7 promoter in front). It needs no Bowtie, ViennaRNA or network, so it runs anywhere the
+CLI does. `--namespace` sets the URL SBOL identities start with (default: the team wiki address) and `--date` fixes the GenBank
+date for reproducible files.
 
 `design --format csv` emits the same schema as the web export, so a CLI report pastes straight into the Pooling tab. Results go
 to stdout and progress and warnings to stderr. Exit codes distinguish bad input (2), a missing native dependency (3) and an
@@ -223,14 +233,25 @@ Diana reads and writes existing formats instead of inventing new ones:
 | **GRCh38** [9] | The reference for the offtarget search (Bowtie 1.3.1 index `GRCh38_noalt_as`) and for coordinates. |
 | **BioBrick RFC[10]** [19] and **iGEM Type IIS Assembly RFC[1000]** [20] | Each guide gets a compatible / not compatible badge per standard, from the enzymes the standard excludes (EcoRI, NotI, XbaI, SpeI, PstI; BsaI, SapI). Diana checks the internal sites of the DNA you would order and also warns, by name, about other cloning enzymes such as BsmBI and BbsI ([Cloning checks](#cloning-checks-enzyme-warnings-and-assembly-standards)). It does not check a prefix and suffix that you type yourself; the BioBricks adapter in the Builder writes the RFC[10] prefix and suffix [18] (EcoRI, NotI, XbaI/SpeI, PstI). |
 | **FASTA** | Sequences copied from the Builder and the complete gRNAs (DNA or RNA) exported from the shortlist. |
+| **GenBank flat file** (INSDC feature table [21]) | The shortlist, or `grna export`, writes one record per guide: the DNA that would be ordered (T7 promoter if ticked, adapters, custom flanks, direct repeat, spacer) with each part as a feature (`regulatory` promoter, `repeat_region` direct repeat, `misc_feature` for the rest), the variant, strand, spacer and scores in the COMMENT, and the sequence in ORIGIN. |
+| **SBOL 3** [22] | The same construct as an RDF/XML document: one `Component` (DNA, linear, role *engineered region*) and one `Sequence` per guide, and a `SequenceFeature` with a `Range` for each part, using Sequence Ontology roles (T7 promoter `SO:0001207`, direct repeat `SO:0000314`, engineered region `SO:0000804`). Identities start with a namespace you can set. |
 | **Dot-bracket notation** (ViennaRNA [2, 3]) and **FORNA** [4] | The predicted structure is shown as dot-bracket and drawn with the FORNA viewer. |
 | **CSV, TSV, JSON** | The CSV report schema is shared by the web export, `grna design` and the Pooling import (documented in the CLI reference); `design` can also write TSV and JSON. Session files are JSON; oligo orders and pooling plans are CSV. Every CSV field that starts with `=`, `+`, `-` or `@` is neutralised so a spreadsheet does not run it. |
 
-**Not supported, stated plainly:** Diana does not read or write **SBOL**, and it does not register parts in the iGEM Registry; a
-guide leaves the tool as FASTA, an oligo CSV or the CSV report. The built-in direct repeat is the LwaCas13a one; other Cas13
+**How the GenBank and SBOL files were checked.** The unit tests check the layout (the parts tile the sequence with no gap or
+overlap and equal the DNA of the oligo export), the GenBank columns and the SBOL structure. `ExternalValidatorTests` also reads the
+files with Biopython (`SeqIO`) and pySBOL3, whose validator reports no error and no warning, and compares sequences and part
+coordinates with the layout; it skips itself when those Python packages are absent (see [docs/validation.md](docs/validation.md)).
+The files describe a computational design; opening them in a particular editor (Benchling, SnapGene) is on the
+[manual test plan](docs/manual-test-plan.md), not claimed here.
+
+**Not supported, stated plainly:** Diana does not read SBOL or GenBank files back in, it does not register parts in the iGEM
+Registry, and the export covers one guide per record (no tandem arrays). The built-in direct repeat is the LwaCas13a one; other Cas13
 repeats must be typed in. For use from code, the F# library is packable as the NuGet package `gRNA` (not published) and is
 documented in [docs/using-the-library.md](docs/using-the-library.md); [examples/standalone.fsx](examples/standalone.fsx) runs it
-from F# Interactive. There is no HTTP design API: the integration points are the CLI, the files above and the library.
+from F# Interactive. There is no HTTP design API: the integration points are the CLI (`grna design`, `grna export`, ...), the files
+above and the library. The logic lives in the F# library with no web or UI dependency (the web app and the CLI are two front ends
+over it), so putting an HTTP layer in front of it is a thin wrapper that this project has not built.
 
 ### Reading the CSV report
 
@@ -604,6 +625,8 @@ are stated in [THIRD-PARTY-NOTICES.md](THIRD-PARTY-NOTICES.md).
 18. iGEM Registry of Standard Biological Parts. *Help:BioBrick Prefix and Suffix*. https://parts.igem.org/Help:BioBrick_Prefix_and_Suffix (accessed 19 October 2026)
 19. iGEM Registry of Standard Biological Parts. *Help:Standards/Assembly/RFC10* (BioBrick RFC[10], developed by T. Knight). https://parts.igem.org/Help:Standards/Assembly/RFC10 (accessed 19 October 2026)
 20. iGEM Registry of Standard Biological Parts. *Help:Standards/Assembly/Type IIS* (iGEM Type IIS Assembly RFC[1000]). https://parts.igem.org/Help:Standards/Assembly/Type_IIS (accessed 19 October 2026)
+21. DDBJ, EMBL-EBI/ENA and NCBI/GenBank (INSDC). *The DDBJ/ENA/GenBank Feature Table Definition*, version 11.4 (April 2026). https://www.insdc.org/submitting-standards/feature-table/ (accessed 19 October 2026)
+22. Baig, H., Fontanarrosa, P., Kulkarni, V., McLaughlin, J. A., Vaidyanathan, P., Bartley, B., Beal, J., Crowther, M., Gorochowski, T. E., Grünberg, R., Misirli, G., Scott-Brown, J., Oberortner, E., Wipat, A., & Myers, C. J. (2020). Synthetic biology open language (SBOL) version 3.0.0. *Journal of Integrative Bioinformatics*, 17(2-3), 20200017. https://doi.org/10.1515/jib-2020-0017
 
 ## Future enhancements
 
@@ -620,7 +643,8 @@ are stated in [THIRD-PARTY-NOTICES.md](THIRD-PARTY-NOTICES.md).
   28 / 10-17 defaults are fixed. Other Cas variants need their DRs, seed windows and mismatch positions verified against the
   literature first. The candidate table's fold columns use the screening repeat and no adapters; the Complete gRNA card re-folds the
   full construct.
-- **Pooling** tested against a real pooled screen, and SBOL export of designed guides.
+- **Pooling** tested against a real pooled screen.
+- **Exports.** Reading GenBank/SBOL back in, tandem-array records, restriction sites as features, and a Turtle serialisation of the SBOL.
 
 Not planned: additional genome assemblies (each adds ~4 GB to the image), authentication.
 

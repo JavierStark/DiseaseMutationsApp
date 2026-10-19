@@ -21,7 +21,9 @@ Status words: **automated** (a test fails if it breaks), **by hand** (a person r
 | A five-guide tandem transcript is processed by Cas13a | Wet lab: MT + 5G clearly above the no-Cas control | **lab**, partly (section 3) |
 | Guides tell the two alleles apart | Wet lab: not achieved with the placements tested | **not validated** (a negative result) |
 | The substitution rule improves allele discrimination | Not shown by the lab data | **not validated** |
-| The ranking order (offtargets, energy, GC, homopolymers) predicts guide activity | No lab data; the score is a rank, not a prediction | **not validated** |
+| The ranking order (offtargets, energy, GC, homopolymers) predicts guide activity | No lab data; the score is a rank, not a prediction. The order is a fixed priority list, not tunable weights; it is a default, not a constraint: the tables re-sort by any of nine columns, filters narrow them and any candidate can be shortlisted | **not validated** |
+| The GenBank and SBOL 3 exports are well formed and describe the construct that would be ordered | `ExportLayoutTests`, `GenBankExportTests`, `SbolExportTests`, `CliExportTests`, `ExportDownloadTests` (browser); `ExternalValidatorTests` reads the files with Biopython and pySBOL3 (section 2a) | automated; the external check needs the two Python packages and skips itself without them |
+| An editor such as Benchling or SnapGene opens the files as expected | Listed in the manual test plan; not run by the automated suite | **not validated** here |
 | The pooling layout works on a real screen | No pooled screen was run | **not validated** |
 | The Frida and BioBricks adapters keep Cas13 processing intact | Not assessed by the program or by a test | **not validated** |
 
@@ -56,6 +58,32 @@ Not covered by automation (and listed in the [manual test plan](manual-test-plan
 install on each operating system, and screen readers. The GitLab pipeline runs the pinning gate and the unit tests; it does not
 build the image.
 
+## 2a. The GenBank and SBOL 3 exports
+
+What is checked, and by what:
+
+- **Layout** (`ExportLayoutTests`): for every combination of direct repeat, Frida, BioBricks, custom flanks and T7 (64 combinations)
+  the parts tile the sequence from 1 to the last base with no gap or overlap, and the DNA equals what the older oligo export
+  builds by an independent path (`OligoExport.Template`). The F# and C# construct builders agree on every combination
+  (`ConstructParityTests`).
+- **GenBank** (`GenBankExportTests`): the LOCUS columns, ORIGIN in blocks of 10 and lines of 60 numbered from 1, feature keys and
+  locations equal to the layout, lines of at most 79 characters, several records, hostile text (quotes, newlines, tabs, non-ASCII).
+- **SBOL 3** (`SbolExportTests`): one Component and Sequence per guide, ranges 1-based and inclusive equal to the layout,
+  valid and unique displayIds, identities under the namespace, escaped markup.
+- **Reference libraries** (`ExternalValidatorTests`, script `Validators/validate_export.py`): Biopython's `SeqIO` parses the GenBank
+  file (sequence, topology, division, feature coordinates, write-and-reread unchanged) and pySBOL3 reads the SBOL file, its
+  validator reports no error and no warning, sequences and ranges match, and it survives pySBOL3's own write-and-reread. Run on
+  2026-10-19 with Biopython 1.88 and sbol3 1.2.0 (rdflib 6.3.2, pyshacl 0.28.1) on Python 3.14.3. The test skips itself when Python or
+  either package is missing, as on the GitLab runners, so a green CI run does **not** include this check.
+- **Front ends**: `CliExportTests` (in-process `grna export`, every bad-input path) and `ExportDownloadTests` (the buttons in a
+  real browser, files read back and compared).
+
+Not checked: opening the files in Benchling, SnapGene or an SBOL tool other than pySBOL3 (manual test plan, rows 2.18 and 2.19);
+that the Sequence Ontology and INSDC terms are the ones a given repository prefers (the roles used are the T7 promoter, direct
+repeat and engineered region; the Sequence Ontology has no term for a Cas13 crRNA spacer, so spacer and adapters share the
+generic *engineered region*); the lab constructs of the team were designed in Benchling and are not claimed to be reproduced by
+this export (they also carry a terminator, which the export does not add).
+
 ## 3. Wet-lab evidence
 
 The wet lab used cystic fibrosis (*CFTR*) as its model disease. The experiments and their figures are on the team wiki
@@ -70,7 +98,7 @@ they say about the software, with their limits.
 | In situ transcription from DNA templates (Results 2, Fig. 6, 7) | The guide supplied as DNA with a T7 promoter instead of purified RNA | 1X template: signal up to 379.8 % of the RNA control at its peak; 2X lower | Supports the **DNA oligo with T7 promoter** that the oligo export produces; it is the same template architecture (T7 promoter, DR, spacer; the lab constructs also carry a terminator, which the export does not add) | Duplicate, high standard deviation at 1X; the lab constructs were designed in Benchling, and we do not claim they were generated by the export |
 | Tandem array of five guides (Results 4, Fig. 12; Engineering cycle 4) | One transcript with five DR-spacer units, one of them complementary to the target | Signal clearly above the no-Cas control: Cas13a processes the array to some degree | Supports the idea behind K guides per tube in the pooling layout | Technical duplicate. It is **not** known whether all five positions are released or only the first; the single-position constructs (cycle 4, iteration 2) have no result yet |
 
-What the lab data do **not** show: that the ranking weights pick better guides, that the substitution rule discriminates alleles,
+What the lab data do **not** show: that the ranking's priority order picks better guides, that the substitution rule discriminates alleles,
 that the pooling layout works on a real pooled screen, or that the Frida and BioBricks adapters preserve processing. The default
 limit of K = 5 guides per tube is a working assumption supported only by the tandem experiment above.
 
@@ -111,8 +139,8 @@ memory-mapped and reclaimable).
 ## 6. Known limits
 
 1. Offtargets are counted against the genome, not the transcriptome.
-2. The substitution rule's positions are not settled in the literature or in the lab; the ranking weights and the GC range are
-   heuristics, and the K = 5 limit is a working assumption.
+2. The substitution rule's positions are not settled in the literature or in the lab; the ranking's priority order and the GC range are
+   heuristics (the order is fixed in code, but the user can re-sort and filter every table), and the K = 5 limit is a working assumption.
 3. Allele discrimination is a count of differing letters. It ignores their position and type (G-U wobble pairs).
 4. Only the LwaCas13a direct repeat is built in, and no protospacer-flanking rule or target-site accessibility is modelled.
 5. A typed HGVS has no known gene orientation; `c.` positions work on transcripts only.

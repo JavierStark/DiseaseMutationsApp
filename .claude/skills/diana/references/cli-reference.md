@@ -6,7 +6,7 @@ Source of truth: `gRNA.Cli/Program.fs`. Everything here was checked against the 
 ## Contents
 
 - [Global behaviour](#global-behaviour): argument parsing, streams, exit codes, environment, cancellation
-- [`doctor`](#grna-doctor) · [`resolve`](#grna-resolve) · [`disease`](#grna-disease) · [`design`](#grna-design) · [`fold`](#grna-fold) · [`pool`](#grna-pool)
+- [`doctor`](#grna-doctor) · [`resolve`](#grna-resolve) · [`disease`](#grna-disease) · [`design`](#grna-design) · [`fold`](#grna-fold) · [`pool`](#grna-pool) · [`export`](#grna-export)
 - [Output formats](#output-formats): design CSV/TSV/JSON, pool plan CSV
 - [Scripting recipes](#scripting-recipes)
 
@@ -238,6 +238,31 @@ grna pool --count <V>     [--capacity 5] [--plate 96|384] [--model auto|2df|2dm|
 - `--guides` with any other file: every comma-separated item on every line is a guide label (deduplicated).
 - Guide count 1-100000. Invalid combinations exit 2. Pure computation: no network, no native tools, works on any OS.
 - stderr summary, e.g. `2D Fragmented: V=100 K=5 -> 40 wells (40 to prepare), each guide in 2`.
+
+## `grna export`
+
+```
+grna export <session.json | report.csv> [--format genbank|sbol] [--out file] [--t7] [--top 1] [--namespace <URL>] [--date yyyy-MM-dd]
+                                        [--dr lwa|none] [--frida] [--biobricks] [--custom5 <seq>] [--custom3 <seq>]
+```
+
+Writes the complete guides (the DNA that would be ordered) as a GenBank flat file (default) or an SBOL 3 document (RDF/XML).
+
+| Option | Default | Notes |
+|---|---|---|
+| positional file | | exactly one. A **session** (`.json` saved by the web app) exports its `shortlist` with its `construct`; a **design report** (CSV or TSV) exports the first `--top` `Mutated` rows of each variant and strand |
+| `--format` | `genbank` | `genbank` (alias `gb`) or `sbol` (alias `sbol3`) |
+| `--t7` | off | put the T7 promoter in front, as the oligo export does |
+| `--top` | 1 | report input only; with a session it is exit 2 |
+| `--dr`, `--frida`, `--biobricks`, `--custom5`, `--custom3` | `lwa`, off, off, empty, empty | build the construct from a report; **with a session file they are exit 2** (the session already holds the construct). `--dr` is `lwa` or `none`; custom text may only hold A, C, G, T, U |
+| `--namespace` | the team wiki address | SBOL only: absolute http/https URL that identities start with |
+| `--date` | today (UTC) | GenBank LOCUS date, for reproducible files |
+| `--out` | stdout | UTF-8 without BOM |
+
+- Pure computation: no network, no Bowtie, no ViennaRNA. Several guides give several GenBank records, or several Components in one SBOL document.
+- stderr gets one summary line, e.g. `exported 2 guides as GenBank (LwaCas13a DR + Frida, T7 promoter).`
+- Exit 2 for a missing or unreadable file, a file that is neither a session nor a design report, an empty shortlist, a bad option value or a spacer with letters other than A, C, G, T, U.
+- Tested in-process by `CliExportTests`; this section was not checked against the built Docker image.
 
 ## Output formats
 

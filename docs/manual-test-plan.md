@@ -57,6 +57,9 @@ Record every run in section 9. A step that was not run is written as "not run", 
 | 2.15 | Press **Get structure**, then **Show diagram** (do not press *Open in FORNA*) | Dot-bracket, minimum free energy, *Repeat hairpin* and *Spacer unpaired*; a warning if the repeat hairpin differs from the table row; the diagram is drawn in the page and the browser's network panel shows no request to the FORNA server |
 | 2.16 | Press **FASTA** on the card, then add several guides to the shortlist and use **Complete gRNAs (FASTA)** with and without **FASTA as RNA** | One record per guide, header `>variant[_C]\|spacer=...\|construct=...\|DNA\|<n>nt`, one-line sequence, U instead of T only when asked |
 | 2.17 | In the shortlist tick **T7 promoter** and **Top and bottom oligos**, press **Order CSV (DNA)**, then **Send to Pooling** | CSV with DNA oligo pairs behind `TAATACGACTCACTATA` and plate wells; the Pooling page opens with the shortlist as the guide list |
+| 2.18 | In the shortlist press **GenBank (.gb)**, then open the file in a sequence editor (SnapGene Viewer, Benchling import, ApE) | One record per guide; the T7 promoter (if ticked), adapters, direct repeat and spacer appear as separate annotated parts; the sequence equals the oligo CSV's top strand |
+| 2.19 | Press **SBOL 3 (.xml)** and open or import the file in an SBOL tool (for example SBOL Designer or SynBioHub, if it accepts SBOL 3) | One DNA component per guide with the same parts annotated; report which tool and version you used and whether it accepted SBOL 3 |
+| 2.20 | Save the session, then run `grna export session.json --format genbank` and `--format sbol` from the CLI | The same constructs as the buttons gave (same sequences), with nothing printed to stderr but one summary line |
 
 ## 2a. Disease variants (real Monarch and NCBI)
 

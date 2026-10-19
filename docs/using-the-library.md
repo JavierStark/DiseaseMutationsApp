@@ -131,6 +131,34 @@ read index, strand, reference, offset, sequence), `countAlignments`.
 ### `ReportSchema`
 `columns`, `header`, `row`, `provenance`: the CSV the web export, `grna design --format csv` and the Pooling parser share.
 
+### `Construct` and `Export` (module `gRNA.Construct`, `gRNA.Export`)
+Pure, with no native tool, network or file access, so they run anywhere the library does.
+
+`Construct` is the "complete guide": `parts spacer options` returns the ordered pieces (BioBricks adapter 5', Frida adapter 5',
+custom 5', direct repeat, spacer, custom 3', Frida 3', BioBricks 3'; each `{ Kind; Label; Rna }`), `build` joins them as RNA,
+`describe` names them, and `T7Promoter`, `Frida5/3`, `BioBricks5/3`, `drPresets` hold the data. The web app's `GuideConstruct` delegates here.
+
+`Export` writes a guide as the DNA that would be ordered. `layout options guide` returns the parts as 1-based inclusive
+`Segment`s (the T7 promoter first when `IncludeT7`); `toGenBank` and `toSbol3` both write from that one layout. `ExportGuide`
+holds the HGVS, optional rsID, strand, spacer and optional rank, score and offtargets; `ExportOptions` the construct, T7, the SBOL
+`Namespace` (default `Export.DefaultNamespace`) and the date for the GenBank LOCUS line (passed in, so the output is deterministic).
+
+```fsharp
+let guide : Export.ExportGuide =
+    { Hgvs = "NG_008690.2:g.5000A>T"; RsId = Some "rs334"; Complement = false
+      Spacer = "CAGAGCGCGCAGCAGCAGCAGCAGAAGC"; Rank = Some 1; Score = Some 1.0; Offtargets = Some 1 }
+let options = { Export.defaultOptions with IncludeT7 = true; Construct = { Construct.defaultOptions with Frida = true } }
+System.IO.File.WriteAllText("guide.gb", Export.toGenBank options [ guide ])      // one record per guide
+System.IO.File.WriteAllText("guide.xml", Export.toSbol3 options [ guide ])       // RDF/XML, SBOL 3
+```
+
+GenBank: `LOCUS` (SYN, linear), `COMMENT` (variant, strand, spacer, scores, "not validated experimentally"), `source`,
+`regulatory` (T7 promoter), `repeat_region` (direct repeat) and `misc_feature` (adapters, custom flanks, spacer) with `/label` and
+`/note`, `ORIGIN` in lower case. SBOL 3: per guide a `Component` (SBO:0000251 DNA, SO:0000987 linear, role SO:0000804), a `Sequence`
+(IUPAC DNA, `edam:format_1207`), and a `SequenceFeature` with an inline `Range` per part. Free text is reduced to printable ASCII,
+quotes are doubled in GenBank, and XML is written with `XmlWriter`, so a hostile HGVS cannot break either format. Bad spacers or
+an unusable namespace raise `GrnaInputException`. From C#, `OligoExport.ShortlistGenBank/ShortlistSbol` wrap these for a shortlist.
+
 ### `Pooling`
 `buildPlan model format guideCount wellCapacity`, `compareModels`, `bestModel`, `wellsForModel`, `repetitions`,
 `modelName`, `plate96`/`plate384`, and `decode plan positivePoolIds` which maps positive wells back to guides

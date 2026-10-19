@@ -295,6 +295,10 @@ part, and iGEM Type IIS Assembly RFC[1000] excludes BsaI and SapI.
   `TAATACGACTCACTATA` (the direct repeat begins with `G`, which becomes the +1 base), as a top and bottom pair ready to anneal, with
   plate wells addressed like the pooling plan. It adds no transcription terminator. The same built guide is available as FASTA, in DNA
   or RNA letters, with the bare spacer and the construct recipe in the header.
+* `Export` (and `grna export`) writes the same DNA as a GenBank flat file or an SBOL 3 document, with the T7 promoter, adapters,
+  custom flanks, direct repeat and spacer as annotated parts. The annotations record what Diana put there, nothing more: the file
+  says the design is computational and not experimentally validated, and the score it carries is the relative rank, not a prediction.
+  It describes the construct, not the genomic locus, and it adds no transcription terminator.
 
 *What is and is not validated.* The enzymes and their sites are standard sequences, and the scan is covered by unit tests. That the
 Frida and BioBricks adapters keep Cas13's processing of the direct repeat and spacer intact has not been tested here. The lab used the

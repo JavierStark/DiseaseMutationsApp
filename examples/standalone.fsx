@@ -32,6 +32,15 @@ let wellsOfGuide7 = plan.Pools |> List.filter (fun p -> List.contains 7 p.GuideI
 let decoded = Pooling.decode plan wellsOfGuide7
 printfn "positive tubes %A implicate guides %A (ambiguous: %b)" wellsOfGuide7 decoded.Implicated decoded.IsAmbiguous
 
+// Export: the complete guide (T7 promoter + Frida adapter + LwaCas13a DR + spacer) as GenBank and SBOL 3 text. Pure, no I/O.
+let guide : Export.ExportGuide =
+    { Hgvs = "NG_008690.2:g.5000A>T"; RsId = Some "rs334"; Complement = false
+      Spacer = "CAGAGCGCGCAGCAGCAGCAGCAGAAGC"; Rank = Some 1; Score = Some 1.0; Offtargets = Some 1 }
+let exportOptions = { Export.defaultOptions with IncludeT7 = true; Construct = { Construct.defaultOptions with Frida = true } }
+for s in Export.layout exportOptions guide do
+    printfn "%-22s %3d..%-3d %s" s.Label s.Start s.End s.Dna
+printfn "%d lines of GenBank, %d characters of SBOL 3" ((Export.toGenBank exportOptions [ guide ]).Split('\n').Length) (Export.toSbol3 exportOptions [ guide ]).Length
+
 // ---- Part 2: the full pipeline (needs Bowtie, the index, python3 + ViennaRNA, and network access) ---------------------
 if System.Environment.GetEnvironmentVariable "GRNA_RUN_PIPELINE" = "1" then
     GrnaLog.sink <- printfn "[gRNA] %s"
