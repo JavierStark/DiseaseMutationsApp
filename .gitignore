@@ -19,3 +19,8 @@ bowtie/indexes/*
 # Tooling
 **/node_modules/
 .fake
+
+# Showcase video: generated footage and renders (the source in showcase/ is committed)
+showcase/out/
+showcase/remotion/public/footage.mp4
+showcase/remotion/public/timeline.json

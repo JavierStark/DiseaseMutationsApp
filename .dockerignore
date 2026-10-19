@@ -14,3 +14,5 @@
 bowtie/indexes/**/packages/
 docs/
 *.md
+
+showcase/
