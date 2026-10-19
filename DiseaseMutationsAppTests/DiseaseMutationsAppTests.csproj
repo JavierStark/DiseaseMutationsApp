@@ -25,6 +25,11 @@
     </ItemGroup>
 
     <ItemGroup>
+        <!-- Reads the exports with Biopython and pySBOL3; ExternalValidatorTests skips itself when they are not installed. -->
+        <None Include="Validators\*.py" CopyToOutputDirectory="PreserveNewest" />
+    </ItemGroup>
+
+    <ItemGroup>
       <ProjectReference Include="..\DiseaseMutationsApp\DiseaseMutationsApp.csproj" />
       <ProjectReference Include="..\gRNA\gRNA.fsproj" />
       <ProjectReference Include="..\gRNA.Cli\gRNA.Cli.fsproj" />

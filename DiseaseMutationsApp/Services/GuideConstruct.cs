@@ -26,82 +26,53 @@ public record ConstructPart(ConstructPartKind Kind, string Label, string Rna);
 /// </summary>
 public static class GuideConstruct
 {
-    public const string LwaId = "lwa";
-    public const string NoneId = "none";
+    public const string LwaId = gRNA.Construct.LwaId;
+    public const string NoneId = gRNA.Construct.NoneId;
 
-    public const string Frida5 = "AGAGCGTCTCTAAAC";
-    public const string Frida3 = "GCTTAGAGACGTACT";
-    public const string BioBricks5 = "GGCTAGCGAATTCGCGGCCGCTTCT";
-    public const string BioBricks3 = "AGTAGCGGCCGCTGCAGCGATCGT";
+    public const string Frida5 = gRNA.Construct.Frida5;
+    public const string Frida3 = gRNA.Construct.Frida3;
+    public const string BioBricks5 = gRNA.Construct.BioBricks5;
+    public const string BioBricks3 = gRNA.Construct.BioBricks3;
 
-    /// <summary>Add further Cas13 direct repeats here (data only) once their sequence is verified.</summary>
-    public static readonly IReadOnlyList<DrPreset> DrPresets = new[]
-    {
-        new DrPreset(LwaId, "LwaCas13a", GrnaService.Scaffold),
-        new DrPreset(NoneId, "None (no direct repeat)", ""),
-    };
+    /// <summary>Add further Cas13 direct repeats in <c>gRNA/Construct.fs</c> (data only) once their sequence is verified.</summary>
+    public static readonly IReadOnlyList<DrPreset> DrPresets =
+        gRNA.Construct.drPresets.Select(p => new DrPreset(p.Id, p.Name, p.Sequence)).ToArray();
 
     public static ConstructOptions Default { get; } = new();
 
-    public static string ToRna(string s) => Clean(s).Replace('T', 'U');
+    public static string ToRna(string s) => gRNA.Construct.toRna(s);
 
     /// <summary>Uppercase, whitespace removed.</summary>
-    public static string Clean(string? s) =>
-        new string((s ?? "").Where(c => !char.IsWhiteSpace(c)).ToArray()).ToUpperInvariant();
+    public static string Clean(string? s) => gRNA.Construct.clean(s ?? "");
 
     /// <summary>True when the custom text is empty or only A, C, G, T, U (case and spaces ignored).</summary>
-    public static bool IsValidCustom(string? s) => Clean(s).All(c => "ACGTU".Contains(c));
+    public static bool IsValidCustom(string? s) => gRNA.Construct.isValidCustom(s ?? "");
 
     public static DrPreset Dr(ConstructOptions o) =>
         DrPresets.FirstOrDefault(p => p.Id == o.DrId) ?? DrPresets[0];
 
-    /// <summary>The ordered pieces of the complete guide; invalid custom text is left out.</summary>
-    public static IReadOnlyList<ConstructPart> Parts(string spacerRna, ConstructOptions? options = null)
+    /// <summary>The F# options the shared library works with.</summary>
+    public static gRNA.Construct.ConstructOptions ToLibrary(ConstructOptions? options)
     {
         var o = options ?? Default;
-        var dr = Dr(o);
-        var c5 = IsValidCustom(o.Custom5) ? ToRna(o.Custom5) : "";
-        var c3 = IsValidCustom(o.Custom3) ? ToRna(o.Custom3) : "";
-
-        var parts = new List<ConstructPart>();
-        void Add(bool on, ConstructPartKind kind, string label, string rna)
-        {
-            if (on && rna.Length > 0) parts.Add(new ConstructPart(kind, label, rna));
-        }
-
-        Add(o.BioBricks, ConstructPartKind.BioBricks, "BioBricks adapter 5'", ToRna(BioBricks5));
-        Add(o.Frida, ConstructPartKind.Frida, "Frida adapter 5'", ToRna(Frida5));
-        Add(true, ConstructPartKind.Custom, "Custom 5'", c5);
-        Add(true, ConstructPartKind.DirectRepeat, dr.Name + " DR", ToRna(dr.Sequence));
-        parts.Add(new ConstructPart(ConstructPartKind.Spacer, "Spacer", ToRna(spacerRna)));
-        Add(true, ConstructPartKind.Custom, "Custom 3'", c3);
-        Add(o.Frida, ConstructPartKind.Frida, "Frida adapter 3'", ToRna(Frida3));
-        Add(o.BioBricks, ConstructPartKind.BioBricks, "BioBricks adapter 3'", ToRna(BioBricks3));
-        return parts;
+        return new gRNA.Construct.ConstructOptions(o.DrId, o.Frida, o.BioBricks, o.Custom5 ?? "", o.Custom3 ?? "");
     }
+
+    /// <summary>The ordered pieces of the complete guide; invalid custom text is left out.</summary>
+    public static IReadOnlyList<ConstructPart> Parts(string spacerRna, ConstructOptions? options = null) =>
+        gRNA.Construct.parts(spacerRna, ToLibrary(options))
+            .Select(p => new ConstructPart(Enum.Parse<ConstructPartKind>(p.Kind.ToString()), p.Label, p.Rna))
+            .ToList();
 
     /// <summary>The complete guide as RNA letters.</summary>
     public static string Build(string spacerRna, ConstructOptions? options = null) =>
-        string.Concat(Parts(spacerRna, options).Select(p => p.Rna));
+        gRNA.Construct.build(spacerRna, ToLibrary(options));
 
     /// <summary>Only the engineered adapters (Frida, BioBricks) around an empty spacer, for expected-site accounting.</summary>
-    public static string AdaptersOnly(ConstructOptions? options = null)
-    {
-        var o = options ?? Default;
-        return string.Concat(Parts("", o).Where(p => p.Kind is ConstructPartKind.BioBricks or ConstructPartKind.Frida).Select(p => p.Rna));
-    }
+    public static string AdaptersOnly(ConstructOptions? options = null) =>
+        string.Concat(Parts("", options).Where(p => p.Kind is ConstructPartKind.BioBricks or ConstructPartKind.Frida).Select(p => p.Rna));
 
     /// <summary>Short description for file headers, e.g. "LwaCas13a DR + Frida + BioBricks".</summary>
-    public static string Describe(ConstructOptions? options = null)
-    {
-        var o = options ?? Default;
-        var bits = new List<string>();
-        var dr = Dr(o);
-        bits.Add(dr.Sequence.Length > 0 ? dr.Name + " DR" : "no DR");
-        if (o.Frida) bits.Add("Frida");
-        if (o.BioBricks) bits.Add("BioBricks");
-        if (Clean(o.Custom5).Length > 0 && IsValidCustom(o.Custom5)) bits.Add("custom 5'");
-        if (Clean(o.Custom3).Length > 0 && IsValidCustom(o.Custom3)) bits.Add("custom 3'");
-        return string.Join(" + ", bits);
-    }
+    public static string Describe(ConstructOptions? options = null) =>
+        gRNA.Construct.describe(ToLibrary(options));
 }

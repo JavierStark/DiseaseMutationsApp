@@ -23,6 +23,8 @@
         <Compile Include="Diagnostics.fs" />
         <Compile Include="SpacerFinder.fs" />
         <Compile Include="ReportSchema.fs" />
+        <Compile Include="Construct.fs" />
+        <Compile Include="Export.fs" />
         <Compile Include="DiseaseVariants.fs" />
         <Compile Include="Main.fs" />
     </ItemGroup>

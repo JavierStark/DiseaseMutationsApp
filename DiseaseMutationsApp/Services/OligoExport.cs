@@ -16,7 +16,7 @@ public static class OligoExport
     /// T7 class III promoter up to (not including) the +1 base. The Cas13 scaffold begins with G, which becomes the
     /// +1 transcription start, so the promoter is followed directly by the gRNA DNA.
     /// </summary>
-    public const string T7Promoter = "TAATACGACTCACTATA";
+    public const string T7Promoter = gRNA.Construct.T7Promoter;
 
     public record OligoPair(string Name, string Top, string Bottom);
 
